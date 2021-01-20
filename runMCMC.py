@@ -23,7 +23,7 @@ from utils import *
 
 #######################
 # Global variables
-dirName  = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+dirName  = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 dataPath=os.path.join(dirName, 'data')
 
 fout='test'
