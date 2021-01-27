@@ -41,13 +41,15 @@ def j(z):
     '''
     Jacobian of comoving volume, dimensioneless. Does not depend on H0
     '''
-    return FlatLambdaCDM(H0=70, Om0=Om0GLOB).comoving_volume(z).value*(70/clight)**3
+    return FlatLambdaCDM(H0=70, Om0=Om0GLOB).differential_comoving_volume(z).value*(70/clight)**3
+
+####### For j(z), differential_comoving_volume(z) instead of comovin_volume(z)
 
 def dV_dz(z, H0):
     '''
     Jacobian of comoving volume, with correct dimensions [Mpc^3]. Depends on H0
     '''
-    return FlatLambdaCDM(H0=H0, Om0=Om0GLOB).comoving_volume(z).value #*(70/clight)**3
+    return FlatLambdaCDM(H0=H0, Om0=Om0GLOB).differential_comoving_volume(z).value #*(70/clight)**3
 
 
 def s(z, Xi0, n):
@@ -105,12 +107,14 @@ def z_from_dLGW(dL_GW_val, H0, Xi0, n):
 # OTHER
 ######################
 
-def flatten(list_of_lists):
+def flatten2(list_of_lists):
     if len(list_of_lists) == 0:
         return list_of_lists
     if isinstance(list_of_lists[0], list):
-        return flatten(list_of_lists[0]) + flatten(list_of_lists[1:])
-    return list_of_lists[:1] + flatten(list_of_lists[1:])
+        return flatten2(list_of_lists[0]) + flatten2(list_of_lists[1:])
+    return list_of_lists[:1] + flatten2(list_of_lists[1:])
+
+###### flatten2 instead of flatten (there is a conflict)
 
 
 
