@@ -57,7 +57,10 @@ from models import *
 dirName  = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 dataPath=os.path.join(dirName, 'data')
 
-fout='test'
+fout='run1'
+
+nChains=8
+max_n=10000
 
 maxNtaus = 150
 checkTauStep = 100
@@ -119,7 +122,7 @@ def main():
 
     print('loading data')
 
-    with h5py.File('observations.h5', 'r') as phi: #observations.h5 has to be in the same folder as this code
+    with h5py.File(os.path.join(dataPath,'observations.h5'), 'r') as phi: #observations.h5 has to be in the same folder as this code
    
         m1det_samples = np.array(phi['posteriors']['m1det']) # m1
         m2det_samples = np.array(phi['posteriors']['m2det']) # m2
@@ -127,7 +130,7 @@ def main():
         theta_samples = np.array(phi['posteriors']['theta'])  # theta
         # Farr et al.'s simulations: our "observations"
 
-    with h5py.File('selected.h5', 'r') as f:
+    with h5py.File(os.path.join(dataPath,'selected.h5'), 'r') as f:
         m1_sel = np.array(f['m1det'])
         m2_sel = np.array(f['m2det'])
         dl_sel = np.array(f['dl'])*10**3
@@ -142,7 +145,7 @@ def main():
     
     Delta=[ 140-20, 10-0 ,100]
      
-    pos = Delta*np.random.rand(8, 3)+[20, 0,30]
+    pos = Delta*np.random.rand(nChains, 3)+[20, 0,30]
     nwalkers, ndim = pos.shape
 
     print('nwalkers=%s, ndim=%s' %(nwalkers, ndim))
@@ -153,13 +156,13 @@ def main():
     backend = emcee.backends.HDFBackend(os.path.join(out_path,filename))
     backend.reset(nwalkers, ndim)
 
-    print('starting MCMC')
+    print('starting MCMC. Max number of steps: %s' %max_n)
 
     # Initialize the sampler
     with Pool() as pool:
     	sampler = emcee.EnsembleSampler(nwalkers, ndim, log_posterior, backend=backend, args=(Lambda_ntest, theta, theta_sel, weights_sel, N_gen))
 
-    	max_n = 1#10000
+    	
 
     # We'll track how the average autocorrelation time estimate changes
     	index = 0
@@ -190,7 +193,7 @@ def main():
         
     fig, axes = plt.subplots(3, figsize=(10, 7), sharex=True)
     samples = sampler.get_chain()
-    labels = ["H_0", "$\alpha$","m_h"]
+    labels = [r"\H_0", r"$\alpha$",r"\m_h"]
     for i in range(ndim):
         ax = axes[i]
         ax.plot(samples[:, :, i], "k", alpha=0.3)
