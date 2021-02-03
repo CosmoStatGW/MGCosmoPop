@@ -13,18 +13,18 @@ Created on Wed Jan 20 16:38:28 2021
 
 
 from utils import *
+from dataFarr import *
 import scipy.stats as ss
 
 
-priorLimits  = ((1, 250), (0, 10), (10, 150))#, (-10, 250), (-10, 250), (-10, 250), (-10, 250), (-10, 250), (-10, 250), (-10, 250))
-##### New prior limits
+
 
 ###########################################################################
 
 
 def alphabias(Lambda_test, Lambda_ntest,  theta_sel, weights_sel, N_gen):
-    H0, alpha, mh = Lambda_test
-    Xi0, n, lambdaRedshift, beta, ml, sl, sh  = Lambda_ntest
+    H0, Xi0, mh = Lambda_test
+    n, lambdaRedshift, alpha, beta, ml, sl, sh  = Lambda_ntest
     Lambda = [H0, Xi0, n, lambdaRedshift,  alpha, beta, ml, sl, mh, sh]
     return np.sum(dN_dm1zdm2zddL(theta_sel,  Lambda)/weights_sel)/N_gen
 
@@ -36,8 +36,8 @@ def logLik(Lambda_test, Lambda_ntest, theta):
     
     Returns log likelihood for all data
     '''
-    H0, alpha, mh = Lambda_test
-    Xi0, n, lambdaRedshift, beta, ml, sl, sh  = Lambda_ntest
+    H0, Xi0,  mh = Lambda_test
+    n, lambdaRedshift, alpha, beta, ml, sl, sh  = Lambda_ntest
     Lambda = [H0, Xi0, n, lambdaRedshift,  alpha, beta, ml, sl, mh, sh]
     m1z, m2z, dL = theta
     lik = dN_dm1zdm2zddL(theta,  Lambda) # ( n_obs x n_samples ) 
@@ -49,7 +49,7 @@ def logLik(Lambda_test, Lambda_ntest, theta):
 #### The mean is taken over axis = 1 (instead of -1)
 
 def log_prior(Lambda_test):
-    H0, alpha, mh = Lambda_test
+    H0, Xi0, mh = Lambda_test
    # allVariables = flatten2([Lambda_test,])
     condition=True
     for i, (limInf, limSup) in enumerate(priorLimits):

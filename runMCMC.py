@@ -50,6 +50,7 @@ from scipy.stats import loguniform
 import shutil
 
 from models import *
+from dataFarr import *
 
 
 #######################
@@ -65,18 +66,6 @@ max_n=10000
 maxNtaus = 150
 checkTauStep = 100
 # Nobs=100
-n= 1.91 # we will use that n. This isn't really nice :-/
-alpha = 0.75 # param m1^-alpha
-beta1 = 0.0 # param m2^beta
-ml = 5.0 # [Msun] minimum mass
-mh = 45.0 # [Msun] maximum mass
-sl = 0.1 # standard deviation on the lightest mass
-sh = 0.1 # standard deviation on the heavier mass 
-R0 = 64.4
-gamma1 = 3.0
-Tobs=5./2
-H0=67.74
-Xi0 = 1.0
 
 ########################
 
@@ -120,33 +109,19 @@ def main():
    # %pylab inline
    # %config InlineBackend.figure_format = 'retina'
 
-    print('loading data')
-
-    with h5py.File(os.path.join(dataPath,'observations.h5'), 'r') as phi: #observations.h5 has to be in the same folder as this code
-   
-        m1det_samples = np.array(phi['posteriors']['m1det']) # m1
-        m2det_samples = np.array(phi['posteriors']['m2det']) # m2
-        dl_samples = np.array(phi['posteriors']['dl'])*10**3 # dLm distance is given in Gpc in the .h5
-        theta_samples = np.array(phi['posteriors']['theta'])  # theta
-        # Farr et al.'s simulations: our "observations"
-
-    with h5py.File(os.path.join(dataPath,'selected.h5'), 'r') as f:
-        m1_sel = np.array(f['m1det'])
-        m2_sel = np.array(f['m2det'])
-        dl_sel = np.array(f['dl'])*10**3
-        weights_sel = np.array(f['wt'])
-        N_gen = f.attrs['N_gen']
-
-    print('done data')
-
-    theta = np.array([m1det_samples, m2det_samples, dl_samples])
-    theta_sel = np.array([m1_sel, m2_sel, dl_sel])
-    Lambda_ntest = np.array([Xi0,n,gamma1, beta1, ml, sl, sh])
-    
-    Delta=[ 140-20, 10-0 ,100]
+    n_param = len(Delta)
      
-    pos = Delta*np.random.rand(nChains, 3)+[20, 0,30]
+    pos = Delta*np.random.rand(nChains,  n_param)+beginDelta
     nwalkers, ndim = pos.shape
+
+    scriptname = __file__
+    filenameT = scriptname.replace("_", "\_")
+    #filenameT = scriptname
+    
+    telegram_bot_sendtext("Start of: %s" %filenameT)
+    telegram_bot_sendtext('%s: nwalkers = %d, ndim = %d' %(filenameT,nwalkers, ndim) )
+    telegram_bot_sendtext("%s: labels =%s" %(filenameT,labels_param))
+    telegram_bot_sendtext("%s: max step =%s" %(filenameT,max_n))
 
     print('nwalkers=%s, ndim=%s' %(nwalkers, ndim))
 
@@ -161,9 +136,7 @@ def main():
     # Initialize the sampler
     with Pool() as pool:
     	sampler = emcee.EnsembleSampler(nwalkers, ndim, log_posterior, backend=backend, args=(Lambda_ntest, theta, theta_sel, weights_sel, N_gen))
-
     	
-
     # We'll track how the average autocorrelation time estimate changes
     	index = 0
     	autocorr = np.empty(max_n)
@@ -180,9 +153,14 @@ def main():
         # Compute the autocorrelation time so far
         # Using tol=0 means that we'll always get an estimate even
         # if it isn't trustworthy
+
+        	telegram_bot_sendtext("%s: step No.  %s" %(filenameT,sampler.iteration))
         	tau = sampler.get_autocorr_time(tol=0)
         	autocorr[index] = np.mean(tau)
         	index += 1
+ 
+
+    
         
         # Check convergence
         	converged = np.all(tau * 100 < sampler.iteration)
@@ -191,9 +169,9 @@ def main():
          	   break
         	old_tau = tau
         
-    fig, axes = plt.subplots(3, figsize=(10, 7), sharex=True)
+    fig, axes = plt.subplots(n_param, figsize=(10, 7), sharex=True)
     samples = sampler.get_chain()
-    labels = [r"\H_0", r"$\alpha$",r"\m_h"]
+    labels = labels_param
     for i in range(ndim):
         ax = axes[i]
         ax.plot(samples[:, :, i], "k", alpha=0.3)
@@ -215,10 +193,12 @@ def main():
     
 
     fig1 = corner.corner(
-    samples, labels=labels, truths=[67.74, 0.75, 45],quantiles=[0.16, 0.84],show_titles=True, title_kwargs={"fontsize": 12}
+    samples, labels=labels, truths=trueValues,quantiles=[0.16, 0.84],show_titles=True, title_kwargs={"fontsize": 12}
     );
 
     fig1.savefig(os.path.join(out_path, 'corner.pdf'))
+
+    telegram_bot_sendtext("End of: %s " %filenameT)
     
     
     # Example: save plot 
