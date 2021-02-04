@@ -17,6 +17,8 @@ from dataFarr import *
 import scipy.stats as ss
 
 
+priorLimits  = ((20, 140), (0, 10), (20, 150)) # (-10, 250), (-10, 250), (-10, 250), (-10, 250), (-10, 250), (-10, 250))
+
 
 
 ###########################################################################
@@ -46,6 +48,7 @@ def logLik(Lambda_test, Lambda_ntest, theta):
     lik/=originalDistPrior(dL)
         
     return np.log(lik.mean(axis=1)).sum(axis=-1)
+
 #### The mean is taken over axis = 1 (instead of -1)
 
 def log_prior(Lambda_test):
@@ -63,9 +66,9 @@ def log_prior(Lambda_test):
 def log_posterior(Lambda_test, Lambda_ntest, theta, theta_sel, weights_sel, N_gen):
     lp = log_prior(Lambda_test)
     Nobs=theta[0].shape[0]
-    if not np.isfinite(lp):
-       return -np.inf
-    return logLik(Lambda_test, Lambda_ntest, theta)-Nobs*np.log(alphabias(Lambda_test, Lambda_ntest,  theta_sel, weights_sel, N_gen)) # + lp
+    #if not np.isfinite(lp):
+    #   return -np.inf
+    return logLik(Lambda_test, Lambda_ntest, theta)-Nobs*np.log(alphabias(Lambda_test, Lambda_ntest,  theta_sel, weights_sel, N_gen)) + lp
 
 
 ###########################################################################
@@ -103,10 +106,10 @@ def dN_dm1zdm2zddL(theta,  Lambda) :
     m1z, m2z, dL = theta
     H0, Xi0, n, lambdaRedshift,  alpha, beta, ml, sl, mh, sh  = Lambda
     
-    z=z_from_dLGW_fast(dL, H0, Xi0, n=n)
+    z=z_from_dLGW_fast(dL, H0, Xi0, n)
     
     
-    return  dN_dm1dm2dz(z, theta,  Lambda)/(redshiftJacobian(z)*ddL_dz(z, H0, Xi0, n=n))
+    return  dN_dm1dm2dz(z, theta,  Lambda)/(redshiftJacobian(z)*ddL_dz(z, H0, Xi0, n))
 
 
 

@@ -5,6 +5,7 @@ from astropy import constants as const
 import astropy.units as u
 import sys
 import requests
+from scipy.optimize import fsolve
 
 
 which_unit=u.Mpc
@@ -16,7 +17,13 @@ nGLOB=1.91
 
 cosmoglob = FlatLambdaCDM(H0=H0GLOB, Om0=Om0GLOB)
 
-zGridGLOB = np.logspace(start=-10, stop=5, base=10, num=1000)
+eps=1e-8
+
+zGridGLOB = np.logspace(start=-8, stop=5, base=10, num=1500) #np.concatenate([ np.logspace(start=eps, stop=np.log10(7.99), base=10, num=1000), np.logspace(start=np.log10(8), stop=5, base=10, num=100)])#np.logspace(start=-8, stop=5, base=10, num=1500) 
+#zGridGLOB = np.sort(zGridGLOB)
+#zGridGLOB=np.unique(zGridGLOB, return_counts=False)  
+
+
 dLGridGLOB = cosmoglob.luminosity_distance(zGridGLOB).to(which_unit).value
 
 clight=const.c.value*1e-03 # c in km/s
@@ -76,7 +83,7 @@ def dLGW(z, H0, Xi0, n):
     Modified GW luminosity distance in units set by utils.which_unit (default Mpc)                                                                           
     '''
     cosmo=FlatLambdaCDM(H0=H0, Om0=Om0GLOB)
-    return (cosmo.luminosity_distance(z).to(which_unit).value)*Xi(z, Xi0, n=n)
+    return (cosmo.luminosity_distance(z).to(which_unit).value)*Xi(z, Xi0, n)
 
 
 def Xi(z, Xi0, n):
@@ -91,15 +98,18 @@ def z_from_dLGW_fast(r, H0, Xi0, n):
     '''
     Returns redshift for a given luminosity distance r (in Mpc by default). Vectorized
     '''
-    z2dL = interpolate.interp1d(dLGridGLOB/H0*H0GLOB*Xi(zGridGLOB, Xi0, n=n), zGridGLOB, kind='cubic', bounds_error=False, fill_value=(0,np.NaN), assume_sorted=True)
-    return z2dL(r)
+    
+    z2dL = interpolate.interp1d( dLGridGLOB/H0*H0GLOB*Xi(zGridGLOB, Xi0, n), zGridGLOB, kind='cubic', bounds_error=False, fill_value=(0,0.), assume_sorted=False)
+    return np.where(z2dL(r)>eps, z2dL(r), 0.)
 
+
+def z_from_dLGW_fast_1(r, H0, Xi0, n):
+    return np.array([z_from_dLGW(dL_GW_val, H0, Xi0, n) for dL_GW_val in r] )
 
 
 def z_from_dLGW(dL_GW_val, H0, Xi0, n):
     '''Returns redshift for a given luminosity distance dL_GW_val (in Mpc by default)                                         '''
-    from scipy.optimize import fsolve
-    func = lambda z : dLGW(z, H0, Xi0, n=n) - dL_GW_val
+    func = lambda z : dLGW(z, H0, Xi0, n) - dL_GW_val
     z = fsolve(func, 0.5)
     return z[0]
 
