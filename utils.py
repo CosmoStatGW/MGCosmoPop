@@ -17,9 +17,10 @@ nGLOB=1.91
 
 cosmoglob = FlatLambdaCDM(H0=H0GLOB, Om0=Om0GLOB)
 
-eps=1e-8
+eps=1e-15
 
-zGridGLOB = np.logspace(start=-8, stop=5, base=10, num=1500) #np.concatenate([ np.logspace(start=eps, stop=np.log10(7.99), base=10, num=1000), np.logspace(start=np.log10(8), stop=5, base=10, num=100)])#np.logspace(start=-8, stop=5, base=10, num=1500) 
+zGridGLOB = np.concatenate([ np.logspace(start=-15, stop=np.log10(9.99e-09), base=10, num=10), np.logspace(start=-8, stop=np.log10(7.99), base=10, num=1000), np.logspace(start=np.log10(8), stop=5, base=10, num=100)])
+
 #zGridGLOB = np.sort(zGridGLOB)
 #zGridGLOB=np.unique(zGridGLOB, return_counts=False)  
 
@@ -98,14 +99,22 @@ def z_from_dLGW_fast(r, H0, Xi0, n):
     '''
     Returns redshift for a given luminosity distance r (in Mpc by default). Vectorized
     '''
-    
-    z2dL = interpolate.interp1d( dLGridGLOB/H0*H0GLOB*Xi(zGridGLOB, Xi0, n), zGridGLOB, kind='cubic', bounds_error=False, fill_value=(0,0.), assume_sorted=False)
-    return np.where(z2dL(r)>eps, z2dL(r), 0.)
+    #dLeps=dLGW(eps, H0, Xi0, n)
+    z2dL = interpolate.interp1d( dLGridGLOB/H0*H0GLOB*Xi(zGridGLOB, Xi0, n), zGridGLOB, kind='cubic', bounds_error=False, fill_value=(0,0.), assume_sorted=True)
+    return z2dL(r)#np.where(r>dLeps, z2dL(r), 0.) #np.where(z2dL(r)>eps, z2dL(r), 0.)
 
 
 def z_from_dLGW_fast_1(r, H0, Xi0, n):
-    return np.array([z_from_dLGW(dL_GW_val, H0, Xi0, n) for dL_GW_val in r] )
-
+    #print('r shape: %s' %str(r.shape))
+    #if not np.isscalar(r):
+    #    if np.ndim(r)==1:
+    #        return  np.array([z_from_dLGW(dL_GW_val, H0, Xi0, n) for dL_GW_val in r] )
+    #    else:
+    #        
+    #else:
+    #    return np.array([z_from_dLGW(r, H0, Xi0, n),] )
+    
+    return np.vectorize(z_from_dLGW)(r, H0, Xi0, n)
 
 def z_from_dLGW(dL_GW_val, H0, Xi0, n):
     '''Returns redshift for a given luminosity distance dL_GW_val (in Mpc by default)                                         '''

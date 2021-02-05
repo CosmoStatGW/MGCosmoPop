@@ -21,7 +21,7 @@ import sys
 import array as arr
 import emcee
 import corner
-from multiprocessing import Pool
+from multiprocessing import Pool, cpu_count
 
 from scipy.stats import norm as norm1
 import matplotlib.pyplot as plt
@@ -49,8 +49,14 @@ from tqdm import tqdm, tqdm_notebook
 from scipy.stats import loguniform
 import shutil
 
+
+#from dataFarr import *
 from models import *
-from dataFarr import *
+from params import Params, PriorLimits
+
+
+
+os.environ["OMP_NUM_THREADS"] = "1"
 
 
 ###############################################
@@ -62,6 +68,10 @@ dataPath=os.path.join(dirName, 'data')
 
 fout='run2'
 
+dataset_name = 'mock'
+
+telegramAlert = False
+
 nChains=8
 max_n=10000
 
@@ -69,34 +79,31 @@ maxNtaus = 150
 checkTauStep = 100
 # Nobs=100
 
-#  PARAMETERS
+myParams = Params(dataset_name)
+
+params_inference = [ 'H0', 'Xi0','mh' ]
+
+params_n_inference = [param for param in myParams.allParams if param not in params_inference]
 
 
-TrueValues = {'H0':67.74, 'Xi0':1.0, 'n':1.91, 'lambdaRedshift':3.0,  'alpha':0.75, 'beta':0.0, 'ml':5.0, 'sl':0.1, 'mh':45.0, 'sh':0.1}
-
-n= 1.91 # we will use that n. This isn't really nice :-/
-alpha = 0.75 # param m1^-alpha
-beta1 = 0.0 # param m2^beta
-ml = 5.0 # [Msun] minimum mass
-mh = 45.0 # [Msun] maximum mass
-sl = 0.1 # standard deviation on the lightest mass
-sh = 0.1 # standard deviation on the heavier mass 
-R0 = 64.4
-gamma1 = 3.0
-Tobs=5./2
-H0=67.74
-Xi0 = 1.0
+labels_param = [ myParams.names[param] for param in params_inference ] #.sort()
+Lambda_ntest = np.array([myParams.trueValues[param] for param in params_n_inference])
 
 
-Lambda_ntest = np.array([n, gamma1, alpha, beta1, ml, sl, sh])
-    
-Delta=[140-20, 10-0, 150-20]
-beginDelta = [20, 0, 20]
+exp_values= myParams.get_expected_values(params_inference) #[70, 1, 45]
+perc_variation = 10
+lowLims = [val-val*perc_variation/100 for val in exp_values] #[20, 0, 20]
+upLims = [val+val*perc_variation/100 for val in exp_values] 
+Delta = [upLims[i]-lowLims[i] for i in range(len(exp_values))] #[140-20, 10-0, 150-20] 
 
-labels_param=[r"H_0", r"$\Xi_0$", r"m_h"]
-trueValues = [67.74, 1, 45]
+labels_param= myParams.get_labels(params_inference)#[r"$H_0$", r"$\Xi_0$", r"$m_h$"]
+trueValues = myParams.get_true_values(params_inference)#[67.74, 1, 45]
 
 
+
+allMyPriors = PriorLimits()
+
+priorLimits  = [ (allMyPriors.limInf[param],allMyPriors.limSup[param] ) for param in params_inference ]
 
 
 ########################
@@ -137,34 +144,34 @@ def main():
     #####
     # Load data
     #####
-    print('Loading data...')
-    
-    theta = load_mock_data()
-    theta_sel, weights_sel, N_gen = load_injections_data()
     
     
-    print('Done data.')
-    print('theta shape: %s' %str(theta.shape))
-    print('We have %s observations' %theta.shape[1])
 
     #####
     # Setup MCMC
     #####
 
     ndim = len(Delta)
+    
+    print('Running inference for parameters: %s' %str(params_inference))
+    print('Prior range: %s' %priorLimits)
+    print('Fixing parameters: %s' %str(params_n_inference))
+    print('Values: %s' %str(Lambda_ntest))
      
-    pos = Delta*np.random.rand(nChains,  ndim)+beginDelta
+    #print('Initial balls for initialization of the walkers: %s' %str(Delta))
+    print(' Initial intervals for initialization of the walkers have an amplitude of +-%s percent around the expeced values of %s'%(perc_variation, str(exp_values)) )
+    pos = Delta*np.random.rand(nChains,  ndim)+lowLims
     nwalkers = pos.shape[0]
     print('Initial positions of the walkers: %s' %str(pos))
     
     scriptname = __file__
     filenameT = scriptname.replace("_", "\_")
     #filenameT = scriptname
-    
-    telegram_bot_sendtext("Start of: %s" %filenameT)
-    telegram_bot_sendtext('%s: nwalkers = %d, ndim = %d' %(filenameT,nwalkers, ndim) )
-    telegram_bot_sendtext("%s: labels =%s" %(filenameT,labels_param))
-    telegram_bot_sendtext("%s: max step =%s" %(filenameT,max_n))
+    #if telegramAlert:
+    #    telegram_bot_sendtext("Start of: %s" %filenameT)
+    #    telegram_bot_sendtext('%s: nwalkers = %d, ndim = %d' %(filenameT,nwalkers, ndim) )
+    #    telegram_bot_sendtext("%s: labels =%s" %(filenameT,labels_param))
+    #    telegram_bot_sendtext("%s: max step =%s" %(filenameT,max_n))
 
     print('nwalkers=%s, ndim=%s' %(nwalkers, ndim))
 
@@ -177,8 +184,10 @@ def main():
     print('starting MCMC. Max number of steps: %s' %max_n)
 
     # Initialize the sampler
+    ncpu = cpu_count()
+    print('Parallelizing on %s CPUs ' %ncpu)
     with Pool() as pool:
-    	sampler = emcee.EnsembleSampler(nwalkers, ndim, log_posterior, backend=backend, args=(Lambda_ntest, theta, theta_sel, weights_sel, N_gen))
+    	sampler = emcee.EnsembleSampler(nwalkers, ndim, log_posterior, backend=backend, args=(Lambda_ntest,priorLimits), pool=pool)
     	
     # We'll track how the average autocorrelation time estimate changes
     	index = 0
@@ -187,17 +196,18 @@ def main():
     # This will be useful to testing convergence
     	old_tau = np.inf
 
-    # Now we'll sample for up to max_n steps
+        # Now we'll sample for up to max_n steps
     	for sample in sampler.sample(pos, iterations=max_n, progress=True):
         # Only check convergence every 100 steps
         	if sampler.iteration % 100:
             	   continue
-
-        # Compute the autocorrelation time so far
-        # Using tol=0 means that we'll always get an estimate even
-        # if it isn't trustworthy
-
-        	telegram_bot_sendtext("%s: step No.  %s" %(filenameT,sampler.iteration))
+            
+            #if telegramAlert:
+            # 	telegram_bot_sendtext("%s: step No.  %s" %(filenameT,sampler.iteration))
+        
+            # Compute the autocorrelation time so far
+            # Using tol=0 means that we'll always get an estimate even
+            # if it isn't trustworthy
         	tau = sampler.get_autocorr_time(tol=0)
         	autocorr[index] = np.mean(tau)
         	index += 1
@@ -240,8 +250,8 @@ def main():
     );
 
     fig1.savefig(os.path.join(out_path, 'corner.pdf'))
-
-    telegram_bot_sendtext("End of: %s " %filenameT)
+    #if telegramAlert:
+    #    telegram_bot_sendtext("End of: %s " %filenameT)
     
     
     # Example: save plot 
@@ -256,7 +266,7 @@ def main():
     
     
     ######
-   # print('\nDone in %.2fs' %(time.time() - in_time))
+    print('\nDone in %.2fs' %(time.time() - in_time))
     
     sys.stdout = sys.__stdout__
     sys.stderr = sys.__stderr__

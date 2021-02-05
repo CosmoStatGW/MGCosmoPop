@@ -17,32 +17,51 @@ from dataFarr import *
 import scipy.stats as ss
 
 
-priorLimits  = ((20, 140), (0, 10), (20, 150)) # (-10, 250), (-10, 250), (-10, 250), (-10, 250), (-10, 250), (-10, 250))
+
+
+#((20, 140), (0.3, 10), (20, 150)) # (-10, 250), (-10, 250), (-10, 250), (-10, 250), (-10, 250), (-10, 250))
 
 
 
 ###########################################################################
+print('Loading data...')
+theta = load_mock_data()
+m1z, m2z, dL = theta
+assert (m1z > 0).all()
+assert (m2z > 0).all()
+assert (dL > 0).all()
+theta_sel, weights_sel, N_gen = load_injections_data()
+print('Done data.')
+print('theta shape: %s' %str(theta.shape))
+print('We have %s observations' %theta.shape[1])
 
+###########################################################################
 
-def alphabias(Lambda_test, Lambda_ntest,  theta_sel, weights_sel, N_gen):
+def get_Lambda(Lambda_test, Lambda_ntest):
     H0, Xi0, mh = Lambda_test
     n, lambdaRedshift, alpha, beta, ml, sl, sh  = Lambda_ntest
     Lambda = [H0, Xi0, n, lambdaRedshift,  alpha, beta, ml, sl, mh, sh]
-    return np.sum(dN_dm1zdm2zddL(theta_sel,  Lambda)/weights_sel)/N_gen
+    return Lambda
 
 
-def logLik(Lambda_test, Lambda_ntest, theta):
+def alphabias(Lambda_test, Lambda_ntest):
+    Lambda = get_Lambda(Lambda_test, Lambda_ntest)
+    return np.sum(dN_dm1zdm2zddL( Lambda)/weights_sel)/N_gen
+
+
+def logLik(Lambda_test, Lambda_ntest):
     '''
     Lambda:
      H0, Xi0, n, gamma, alpha, beta, ml, sl, mh, sh
     
     Returns log likelihood for all data
     '''
-    H0, Xi0,  mh = Lambda_test
-    n, lambdaRedshift, alpha, beta, ml, sl, sh  = Lambda_ntest
-    Lambda = [H0, Xi0, n, lambdaRedshift,  alpha, beta, ml, sl, mh, sh]
-    m1z, m2z, dL = theta
-    lik = dN_dm1zdm2zddL(theta,  Lambda) # ( n_obs x n_samples ) 
+    #H0, Xi0,  mh = Lambda_test
+    #n, lambdaRedshift, alpha, beta, ml, sl, sh  = Lambda_ntest
+    #Lambda = [H0, Xi0, n, lambdaRedshift,  alpha, beta, ml, sl, mh, sh]
+    Lambda = get_Lambda(Lambda_test, Lambda_ntest)
+    #m1z, m2z, dL = theta
+    lik = dN_dm1zdm2zddL(Lambda) # ( n_obs x n_samples ) 
     
     lik/=originalMassPrior(m1z, m2z)
     lik/=originalDistPrior(dL)
@@ -51,9 +70,9 @@ def logLik(Lambda_test, Lambda_ntest, theta):
 
 #### The mean is taken over axis = 1 (instead of -1)
 
-def log_prior(Lambda_test):
-    H0, Xi0, mh = Lambda_test
-   # allVariables = flatten2([Lambda_test,])
+def log_prior(Lambda_test, priorLimits):
+    #H0, Xi0, mh = Lambda_test
+    #allVariables = flatten2([Lambda_test,])
     condition=True
     for i, (limInf, limSup) in enumerate(priorLimits):
         condition &= limInf<Lambda_test[i]<limSup 
@@ -63,12 +82,12 @@ def log_prior(Lambda_test):
         return -np.inf
 
 
-def log_posterior(Lambda_test, Lambda_ntest, theta, theta_sel, weights_sel, N_gen):
-    lp = log_prior(Lambda_test)
+def log_posterior(Lambda_test, Lambda_ntest, priorLimits):
+    lp = log_prior(Lambda_test, priorLimits)
     Nobs=theta[0].shape[0]
-    #if not np.isfinite(lp):
-    #   return -np.inf
-    return logLik(Lambda_test, Lambda_ntest, theta)-Nobs*np.log(alphabias(Lambda_test, Lambda_ntest,  theta_sel, weights_sel, N_gen)) + lp
+    if not np.isfinite(lp):
+       return -np.inf
+    return logLik(Lambda_test, Lambda_ntest)-Nobs*np.log(alphabias(Lambda_test, Lambda_ntest)) + lp
 
 
 ###########################################################################
@@ -82,7 +101,7 @@ def originalDistPrior(dL):
 
 
 
-def dN_dm1dm2dz(z, theta,  Lambda) :
+def dN_dm1dm2dz(z,  Lambda) :
     '''
     - theta is an array (m1z, m2z, dL) where m1z, m2z, dL are arrays 
     of the GW posterior samples
@@ -91,25 +110,31 @@ def dN_dm1dm2dz(z, theta,  Lambda) :
      lambdaBBH is the parameters of the BBH mass function 
     '''
     
-    m1z, m2z, dL = theta
+    #m1z, m2z, dL = theta
     H0, Xi0, n, lambdaRedshift,  alpha, beta, ml, sl, mh, sh  = Lambda
     lambdaBBH=[ alpha, beta, ml, sl, mh, sh]
     
     m1, m2 = m1z/(1+z), m2z/(1+z)
-    
+    #assert (m1 > 0).all()
+    #assert (m2 > 0).all()
     return redshiftPrior(z, lambdaRedshift, H0)*massPrior(m1, m2, lambdaBBH)
 
 
 
-def dN_dm1zdm2zddL(theta,  Lambda) :
+def dN_dm1zdm2zddL(Lambda) :
     
-    m1z, m2z, dL = theta
+    #m1z, m2z, dL = theta
     H0, Xi0, n, lambdaRedshift,  alpha, beta, ml, sl, mh, sh  = Lambda
     
     z=z_from_dLGW_fast(dL, H0, Xi0, n)
-    
-    
-    return  dN_dm1dm2dz(z, theta,  Lambda)/(redshiftJacobian(z)*ddL_dz(z, H0, Xi0, n))
+    if not (z > 0).all():
+        print('Parameters H0, Xi0, n, lambdaRedshift,  alpha, beta, ml, sl, mh, sh :')
+        print(H0, Xi0, n, lambdaRedshift,  alpha, beta, ml, sl, mh, sh)
+        
+        print('dL = %s' %dL[z<0])
+        raise ValueError('negative redshift')
+
+    return  dN_dm1dm2dz(z,  Lambda)/(redshiftJacobian(z)*ddL_dz(z, H0, Xi0, n))
 
 
 
