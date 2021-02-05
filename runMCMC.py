@@ -66,13 +66,13 @@ os.environ["OMP_NUM_THREADS"] = "1"
 dirName  = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 dataPath=os.path.join(dirName, 'data')
 
-fout='run2'
+fout='runFull'
 
 dataset_name = 'mock'
 
 telegramAlert = False
 
-nChains=8
+nChains=50
 max_n=10000
 
 maxNtaus = 150
@@ -81,7 +81,7 @@ checkTauStep = 100
 
 myParams = Params(dataset_name)
 
-params_inference = [ 'H0', 'Xi0','mh' ]
+params_inference = [ 'H0', 'Xi0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh']
 
 params_n_inference = [param for param in myParams.allParams if param not in params_inference]
 
@@ -162,7 +162,7 @@ def main():
     print(' Initial intervals for initialization of the walkers have an amplitude of +-%s percent around the expeced values of %s'%(perc_variation, str(exp_values)) )
     pos = Delta*np.random.rand(nChains,  ndim)+lowLims
     nwalkers = pos.shape[0]
-    print('Initial positions of the walkers: %s' %str(pos))
+    #print('Initial positions of the walkers: %s' %str(pos))
     
     scriptname = __file__
     filenameT = scriptname.replace("_", "\_")
@@ -197,7 +197,7 @@ def main():
     	old_tau = np.inf
 
         # Now we'll sample for up to max_n steps
-    	for sample in sampler.sample(pos, iterations=max_n, progress=True):
+    	for sample in sampler.sample(pos, iterations=max_n, progress=True, skip_initial_state_check=True):
         # Only check convergence every 100 steps
         	if sampler.iteration % 100:
             	   continue

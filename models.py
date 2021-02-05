@@ -38,15 +38,23 @@ print('We have %s observations' %theta.shape[1])
 ###########################################################################
 
 def get_Lambda(Lambda_test, Lambda_ntest):
-    H0, Xi0, mh = Lambda_test
-    n, lambdaRedshift, alpha, beta, ml, sl, sh  = Lambda_ntest
+    H0, Xi0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda_test
+    n = Lambda_ntest#lambdaRedshift, alpha, beta, ml, sl, sh  = Lambda_ntest
+    
     Lambda = [H0, Xi0, n, lambdaRedshift,  alpha, beta, ml, sl, mh, sh]
     return Lambda
 
 
 def alphabias(Lambda_test, Lambda_ntest):
     Lambda = get_Lambda(Lambda_test, Lambda_ntest)
-    return np.sum(dN_dm1zdm2zddL( Lambda, theta_sel)/weights_sel)/N_gen
+    
+    xx = dN_dm1zdm2zddL( Lambda, theta_sel)/weights_sel
+    alpha=np.sum(xx)/N_gen
+    s2=np.sum(xx*xx)/N_gen**2
+    sigmaSq = s2 - alpha*alpha/N_gen
+    Neff = alpha*alpha/sigmaSq
+    
+    return alpha, Neff
 
 
 def logLik(Lambda_test, Lambda_ntest):
@@ -87,7 +95,8 @@ def log_posterior(Lambda_test, Lambda_ntest, priorLimits):
     Nobs=theta[0].shape[0]
     if not np.isfinite(lp):
        return -np.inf
-    return logLik(Lambda_test, Lambda_ntest)-Nobs*np.log(alphabias(Lambda_test, Lambda_ntest)) + lp
+    alphaSel, Neff = alphabias(Lambda_test, Lambda_ntest)
+    return logLik(Lambda_test, Lambda_ntest)-Nobs*np.log(alphaSel)+(3*Nobs+Nobs**2)/(2*Neff) + lp
 
 
 ###########################################################################
