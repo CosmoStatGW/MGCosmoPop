@@ -38,7 +38,7 @@ class Params(object):
                            'ml':r'$M_l$', 
                            'sl':r'$\sigma_l$', 
                            'mh':r'$M_h$',
-                           'sh':r'$sigma_h$'}
+                           'sh':r'$\sigma_h$'}
     
         
         else:

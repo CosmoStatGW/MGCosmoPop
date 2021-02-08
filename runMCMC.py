@@ -81,7 +81,7 @@ checkTauStep = 100
 
 myParams = Params(dataset_name)
 
-params_inference = [ 'H0', 'Xi0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh']
+params_inference = [ 'H0', 'Xi0', 'mh'] #'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh']
 
 params_n_inference = [param for param in myParams.allParams if param not in params_inference]
 

@@ -38,9 +38,8 @@ print('We have %s observations' %theta.shape[1])
 ###########################################################################
 
 def get_Lambda(Lambda_test, Lambda_ntest):
-    H0, Xi0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda_test
-    n = Lambda_ntest#lambdaRedshift, alpha, beta, ml, sl, sh  = Lambda_ntest
-    
+    H0, Xi0, mh= Lambda_test
+    n , lambdaRedshift, alpha, beta, ml, sl, sh  = Lambda_ntest
     Lambda = [H0, Xi0, n, lambdaRedshift,  alpha, beta, ml, sl, mh, sh]
     return Lambda
 
