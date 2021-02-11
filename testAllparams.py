@@ -109,12 +109,40 @@ else:
         mymodels = importlib.import_module('models'+param, package=None)
         
         
-        print('Computing posterior for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
-        logPosterior = np.array( [mymodels.log_posterior(val, Lambda_ntest, priorLimits) for val in grid ] )
-        posterior = np.exp(logPosterior)
-        posterior_norm =np.trapz(posterior, grid) 
+        print('Computing Ndet for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
+        
+        
+        NdetRes = np.array( [Ndet(val, Lambda_ntest) for val in grid  ] )
+        NdetVals=NdetRes[:, 0]
+        NeffVals=NdetRes[:, 1]
+        
+        plt.plot(grid, NdetVals)
+        plt.xlabel(myParams.names[param]);
+        plt.ylabel(r'$N_{det}$');
+        plt.axvline(truth, ls='--', color='k', lw=2);
+        plt.savefig( os.path.join(out_path, param+'_Ndet.pdf'))
+        plt.close()
+        
+        print('Computing likelihood for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
+        logLik = np.array( [mymodels.logLik(val, Lambda_ntest) for val in grid ] )
+        
+        logPrior = np.array([log_prior(val, priorLimits) for val in grid ] )
+        
+        #logPosterior = np.array( [mymodels.log_posterior(val, Lambda_ntest, priorLimits) for val in grid ] )
+        logPosterior = logLik - NdetVals + (3 * Nobs + Nobs ** 2) / (2 * NeffVals) + logPrior
+        
+        posterior = np.exp(logPosterior-logPosterior.max())
+        posterior /=np.trapz(posterior, grid) 
         print('Done.')
-        np.savetxt( os.path.join(out_path, param+'_values.txt') , np.stack([grid, posterior, posterior_norm], axis=1) )
+        np.savetxt( os.path.join(out_path, param+'_values.txt') , np.stack([grid, logPosterior, posterior], axis=1) )
+        
+        
+        plt.plot(grid, logPosterior)
+        plt.xlabel(myParams.names[param]);
+        plt.ylabel(r'$p$');
+        plt.axvline(truth, ls='--', color='k', lw=2);
+        plt.savefig( os.path.join(out_path, param+'_logpost.pdf'))
+        plt.close()
         
         
         plt.plot(grid, posterior)
@@ -122,14 +150,6 @@ else:
         plt.ylabel(r'$p$');
         plt.axvline(truth, ls='--', color='k', lw=2);
         plt.savefig( os.path.join(out_path, param+'_post.pdf'))
-        plt.close()
-        
-        
-        plt.plot(grid, posterior_norm)
-        plt.xlabel(myParams.names[param]);
-        plt.ylabel(r'$p$');
-        plt.axvline(truth, ls='--', color='k', lw=2);
-        plt.savefig( os.path.join(out_path, param+'_post_norm.pdf'))
         plt.close()
             
 
