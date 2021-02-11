@@ -84,10 +84,10 @@ def load_injections_data_mock():
             dl_sel = np.array(f['dl'])[:nInjUse]*10**3
             weights_sel = np.array(f['wt'])[:nInjUse]
         else:
-            m1_sel = np.array(f['m1det'])#[:nInjUse]
-            m2_sel = np.array(f['m2det'])#[:nInjUse]
+            m1_sel = np.array(f['m1det'])
+            m2_sel = np.array(f['m2det'])
             dl_sel = np.array(f['dl'])*10**3
-            weights_sel = np.array(f['wt'])#[:nInjUse]
+            weights_sel = np.array(f['wt'])
         
         N_gen = f.attrs['N_gen']
         
