@@ -29,7 +29,7 @@ nObsUse=50
 with open('config.py', 'w') as f:
     f.write("dataset_name='%s'" %dataset_name)
     f.write("\ndataset_name_injections='%s'" %dataset_name)
-    f.write("\nnObsUse=%s " %nObsUse)
+    f.write("\nnObsUse=None " ) #%nObsUse)
     f.write("\nnSamplesUse=None  " )
     f.write("\nnInjUse=None  " )
     
@@ -76,7 +76,7 @@ if param=='n':
 else:
         truth = myParams.trueValues[param]
         print('True value: %s' %truth)
-        grid = np.concatenate( [np.linspace( myPriorLims.limInf[param], truth-(truth*perc_variation/100)-0.01, 5), np.linspace(truth-(truth*perc_variation/100), truth+(truth*perc_variation/100), npoints) , np.linspace( truth+(truth*perc_variation/100)+0.01, myPriorLims.limSup[param], 5)])
+        grid = np.sort(np.concatenate( [np.array([truth,]) , np.linspace( myPriorLims.limInf[param], truth-(truth*perc_variation/100)-0.01, 5), np.linspace(truth-(truth*perc_variation/100), truth+(truth*perc_variation/100), npoints) , np.linspace( truth+(truth*perc_variation/100)+0.01, myPriorLims.limSup[param], 5)]) )
             
         params_n_inference = [nparam for nparam in myParams.allParams if nparam!= param]
 
@@ -112,9 +112,9 @@ else:
         print('Computing posterior for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
         logPosterior = np.array( [mymodels.log_posterior(val, Lambda_ntest, priorLimits) for val in grid ] )
         posterior = np.exp(logPosterior)
-        posterior/=np.trapz(posterior, grid) 
+        posterior_norm =np.trapz(posterior, grid) 
         print('Done.')
-        np.savetxt( os.path.join(out_path, param+'_values.txt') , np.stack([grid, posterior], axis=1) )
+        np.savetxt( os.path.join(out_path, param+'_values.txt') , np.stack([grid, posterior, posterior_norm], axis=1) )
         
         
         plt.plot(grid, posterior)
@@ -122,6 +122,14 @@ else:
         plt.ylabel(r'$p$');
         plt.axvline(truth, ls='--', color='k', lw=2);
         plt.savefig( os.path.join(out_path, param+'_post.pdf'))
+        plt.close()
+        
+        
+        plt.plot(grid, posterior_norm)
+        plt.xlabel(myParams.names[param]);
+        plt.ylabel(r'$p$');
+        plt.axvline(truth, ls='--', color='k', lw=2);
+        plt.savefig( os.path.join(out_path, param+'_post_norm.pdf'))
         plt.close()
             
 

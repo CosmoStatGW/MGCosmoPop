@@ -45,7 +45,7 @@ def Ndet(Lambda_test, Lambda_ntest):
     sigmaSq = s2 - mu * mu / N_gen
     Neff = mu * mu / sigmaSq
     if Neff < 4 * Nobs:
-        print('NEED MORE SAMPLES FOR SELECTION EFFECTS')
+        print('NEED MORE SAMPLES FOR SELECTION EFFECTS. Values of lambda_test: %s' %str(Lambda_test))
     return (mu, Neff)
 
 
