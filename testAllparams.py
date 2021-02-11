@@ -29,9 +29,9 @@ nObsUse=50
 with open('config.py', 'w') as f:
     f.write("dataset_name='%s'" %dataset_name)
     f.write("\ndataset_name_injections='%s'" %dataset_name)
-    f.write("\nnObsUse=None " ) #%nObsUse)
-    f.write("\nnSamplesUse=None  " )
-    f.write("\nnInjUse=None  " )
+    f.write("\nnObsUse=50 " ) #%nObsUse)
+    f.write("\nnSamplesUse=100  " )
+    f.write("\nnInjUse=100  " )
     
 
 
@@ -42,7 +42,7 @@ param = FLAGS.param
 
 
 
-fout = 'test_oneVar_Full'
+fout = 'test_oneVar_testNdet'
 out_path=os.path.join(dirName, 'results', fout)
 if not os.path.exists(out_path):
         print('Creating directory %s' %out_path)
@@ -129,7 +129,7 @@ else:
         logPrior = np.array([mymodels.log_prior(val, priorLimits) for val in grid ] )
         
         #logPosterior = np.array( [mymodels.log_posterior(val, Lambda_ntest, priorLimits) for val in grid ] )
-        logPosterior = logLik - NdetVals + (3 * Nobs + Nobs ** 2) / (2 * NeffVals) + logPrior
+        logPosterior = logLik - NdetVals + (3 * mymodels.Nobs + mymodels.Nobs ** 2) / (2 * NeffVals) + logPrior
         
         posterior = np.exp(logPosterior-logPosterior.max())
         posterior /=np.trapz(posterior, grid) 
