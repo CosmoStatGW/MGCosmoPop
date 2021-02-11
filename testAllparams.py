@@ -30,8 +30,8 @@ with open('config.py', 'w') as f:
     f.write("dataset_name='%s'" %dataset_name)
     f.write("\ndataset_name_injections='%s'" %dataset_name)
     f.write("\nnObsUse=100 " ) #%nObsUse)
-    f.write("\nnSamplesUse=100  " )
-    f.write("\nnInjUse=100  " )
+    f.write("\nnSamplesUse=500  " )
+    f.write("\nnInjUse=2000  " )
     
 
 
@@ -132,15 +132,20 @@ else:
         logPrior = np.array([mymodels.log_prior(val, priorLimits) for val in grid ] )
         
         #logPosterior = np.array( [mymodels.log_posterior(val, Lambda_ntest, priorLimits) for val in grid ] )
-        logPosterior = logLik - NdetVals + (3 * mymodels.Nobs + mymodels.Nobs ** 2) / (2 * NeffVals) + logPrior
+        logPosterior_noSel = logLik  + logPrior
+        logPosterior = logPosterior_noSel - NdetVals 
         
         posterior = np.exp(logPosterior-logPosterior.max())
         posterior /=np.trapz(posterior, grid) 
+        
+        posterior_noSel = np.exp(logPosterior_noSel-logPosterior_noSel.max())
+        posterior_noSel /=np.trapz(posterior_noSel, grid) 
         print('Done.')
         np.savetxt( os.path.join(out_path, param+'_values.txt') , np.stack([grid, logPosterior, posterior], axis=1) )
         
         
-        plt.plot(grid, logPosterior)
+        plt.plot(grid, logPosterior, label='With sel effects')
+        plt.plot(grid, logPosterior_noSel, label='No sel effects')
         plt.xlabel(myParams.names[param]);
         plt.ylabel(r'$p$');
         plt.axvline(truth, ls='--', color='k', lw=2);
@@ -148,7 +153,8 @@ else:
         plt.close()
         
         
-        plt.plot(grid, posterior)
+        plt.plot(grid, posterior, label='With sel effects')
+        plt.plot(grid, posterior_noSel, label='No sel effects')
         plt.xlabel(myParams.names[param]);
         plt.ylabel(r'$p$');
         plt.axvline(truth, ls='--', color='k', lw=2);

@@ -30,7 +30,7 @@ print('We have %s observations' % Nobs)
 
 print('Number of total injections: %s' %N_gen)
 print('Number of injections with SNR>8: %s' %weights_sel.shape[0])
-zmax=z_at_value(Planck15.luminosity_distance, theta_sel[3].max()*u.Mpc)
+zmax=z_at_value(Planck15.luminosity_distance, theta_sel[2].max()*u.Mpc)
 print('Max z of injections: %s' %zmax)
 
 #####################################################
