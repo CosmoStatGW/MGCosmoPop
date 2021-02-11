@@ -109,7 +109,7 @@ else:
         mymodels = importlib.import_module('models'+param, package=None)
         
         
-        print('Computing posterior in range (%s, %s) on %s points... ' %(grid.min(), grid.max(), grid.shape[0] ) )
+        print('Computing posterior for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
         logPosterior = np.array( [mymodels.log_posterior(val, Lambda_ntest, priorLimits) for val in grid ] )
         posterior = np.exp(logPosterior)
         posterior/=np.trapz(posterior, grid) 
@@ -126,7 +126,7 @@ else:
             
 
 ######
-print('\nDone in %.2fs' %(time.time() - in_time))
+print('\nDone for '+param+' in %.2fs' %(time.time() - in_time))
     
 sys.stdout = sys.__stdout__
 sys.stderr = sys.__stderr__

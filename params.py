@@ -68,13 +68,13 @@ class PriorLimits(object):
     
     def __init__(self,):
         
-        self.limInf = {'H0':20, 
+        self.limInf = {'H0': 20, 
                            'Xi0':0.1, 
                            'n':0, 
                            'R0':1, # Gpc^-3 yr^-1
                            'lambdaRedshift':-15,
-                           'alpha':0,
-                           'beta':0.0, 
+                           'alpha':-5,
+                           'beta':-5, 
                            'ml':2, 
                            'sl':0.01, 
                            'mh':20,
