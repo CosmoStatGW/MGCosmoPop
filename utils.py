@@ -55,7 +55,7 @@ def j(z):
     '''
     Jacobian of comoving volume, dimensioneless. Does not depend on H0
     '''
-    return FlatLambdaCDM(H0=70, Om0=Om0GLOB).differential_comoving_volume(z).value*(70/clight)**3
+    return 4*np.pi*FlatLambdaCDM(H0=70, Om0=Om0GLOB).differential_comoving_volume(z).value*(70/clight)**3
 
 ####### For j(z), differential_comoving_volume(z) instead of comovin_volume(z)
 
@@ -63,7 +63,7 @@ def dV_dz(z, H0):
     '''
     Jacobian of comoving volume, with correct dimensions [Mpc^3]. Depends on H0
     '''
-    return FlatLambdaCDM(H0=H0, Om0=Om0GLOB).differential_comoving_volume(z).value #*(70/clight)**3
+    return 4*np.pi*FlatLambdaCDM(H0=H0, Om0=Om0GLOB).differential_comoving_volume(z).value
 
 
 def s(z, Xi0, n):

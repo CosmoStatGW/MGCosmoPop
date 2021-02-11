@@ -9,7 +9,7 @@ from utils import *
 from dataFarr import *
 import scipy.stats as ss
 from getLambda import get_Lambda
-
+from astropy.cosmology import FlatLambdaCDM, Planck15, z_at_value
 
 
 #####################################################
@@ -26,12 +26,12 @@ Nobs = theta[0].shape[0]
 Tobs = 2.5
 print('Done data.')
 print('theta shape: %s' % str(theta.shape))
-print('We have %s observations' % theta.shape[1])
+print('We have %s observations' % Nobs)
 
 print('Number of total injections: %s' %N_gen)
 print('Number of injections with SNR>8: %s' %weights_sel.shape[0])
-
-
+zmax=z_at_value(Planck15.luminosity_distance, theta_sel[3].max()*u.Mpc)
+print('Max z of injections: %s' %zmax)
 
 #####################################################
 #####################################################
@@ -96,6 +96,12 @@ def log_posterior(Lambda_test, Lambda_ntest, priorLimits):
 #####################################################
 
 
+def normNz(H0, gamma):
+    allz = np.linspace(0, zmax, num=1000)
+    pz = cumtrapz(redshiftPrior(allz, gamma, H0), allz, initial=0)
+    return pz[-1]
+
+
 def dN_dm1dm2dz(z, Lambda, theta):
     """
     - theta is an array (m1z, m2z, dL) where m1z, m2z, dL are arrays 
@@ -108,7 +114,7 @@ def dN_dm1dm2dz(z, Lambda, theta):
     H0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     lambdaBBH = [alpha, beta, ml, sl, mh, sh]
     m1, m2 = m1z / (1 + z), m2z / (1 + z)
-    return redshiftPrior(z, lambdaRedshift, H0) * massPrior(m1, m2, lambdaBBH) *R0*Tobs*1e-09/(30**2)
+    return redshiftPrior(z, lambdaRedshift, H0) * massPrior(m1, m2, lambdaBBH)*R0*Tobs*1e-09/(30**2)/normNz(H0, lambdaRedshift)
 
 
 def dN_dm1zdm2zddL(Lambda, theta):
@@ -131,7 +137,7 @@ def redshiftPrior(z, gamma, H0):
     """
     dV/dz *(1+z)^(gamma-1)  [Mpc^3]
     """
-    return 4 * np.pi * (1 + z) ** (gamma - 1) * dV_dz(z, H0) #(clight / H0) ** 3 * j(z)
+    return (1 + z)**(gamma - 1)*dV_dz(z, H0) #(clight / H0) ** 3 * j(z)
 
 
 
@@ -144,7 +150,7 @@ def massPrior(m1, m2, lambdaBBH):
     """
     alpha, beta, ml, sl, mh, sh = lambdaBBH
 #    return m1 ** (-alpha) * (m2 / m1) ** beta * f_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh) * f_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh) * C1(m1, beta, ml) * C2(alpha, ml, mh)
-    return (m1/30)**(-alpha) * (m2 / 30)**(beta)* f_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh) * f_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh) #* C1(m1, beta, ml) * C2(alpha, ml, mh)
+    return (m1/30)**(-alpha) * (m2/30)**(beta)* f_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh) * f_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh) #* C1(m1, beta, ml) * C2(alpha, ml, mh)
 
 
 def C1(m, beta, ml):

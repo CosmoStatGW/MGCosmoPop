@@ -29,9 +29,9 @@ nObsUse=50
 with open('config.py', 'w') as f:
     f.write("dataset_name='%s'" %dataset_name)
     f.write("\ndataset_name_injections='%s'" %dataset_name)
-    f.write("\nnObsUse=None " ) #%nObsUse)
-    f.write("\nnSamplesUse=None  " )
-    f.write("\nnInjUse=None  " )
+    f.write("\nnObsUse=100 " ) #%nObsUse)
+    f.write("\nnSamplesUse=100  " )
+    f.write("\nnInjUse=100  " )
     
 
 
@@ -77,7 +77,7 @@ else:
         truth = myParams.trueValues[param]
         print('True value: %s' %truth)
         grid = np.sort(np.concatenate( [np.array([truth,]) , np.linspace( myPriorLims.limInf[param], truth-(truth*perc_variation/100)-0.01, 5), np.linspace(truth-(truth*perc_variation/100), truth+(truth*perc_variation/100), npoints) , np.linspace( truth+(truth*perc_variation/100)+0.01, myPriorLims.limSup[param], 5)]) )
-            
+        grid=np.unique(grid, axis=0)
         params_n_inference = [nparam for nparam in myParams.allParams if nparam!= param]
 
         Lambda_ntest = np.array([myParams.trueValues[param] for param in params_n_inference])
@@ -120,9 +120,11 @@ else:
         plt.xlabel(myParams.names[param]);
         plt.ylabel(r'$N_{det}$');
         plt.axvline(truth, ls='--', color='k', lw=2);
-        plt.axhline(5267, ls=':', color='k', lw=2);
+        #plt.axhline(5267, ls=':', color='k', lw=2);
         plt.savefig( os.path.join(out_path, param+'_Ndet.pdf'))
         plt.close()
+        
+        print('N_det at true value of %s: %s '%(truth, NdetVals[np.argwhere(grid==truth)] ) )
         
         print('Computing likelihood for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
         logLik = np.array( [mymodels.logLik(val, Lambda_ntest) for val in grid ] )
