@@ -57,7 +57,6 @@ def j(z):
     '''
     return 4*np.pi*FlatLambdaCDM(H0=70, Om0=Om0GLOB).differential_comoving_volume(z).value*(70/clight)**3
 
-####### For j(z), differential_comoving_volume(z) instead of comovin_volume(z)
 
 def dV_dz(z, H0):
     '''
@@ -73,9 +72,6 @@ def sPrime(z, Xi0, n):
     return Xi(z, Xi0, n)-n*(1-Xi0)/(1+z)**n
 
 
-### This is not used; if using, double-check units
-#def Jac(z, Xi0, n):
-#    return (sPrime(z, Xi0, n)*u(z)+s(z Xi0, n)/E(z))
 
 def ddL_dz(z, H0, Xi0, n):
     '''

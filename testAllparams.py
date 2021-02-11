@@ -42,7 +42,7 @@ param = FLAGS.param
 
 
 
-fout = 'test_oneVar_withNdet_Farr'
+fout = 'test_oneVar_withNdet_LVC'
 out_path=os.path.join(dirName, 'results', fout)
 if not os.path.exists(out_path):
         print('Creating directory %s' %out_path)
