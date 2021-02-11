@@ -21,7 +21,7 @@ class Params(object):
             self.trueValues = {'H0':67.74, 
                            'Xi0':1.0, 
                            'n':1.91, 
-                           'R0':60, # Gpc^-3 yr^-1
+                           'R0': 64.4, #60, # Gpc^-3 yr^-1
                            'lambdaRedshift':3.0,
                            'alpha':0.75,
                            'beta':0.0, 

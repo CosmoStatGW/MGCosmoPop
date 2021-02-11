@@ -28,6 +28,9 @@ print('Done data.')
 print('theta shape: %s' % str(theta.shape))
 print('We have %s observations' % theta.shape[1])
 
+print('Number of total injections: %s' %N_gen)
+print('Number of injections with SNR>8: %s' %theta_sel.shape[0])
+
 
 
 #####################################################
@@ -41,7 +44,7 @@ def Ndet(Lambda_test, Lambda_ntest):
     Lambda = get_Lambda(Lambda_test, Lambda_ntest)
     xx = dN_dm1zdm2zddL(Lambda, theta_sel) / weights_sel
     mu = np.sum(xx) / N_gen
-    s2 = np.sum(xx * xx) / N_gen ** 2
+    s2 = np.sum(xx * xx) /N_gen**2
     sigmaSq = s2 - mu * mu / N_gen
     Neff = mu * mu / sigmaSq
     if Neff < 4 * Nobs:
@@ -103,18 +106,18 @@ def dN_dm1dm2dz(z, Lambda, theta):
     H0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     lambdaBBH = [alpha, beta, ml, sl, mh, sh]
     m1, m2 = m1z / (1 + z), m2z / (1 + z)
-    return redshiftPrior(z, lambdaRedshift, H0) * massPrior(m1, m2, lambdaBBH) * R0 * Tobs * 1e-09
+    return redshiftPrior(z, lambdaRedshift, H0) * massPrior(m1, m2, lambdaBBH)  * Tobs * R0/(30**2)  #*1e-09
 
 
 def dN_dm1zdm2zddL(Lambda, theta):
     m1z, m2z, dL = theta
     H0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     z = z_from_dLGW_fast(dL, H0, Xi0, n)
-    if not (z > 0).all():
-        print('Parameters H0, Xi0, n, R0, lambdaRedshift,  alpha, beta, ml, sl, mh, sh :')
-        print(H0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh)
-        print('dL = %s' % dL[(z < 0)])
-        raise ValueError('negative redshift')
+    #if not (z > 0).all():
+    #    print('Parameters H0, Xi0, n, R0, lambdaRedshift,  alpha, beta, ml, sl, mh, sh :')
+    #    print(H0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh)
+    #    print('dL = %s' % dL[(z < 0)])
+    #    raise ValueError('negative redshift')
     return dN_dm1dm2dz(z, Lambda, theta) / (redshiftJacobian(z) * ddL_dz(z, H0, Xi0, n))
 
 
@@ -138,7 +141,8 @@ def massPrior(m1, m2, lambdaBBH):
     lambdaBBH is the array of parameters of the BBH mass function 
     """
     alpha, beta, ml, sl, mh, sh = lambdaBBH
-    return m1 ** (-alpha) * (m2 / m1) ** beta * f_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh) * f_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh) * C1(m1, beta, ml) * C2(alpha, ml, mh)
+#    return m1 ** (-alpha) * (m2 / m1) ** beta * f_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh) * f_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh) * C1(m1, beta, ml) * C2(alpha, ml, mh)
+    return (m1/30) ** (-alpha) * (m2 / 30) ** beta * f_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh) * f_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh) #* C1(m1, beta, ml) * C2(alpha, ml, mh)
 
 
 def C1(m, beta, ml):
