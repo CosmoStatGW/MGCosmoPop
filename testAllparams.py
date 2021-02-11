@@ -29,9 +29,9 @@ nObsUse=50
 with open('config.py', 'w') as f:
     f.write("dataset_name='%s'" %dataset_name)
     f.write("\ndataset_name_injections='%s'" %dataset_name)
-    f.write("\nnObsUse=50 " ) #%nObsUse)
-    f.write("\nnSamplesUse=100  " )
-    f.write("\nnInjUse=100  " )
+    f.write("\nnObsUse=None " ) #%nObsUse)
+    f.write("\nnSamplesUse=None  " )
+    f.write("\nnInjUse=None  " )
     
 
 
@@ -42,7 +42,7 @@ param = FLAGS.param
 
 
 
-fout = 'test_oneVar_testNdet'
+fout = 'test_oneVar_withNdet'
 out_path=os.path.join(dirName, 'results', fout)
 if not os.path.exists(out_path):
         print('Creating directory %s' %out_path)
