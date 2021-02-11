@@ -120,6 +120,7 @@ else:
         plt.xlabel(myParams.names[param]);
         plt.ylabel(r'$N_{det}$');
         plt.axvline(truth, ls='--', color='k', lw=2);
+        plt.axhline(5267, ls=':', color='k', lw=2);
         plt.savefig( os.path.join(out_path, param+'_Ndet.pdf'))
         plt.close()
         
