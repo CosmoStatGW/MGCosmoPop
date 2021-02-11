@@ -51,6 +51,7 @@ import shutil
 
 
 #from dataFarr import *
+from config import *
 from models import *
 from params import Params, PriorLimits
 
@@ -63,27 +64,11 @@ os.environ["OMP_NUM_THREADS"] = "1"
 #  GLOBAL VARIABLES
 ###############################################
 
-dirName  = os.path.join(os.path.dirname(os.path.abspath(__file__)))
-dataPath=os.path.join(dirName, 'data')
 
-fout='runFull'
 
-dataset_name = 'mock'
 
-telegramAlert = False
-
-nChains=50
-max_n=10000
-
-maxNtaus = 150
-checkTauStep = 100
 # Nobs=100
 
-myParams = Params(dataset_name)
-
-params_inference = [ 'H0', 'Xi0', 'mh'] #'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh']
-
-params_n_inference = [param for param in myParams.allParams if param not in params_inference]
 
 
 labels_param = [ myParams.names[param] for param in params_inference ] #.sort()
@@ -197,30 +182,26 @@ def main():
     	old_tau = np.inf
 
         # Now we'll sample for up to max_n steps
-    	for sample in sampler.sample(pos, iterations=max_n, progress=True, skip_initial_state_check=True):
-        # Only check convergence every 100 steps
-        	if sampler.iteration % 100:
-            	   continue
-            
-            #if telegramAlert:
-            # 	telegram_bot_sendtext("%s: step No.  %s" %(filenameT,sampler.iteration))
+    	for sample in sampler.sample(pos, iterations=max_n, progress=True, skip_initial_state_check=False):
+            # Only check convergence every 100 steps
+            if sampler.iteration % 100:
+                continue
+            else:
+                tau = sampler.get_autocorr_time(tol=0)
+                autocorr[index] = np.mean(tau)
+                index +=1
+                print('Step n %s. Check autocorrelation: ' %(index*100))
+                print(tau)
         
-            # Compute the autocorrelation time so far
-            # Using tol=0 means that we'll always get an estimate even
-            # if it isn't trustworthy
-        	tau = sampler.get_autocorr_time(tol=0)
-        	autocorr[index] = np.mean(tau)
-        	index += 1
- 
-
-    
-        
-        # Check convergence
-        	converged = np.all(tau * 100 < sampler.iteration)
-        	converged &= np.all(np.abs(old_tau - tau) / tau < 0.01)
-        	if converged:
-         	   break
-        	old_tau = tau
+                # Check convergence
+                converged = np.all(tau * 100 < sampler.iteration)
+                converged &= np.all(np.abs(old_tau - tau) / tau < 0.01)
+                if converged:
+                    print('Chain has converged. Stopping. ')
+                    break
+                else:
+                    print('Chain has not converged yet. ')
+                    old_tau = tau
         
     fig, axes = plt.subplots(ndim, figsize=(10, 7), sharex=True)
     samples = sampler.get_chain()

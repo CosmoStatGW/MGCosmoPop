@@ -6,6 +6,11 @@ import astropy.units as u
 import sys
 import requests
 from scipy.optimize import fsolve
+import os
+
+
+dirName  = os.path.join(os.path.dirname(os.path.abspath(__file__)))
+dataPath=os.path.join(dirName, 'data')
 
 
 which_unit=u.Mpc

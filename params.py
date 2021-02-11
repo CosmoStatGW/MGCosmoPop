@@ -16,11 +16,12 @@ class Params(object):
         
         if dataset_name=='mock':
             
-            self.allParams = [ 'H0', 'Xi0', 'n',  'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh' ]
+            self.allParams = [ 'H0', 'Xi0', 'n', 'R0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh' ]
         
             self.trueValues = {'H0':67.74, 
                            'Xi0':1.0, 
                            'n':1.91, 
+                           'R0':60, # Gpc^-3 yr^-1
                            'lambdaRedshift':3.0,
                            'alpha':0.75,
                            'beta':0.0, 
@@ -32,6 +33,7 @@ class Params(object):
             self.names = {'H0':r'$H_0$', 
                            'Xi0':r'$\Xi_0$', 
                            'n':r'$n$', 
+                           'R0':r'$R_0$', 
                            'lambdaRedshift':r'$\lambda$',
                            'alpha':r'$\alpha$',
                            'beta':r'$\beta$', 
@@ -69,6 +71,7 @@ class PriorLimits(object):
         self.limInf = {'H0':20, 
                            'Xi0':0.1, 
                            'n':0, 
+                           'R0':1, # Gpc^-3 yr^-1
                            'lambdaRedshift':-15,
                            'alpha':0,
                            'beta':0.0, 
@@ -79,6 +82,7 @@ class PriorLimits(object):
         self.limSup= {'H0':140, 
                            'Xi0':10, 
                            'n':10, 
+                           'R0':200,
                            'lambdaRedshift':10,
                            'alpha':10,
                            'beta':10, 
