@@ -112,7 +112,7 @@ else:
         print('Computing Ndet for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
         
         
-        NdetRes = np.array( [Ndet(val, Lambda_ntest) for val in grid  ] )
+        NdetRes = np.array( [mymodels.Ndet(val, Lambda_ntest) for val in grid  ] )
         NdetVals=NdetRes[:, 0]
         NeffVals=NdetRes[:, 1]
         
@@ -126,7 +126,7 @@ else:
         print('Computing likelihood for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
         logLik = np.array( [mymodels.logLik(val, Lambda_ntest) for val in grid ] )
         
-        logPrior = np.array([log_prior(val, priorLimits) for val in grid ] )
+        logPrior = np.array([mymodels.log_prior(val, priorLimits) for val in grid ] )
         
         #logPosterior = np.array( [mymodels.log_posterior(val, Lambda_ntest, priorLimits) for val in grid ] )
         logPosterior = logLik - NdetVals + (3 * Nobs + Nobs ** 2) / (2 * NeffVals) + logPrior
