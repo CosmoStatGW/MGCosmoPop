@@ -51,7 +51,7 @@ import shutil
 
 
 #from data import *
-#from config 
+from config import *
 from models import *
 from params import PriorLimits
 from glob import *
@@ -173,6 +173,12 @@ def main():
     ncpu = cpu_count()
     print('Parallelizing on %s CPUs ' %nPools)
     print('Number of availabel cores:  %s ' %ncpu)
+    
+    #if marginalise_rate:
+    #    logpost_function  = log_posterior_marg
+    #else:
+    #    logpost_function  = log_posterior_unmarg
+    
     with Pool(nPools) as pool:
     	sampler = emcee.EnsembleSampler(nwalkers, ndim, log_posterior, backend=backend, args=(Lambda_ntest,priorLimits), pool=pool)
     	

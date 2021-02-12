@@ -85,7 +85,7 @@ def z_from_dLGW_fast(r, H0, Om, w0, Xi0, n):
     '''
     Returns redshift for a given luminosity distance r (in Mpc by default). Vectorized
     '''
-    if (Om==Om0GLOB) & (w0==-1):
+    if (Om==Om0GLOB) & (w0==-1.):
         dLGrid = dLGridGLOB
     else:
         cosmo = FlatwCDM(H0=H0GLOB, Om0=Om, w0=w0)

@@ -19,28 +19,32 @@ plt.rcParams["font.family"] = 'serif'
 plt.rcParams["mathtext.fontset"] = "cm"
 import importlib
 
-in_time=time.time()
+
+fout = 'test_oneVar_withNdet_Farr_wCDM_margR0_all'
 
 marginalise_R0=True
 skip=['n',  ]
 
-if marginalise_R0 and 'R0' not in skip:
-    skip.append('R0')
 perc_variation=15
 npoints=5
 dataset_name='mock'
 
-nObsUse=50
 
 with open('config.py', 'w') as f:
     f.write("dataset_name='%s'" %dataset_name)
     f.write("\ndataset_name_injections='%s'" %dataset_name)
-    f.write("\nnObsUse=50 " ) #%nObsUse)
+    f.write("\nnObsUse=None " ) #%nObsUse)
     f.write("\nnSamplesUse=None  " )
     f.write("\nnInjUse=None  " )
     f.write("\nmarginalise_rate=False")
     f.write("\nselection_integral_uncertainty=True")
 
+##############################
+
+if marginalise_R0 and 'R0' not in skip:
+    skip.append('R0')
+
+in_time=time.time()
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--param", default='H0', type=str, required=True)
@@ -48,8 +52,6 @@ FLAGS = parser.parse_args()
 param = FLAGS.param
 
 
-
-fout = 'test_oneVar_withNdet_Farr_wCDM_margR0_1000'
 out_path=os.path.join(dirName, 'results', fout)
 if not os.path.exists(out_path):
         print('Creating directory %s' %out_path)

@@ -21,7 +21,7 @@ class Params(object):
         
             self.trueValues = {'H0':glob.H0GLOB,
                                'Om0':glob.Om0GLOB,
-                               'w0':-1,
+                               'w0':-1.,
                            'Xi0':1.0, 
                            'n':1.91, 
                            'R0': 60 *1e-09, #64.4 , # Gpc^-3 yr^-1

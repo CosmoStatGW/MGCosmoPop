@@ -18,11 +18,11 @@ fout='runFullOm'
 telegramAlert = False
 
 
-params_inference = [ 'H0', 'Om0', 'Xi0']
+params_inference = [ 'H0', 'Om0'] #  'Xi0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh']
 #'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh']
 
-nChains=2*len(params_inference)
-max_n=10000
+nChains=2*len(params_inference)+1
+max_n=5000
 
 maxNtaus = 150
 checkTauStep = 100
@@ -31,8 +31,10 @@ checkTauStep = 100
 marginalise_rate = True
 selection_integral_uncertainty = True
 
-nPools = 6
-
+if nChains<6:
+    nPools = nChains
+else:
+    nPools=6
 
 ###########
 # For testing

@@ -89,19 +89,21 @@ def log_prior(Lambda_test, priorLimits):
     return -np.inf
 
 
+
+
 def log_posterior(Lambda_test, Lambda_ntest, priorLimits):
     
     lp = log_prior(Lambda_test, priorLimits)
     if not np.isfinite(lp):
         return -np.inf
     
-    logPost =  logLik(Lambda_test, Lambda_ntest)+lp 
-    
-    #### Selection bias  
+    logPost= logLik(Lambda_test, Lambda_ntest)+lp
+    ### Selection bias  
     mu, Neff = selectionBias(Lambda_test, Lambda_ntest)
     
     ## Effects of uncertainty on selection effect and/or marginalisation over total rate
     ## See 1904.10879
+    
     if marginalise_rate:
         logPost -= Nobs*np.log(mu)
         if selection_integral_uncertainty:
@@ -113,9 +115,41 @@ def log_posterior(Lambda_test, Lambda_ntest, priorLimits):
         logPost-= R0*mu
         if selection_integral_uncertainty:
             logPost+= (R0*mu)**2/ (2 * Neff)
-        
     
     return logPost
+
+
+
+
+def log_posterior_marg(Lambda_test, Lambda_ntest, priorLimits):
+    
+    lp = log_prior(Lambda_test, priorLimits)
+    if not np.isfinite(lp):
+        return -np.inf
+    
+    ### Selection bias  
+    mu, Neff = selectionBias(Lambda_test, Lambda_ntest)
+    
+    return  logLik(Lambda_test, Lambda_ntest)+lp -Nobs*np.log(mu)+(3 * Nobs + Nobs ** 2) / (2 * Neff)
+    
+
+def log_posterior_unmarg(Lambda_test, Lambda_ntest, priorLimits):
+    
+    lp = log_prior(Lambda_test, priorLimits)
+    if not np.isfinite(lp):
+        return -np.inf
+    
+    ### Selection bias  
+    mu, Neff = selectionBias(Lambda_test, Lambda_ntest)
+    
+    mu*=1000
+    
+    Lambda = get_Lambda(Lambda_test, Lambda_ntest) 
+    H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambd
+    
+    return  logLik(Lambda_test, Lambda_ntest)+lp + Nobs*np.log(R0)-R0*mu +(R0*mu)**2/(2 * Neff) 
+    
+    
 
 
 
@@ -135,8 +169,7 @@ def dN_dm1dm2dz(z, Lambda, theta):
     H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     lambdaBBH = [alpha, beta, ml, sl, mh, sh]
     m1, m2 = m1z / (1 + z), m2z / (1 + z)
-    return Tobs*(1 + z)**(-1)*dV_dz(z, H0, Om0, w0)*rateDensityEvol(z, lambdaRedshift) * massPrior(m1, m2, lambdaBBH)
-
+    return Tobs*rateDensityEvol(z, lambdaRedshift, H0, Om0, w0) * massPrior(m1, m2, lambdaBBH)
 
 def dN_dm1zdm2zddL(Lambda, theta):
     m1z, m2z, dL = theta
@@ -155,11 +188,11 @@ def MsourceToMdetJacobian(z):
 
 
 
-def rateDensityEvol(z, lambdaRedshift):
+def rateDensityEvol(z, lambdaRedshift, H0, Om0, w0):
     """
     merger rate density evolution in redshift (un-normalized)
     """
-    return (1 + z)**(lambdaRedshift)
+    return (1 + z)**(lambdaRedshift-1)*dV_dz(z, H0, Om0, w0)
 
 
 
