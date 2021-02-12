@@ -93,6 +93,7 @@ else:
         grid=np.unique(grid, axis=0)
         if param=='R0':
             grid*=1e-09
+            truth=myParams.trueValues[param]
         
         params_n_inference = [nparam for nparam in myParams.allParams if nparam!= param]
 
@@ -133,9 +134,9 @@ else:
         NeffVals=NdetRes[:, 1]
         
         if param=='R0':
-            R0Vals=grid*1e-09
+            R0Vals=grid#*1e-09
         else:
-            R0Vals=np.repeat(myParams.trueValues['R0'], NeffVals.shape)*1e-09
+            R0Vals=np.repeat(myParams.trueValues['R0'], NeffVals.shape)#*1e-09
         
         plt.plot(grid, R0Vals*muVals)
         plt.xlabel(myParams.names[param]);
