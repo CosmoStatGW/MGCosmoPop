@@ -83,6 +83,7 @@ else:
         if truth==0:
             eps=1e-01
         if param=='R0':
+            truth*=1e09
             limInf = 1e09*myPriorLims.limInf[param]
             limSup=1e09*myPriorLims.limSup[param]
         else:
