@@ -6,7 +6,7 @@ Created on Wed Jan 20 16:38:28 2021
 
 from config import *
 #import utils
-import cosmo
+from  cosmo import *
 import data
 import scipy.stats as ss
 from getLambda import get_Lambda
@@ -46,7 +46,7 @@ print('Max z of injections: %s' %zmax)
 def selectionBias(Lambda_test, Lambda_ntest):
     
     Lambda = get_Lambda(Lambda_test, Lambda_ntest)
-    H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
+    #H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     
     xx = dN_dm1zdm2zddL(Lambda, theta_sel) / weights_sel
     
@@ -95,11 +95,10 @@ def log_posterior(Lambda_test, Lambda_ntest, priorLimits):
     if not np.isfinite(lp):
         return -np.inf
     
-    logPost =  logLik(Lambda_test, Lambda_ntest) +lp 
+    logPost =  logLik(Lambda_test, Lambda_ntest)+lp 
     
     #### Selection bias
-    Lambda = get_Lambda(Lambda_test, Lambda_ntest)
-    H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda    
+    Lambda = get_Lambda(Lambda_test, Lambda_ntest)   
     mu, Neff = selectionBias(Lambda_test, Lambda_ntest)
     
     ## Effects of uncertainty on selection effect and/or marginalisation over total rate
@@ -109,6 +108,7 @@ def log_posterior(Lambda_test, Lambda_ntest, priorLimits):
         if selection_integral_uncertainty:
             logPost+=(3 * Nobs + Nobs ** 2) / (2 * Neff)
     else:
+        H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda 
         logPost+= Nobs*np.log(R0)
         logPost-=R0*mu
         if selection_integral_uncertainty:
@@ -135,19 +135,19 @@ def dN_dm1dm2dz(z, Lambda, theta):
     H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     lambdaBBH = [alpha, beta, ml, sl, mh, sh]
     m1, m2 = m1z / (1 + z), m2z / (1 + z)
-    return Tobs*(1 + z)**(-1)*cosmo.dV_dz(z, H0, Om0, w0)* rateDensityEvol(z, lambdaRedshift) * massPrior(m1, m2, lambdaBBH)
+    return Tobs*(1 + z)**(-1)*dV_dz(z, H0, Om0, w0)*rateDensityEvol(z, lambdaRedshift) * massPrior(m1, m2, lambdaBBH)
 
 
 def dN_dm1zdm2zddL(Lambda, theta):
     m1z, m2z, dL = theta
     H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
-    z = cosmo.z_from_dLGW_fast(dL, H0, Om0, w0, Xi0, n)
+    z = z_from_dLGW_fast(dL, H0, Om0, w0, Xi0, n)
     #if not (z > 0).all():
     #    print('Parameters H0, Xi0, n, R0, lambdaRedshift,  alpha, beta, ml, sl, mh, sh :')
     #    print(H0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh)
     #    print('dL = %s' % dL[(z < 0)])
     #    raise ValueError('negative redshift')
-    return dN_dm1dm2dz(z, Lambda, theta) / (MsourceToMdetJacobian(z) * cosmo.ddL_dz(z, H0, Om0, w0, Xi0, n))
+    return dN_dm1dm2dz(z, Lambda, theta) / (MsourceToMdetJacobian(z) * ddL_dz(z, H0, Om0, w0, Xi0, n))
 
 
 def MsourceToMdetJacobian(z):

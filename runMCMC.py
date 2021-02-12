@@ -54,7 +54,7 @@ import shutil
 #from config 
 from models import *
 from params import PriorLimits
-import globals
+from glob import *
 from utils import Logger
 
 
@@ -112,7 +112,7 @@ def main():
     ####
     
     # St out path and create out directory
-    out_path=os.path.join(globals.dirName, 'results', fout)
+    out_path=os.path.join(dirName, 'results', fout)
     if not os.path.exists(out_path):
         print('Creating directory %s' %out_path)
         os.makedirs(out_path)

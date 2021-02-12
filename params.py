@@ -6,7 +6,7 @@ Created on Fri Feb  5 11:51:38 2021
 @author: Michi
 """
 
-import globals
+import glob
 
 
 class Params(object):
@@ -19,8 +19,8 @@ class Params(object):
             
             self.allParams = [ 'H0', 'Om0', 'w0', 'Xi0', 'n', 'R0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh' ]
         
-            self.trueValues = {'H0':globals.H0GLOB,
-                               'Om0':globals.Om0GLOB,
+            self.trueValues = {'H0':glob.H0GLOB,
+                               'Om0':glob.Om0GLOB,
                                'w0':-1,
                            'Xi0':1.0, 
                            'n':1.91, 

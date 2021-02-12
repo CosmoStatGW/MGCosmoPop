@@ -2,7 +2,7 @@ import numpy as np
 import h5py
 import os
 from config import nObsUse, nSamplesUse, nInjUse
-import globals
+from glob import *
 
 
 
@@ -30,7 +30,7 @@ def load_data(dataset_name):
 
 
 def load_mock_data():
-    with h5py.File(os.path.join(globals.dataPath,'observations.h5'), 'r') as phi: #observations.h5 has to be in the same folder as this code
+    with h5py.File(os.path.join(dataPath,'observations.h5'), 'r') as phi: #observations.h5 has to be in the same folder as this code
         
         if nObsUse is None and nSamplesUse is None:
             m1det_samples = np.array(phi['posteriors']['m1det'])
@@ -76,7 +76,7 @@ def load_injections_data_LVC():
 def load_injections_data_mock():   
     
     
-    with h5py.File(os.path.join(globals.dataPath,'selected.h5'), 'r') as f:
+    with h5py.File(os.path.join(dataPath,'selected.h5'), 'r') as f:
         
         if nInjUse is not None:
             m1_sel = np.array(f['m1det'])[:nInjUse]

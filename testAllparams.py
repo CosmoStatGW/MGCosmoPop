@@ -11,7 +11,8 @@ import os
 from params import Params, PriorLimits
 import argparse
 import utils
-import cosmo
+#import cosmo
+from glob import *
 import numpy as np
 import matplotlib.pyplot as plt
 plt.rcParams["font.family"] = 'serif'
@@ -34,7 +35,7 @@ nObsUse=50
 with open('config.py', 'w') as f:
     f.write("dataset_name='%s'" %dataset_name)
     f.write("\ndataset_name_injections='%s'" %dataset_name)
-    f.write("\nnObsUse=None " ) #%nObsUse)
+    f.write("\nnObsUse=50 " ) #%nObsUse)
     f.write("\nnSamplesUse=None  " )
     f.write("\nnInjUse=None  " )
     f.write("\nmarginalise_rate=False")
@@ -49,7 +50,7 @@ param = FLAGS.param
 
 
 fout = 'test_oneVar_withNdet_Farr_wCDM_margR0'
-out_path=os.path.join(globals.dirName, 'results', fout)
+out_path=os.path.join(dirName, 'results', fout)
 if not os.path.exists(out_path):
         print('Creating directory %s' %out_path)
         os.makedirs(out_path)
