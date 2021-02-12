@@ -97,20 +97,20 @@ def log_posterior(Lambda_test, Lambda_ntest, priorLimits):
     
     logPost =  logLik(Lambda_test, Lambda_ntest)+lp 
     
-    #### Selection bias
-    Lambda = get_Lambda(Lambda_test, Lambda_ntest)   
+    #### Selection bias  
     mu, Neff = selectionBias(Lambda_test, Lambda_ntest)
     
     ## Effects of uncertainty on selection effect and/or marginalisation over total rate
     ## See 1904.10879
     if marginalise_rate:
-        logPost-=mu*Nobs
+        logPost -= Nobs*np.log(mu)
         if selection_integral_uncertainty:
             logPost+=(3 * Nobs + Nobs ** 2) / (2 * Neff)
     else:
+        Lambda = get_Lambda(Lambda_test, Lambda_ntest) 
         H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda 
         logPost+= Nobs*np.log(R0)
-        logPost-=R0*mu
+        logPost-= R0*mu
         if selection_integral_uncertainty:
             logPost+= (R0*mu)**2/ (2 * Neff)
         

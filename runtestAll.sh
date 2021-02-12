@@ -7,7 +7,7 @@ for par in ${allGoalParams[@]};do
     echo $par
     pids[${i}]=$!
     i=$((i+1))
-    #python testAllparams.py --param=$par &
+    python testAllparams.py --param=$par &
 done    
 
 for pid in ${pids[*]}; do

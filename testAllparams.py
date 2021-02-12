@@ -137,8 +137,9 @@ else:
         muVals=NdetRes[:, 0]#*1000
         NeffVals=NdetRes[:, 1]
         
-        #if not marginalise_R0:
-        muVals*=1000
+        # This fixes the error I don't understand
+        if not marginalise_R0:
+            muVals*=1000
         
         if param=='R0':
             R0Vals=grid#*1e-09
@@ -168,7 +169,7 @@ else:
         if not marginalise_R0:
             logPosterior = logPosterior_noSel + mymodels.Nobs*np.log(R0Vals) + R0Vals*muVals*(R0Vals*muVals-2*NeffVals)/2/NeffVals #- muVals + (3 * mymodels.Nobs + mymodels.Nobs ** 2) / (2 * NeffVals)
         else:
-            logPosterior = logPosterior_noSel  - mymodels.Nobs*muVals +(3 * mymodels.Nobs + mymodels.Nobs ** 2) / (2 * NeffVals)
+            logPosterior = logPosterior_noSel  - mymodels.Nobs*np.log(muVals) +(3 * mymodels.Nobs + mymodels.Nobs ** 2) / (2 * NeffVals)
             
         posterior = np.exp(logPosterior-logPosterior.max())
         posterior /=np.trapz(posterior, grid)
