@@ -49,7 +49,7 @@ param = FLAGS.param
 
 
 
-fout = 'test_oneVar_withNdet_Farr_wCDM_margR0'
+fout = 'test_oneVar_withNdet_Farr_wCDM_margR0_1000'
 out_path=os.path.join(dirName, 'results', fout)
 if not os.path.exists(out_path):
         print('Creating directory %s' %out_path)
@@ -137,8 +137,8 @@ else:
         muVals=NdetRes[:, 0]#*1000
         NeffVals=NdetRes[:, 1]
         
-        if not marginalise_R0:
-            muVals*=1000
+        #if not marginalise_R0:
+        muVals*=1000
         
         if param=='R0':
             R0Vals=grid#*1e-09
