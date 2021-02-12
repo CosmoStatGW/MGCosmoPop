@@ -17,7 +17,7 @@ class Params(object):
         
         if dataset_name=='mock':
             
-            self.allParams = [ 'H0', 'Om0', 'Xi0', 'w0', 'n', 'R0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh' ]
+            self.allParams = [ 'H0', 'Om0', 'w0', 'Xi0', 'n', 'R0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh' ]
         
             self.trueValues = {'H0':globals.H0GLOB,
                                'Om0':globals.Om0GLOB,
