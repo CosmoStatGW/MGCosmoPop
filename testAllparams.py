@@ -82,8 +82,17 @@ else:
         eps=truth
         if truth==0:
             eps=1e-01
-        grid = np.sort(np.concatenate( [np.array([truth,]) , np.linspace( myPriorLims.limInf[param], truth-(eps*perc_variation/100)-0.01, 5), np.linspace(truth-(eps*perc_variation/100), truth+(eps*perc_variation/100), npoints) , np.linspace( truth+(eps*perc_variation/100)+0.01, myPriorLims.limSup[param], 5)]) )
+        if param=='R0':
+            limInf = 1e09*myPriorLims.limInf[param]
+            limSup=1e09*myPriorLims.limSup[param]
+        else:
+            limInf = myPriorLims.limInf[param]
+            limSup=myPriorLims.limSup[param]
+        grid = np.sort(np.concatenate( [np.array([truth,]) , np.linspace( limInf, truth-(eps*perc_variation/100)-0.01, 5), np.linspace(truth-(eps*perc_variation/100), truth+(eps*perc_variation/100), npoints) , np.linspace( truth+(eps*perc_variation/100)+0.01, limSup, 5)]) )
         grid=np.unique(grid, axis=0)
+        if param=='R0':
+            grid*=1e-09
+        
         params_n_inference = [nparam for nparam in myParams.allParams if nparam!= param]
 
         Lambda_ntest = np.array([myParams.trueValues[param] for param in params_n_inference])
