@@ -6,6 +6,7 @@ Created on Fri Feb  5 11:51:38 2021
 @author: Michi
 """
 
+import globals
 
 
 class Params(object):
@@ -16,12 +17,14 @@ class Params(object):
         
         if dataset_name=='mock':
             
-            self.allParams = [ 'H0', 'Xi0', 'n', 'R0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh' ]
+            self.allParams = [ 'H0', 'Xi0', 'Om0', 'w0', 'n', 'R0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh' ]
         
-            self.trueValues = {'H0':67.74, 
+            self.trueValues = {'H0':globals.H0GLOB,
+                               'Om0':globals.Om0GLOB,
+                               'w0':-1,
                            'Xi0':1.0, 
                            'n':1.91, 
-                           'R0': 64.4, #60, # Gpc^-3 yr^-1
+                           'R0': 60 *1e-09, #64.4 , # Gpc^-3 yr^-1
                            'lambdaRedshift':3.0,
                            'alpha':0.75,
                            'beta':0.0, 
@@ -31,6 +34,8 @@ class Params(object):
                            'sh':0.1}
         
             self.names = {'H0':r'$H_0$', 
+                          'Om0':r'$\Omega_{\rm {m,}0 }$',
+                          'w0':r'$w_{0}$',
                            'Xi0':r'$\Xi_0$', 
                            'n':r'$n$', 
                            'R0':r'$R_0$', 
@@ -70,8 +75,10 @@ class PriorLimits(object):
         
         self.limInf = {'H0': 20, 
                            'Xi0':0.1, 
+                           'Om0':0.1,
+                           'w0':-2,
                            'n':0, 
-                           'R0':1, # Gpc^-3 yr^-1
+                           'R0':1*1e-09, # Gpc^-3 yr^-1
                            'lambdaRedshift':-15,
                            'alpha':-5,
                            'beta':-5, 
@@ -80,9 +87,11 @@ class PriorLimits(object):
                            'mh':20,
                            'sh':0.01}
         self.limSup= {'H0':140, 
+                      'Om0':1.,
+                           'w0':-0.1,
                            'Xi0':10, 
                            'n':10, 
-                           'R0':200,
+                           'R0':200*1e-09,
                            'lambdaRedshift':10,
                            'alpha':10,
                            'beta':10, 

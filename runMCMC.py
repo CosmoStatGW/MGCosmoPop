@@ -16,44 +16,44 @@ Created on Mon Jan 18 18:52:04 2021
 
 import time
 import os
-import h5py
+#import h5py
 import sys
-import array as arr
+#import array as arr
 import emcee
 import corner
 from multiprocessing import Pool, cpu_count
 
-from scipy.stats import norm as norm1
+#from scipy.stats import norm as norm1
 import matplotlib.pyplot as plt
 import numpy as np
-from astropy.cosmology import FlatLambdaCDM
-from astropy.cosmology import Planck15
-import astropy.units as u
-from scipy.optimize import fsolve
-import multiprocessing as multi
-import scipy.integrate as si
-from scipy.integrate import cumtrapz
-from scipy.interpolate import interp1d, RectBivariateSpline
-import scipy.stats as ss
-import seaborn as sns
-from tqdm import tqdm, tqdm_notebook
-from scipy.integrate import quad
-import h5py
-import scipy.integrate as si
-from scipy.integrate import cumtrapz
-from scipy.interpolate import interp1d, RectBivariateSpline
-import scipy.stats as ss
-import seaborn as sns
-import sys
-from tqdm import tqdm, tqdm_notebook
-from scipy.stats import loguniform
-import shutil
+#from astropy.cosmology import FlatLambdaCDM
+#from astropy.cosmology import Planck15
+#import astropy.units as u
+#from scipy.optimize import fsolve
+#import multiprocessing as multi
+#import scipy.integrate as si
+#from scipy.integrate import cumtrapz
+#from scipy.interpolate import interp1d, RectBivariateSpline
+#import scipy.stats as ss
+#import seaborn as sns
+#from tqdm import tqdm, tqdm_notebook
+#from scipy.integrate import quad
+#import h5py
+#import scipy.integrate as si
+#from scipy.integrate import cumtrapz
+#from scipy.interpolate import interp1d, RectBivariateSpline
+#import scipy.stats as ss
+#import seaborn as sns
+#import sys
+#from tqdm import tqdm, tqdm_notebook
+#from scipy.stats import loguniform
+#import shutil
 
 
-#from dataFarr import *
-from config import *
+#from data import *
+#from config 
 from models import *
-from params import Params, PriorLimits
+#from params import Params, PriorLimits
 
 
 
@@ -235,15 +235,6 @@ def main():
     #    telegram_bot_sendtext("End of: %s " %filenameT)
     
     
-    # Example: save plot 
-    #plt.plot(a,b )
-    #plt.savefig(os.path.join(out_path,'my_plot.png'))
-    #plt.close();
-    
-    
-    ## Save corner plot
-    # fig1 = corner.corner( flat_samples, labels=labels,  #truths=[]);
-    # fig1.savefig(os.path.join(out_path, 'corner.pdf'))
     
     
     ######

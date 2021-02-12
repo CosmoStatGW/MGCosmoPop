@@ -28,6 +28,9 @@ checkTauStep = 100
 params_inference = [ 'H0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh']
 #'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh']
 
+marginalise_rate = True
+selection_integral_uncertainty = True
+
 
 ###########
 # For testing
