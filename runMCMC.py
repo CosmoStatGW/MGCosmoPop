@@ -47,14 +47,15 @@ import numpy as np
 #import sys
 #from tqdm import tqdm, tqdm_notebook
 #from scipy.stats import loguniform
-#import shutil
+import shutil
 
 
 #from data import *
 #from config 
 from models import *
-#from params import Params, PriorLimits
-
+from params import PriorLimits
+import globals
+from utils import Logger
 
 
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -111,7 +112,7 @@ def main():
     ####
     
     # St out path and create out directory
-    out_path=os.path.join(dirName, 'results', fout)
+    out_path=os.path.join(globals.dirName, 'results', fout)
     if not os.path.exists(out_path):
         print('Creating directory %s' %out_path)
         os.makedirs(out_path)
@@ -124,7 +125,7 @@ def main():
     sys.stdout = myLog
     sys.stderr = myLog
     
-    shutil.copy('runMCMC.py', os.path.join(out_path, 'runMCMC_original.py'))
+    shutil.copy('config.py', os.path.join(out_path, 'config_original.py'))
     
     #####
     # Load data
@@ -170,8 +171,9 @@ def main():
 
     # Initialize the sampler
     ncpu = cpu_count()
-    print('Parallelizing on %s CPUs ' %ncpu)
-    with Pool() as pool:
+    print('Parallelizing on %s CPUs ' %nPools)
+    print('Number of availabel cores:  %s ' %ncpu)
+    with Pool(nPools) as pool:
     	sampler = emcee.EnsembleSampler(nwalkers, ndim, log_posterior, backend=backend, args=(Lambda_ntest,priorLimits), pool=pool)
     	
     # We'll track how the average autocorrelation time estimate changes

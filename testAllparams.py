@@ -20,8 +20,11 @@ import importlib
 
 in_time=time.time()
 
+marginalise_R0=True
+skip=['n',  ]
 
-
+if marginalise_R0 and 'R0' not in skip:
+    skip.append('R0')
 perc_variation=15
 npoints=5
 dataset_name='mock'
@@ -45,8 +48,8 @@ param = FLAGS.param
 
 
 
-fout = 'test_oneVar_withNdet_Farr_wCDM'
-out_path=os.path.join(utils.dirName, 'results', fout)
+fout = 'test_oneVar_withNdet_Farr_wCDM_margR0'
+out_path=os.path.join(globals.dirName, 'results', fout)
 if not os.path.exists(out_path):
         print('Creating directory %s' %out_path)
         os.makedirs(out_path)
@@ -73,8 +76,8 @@ myPriorLims = PriorLimits()
 print('Parameter: %s' %param)
     #for param in myParams.allParams:
         
-if param=='n':
-        print('Skipping n')
+if param in skip:
+        print('Skipping %s' %param)
         exit
 else:
         truth = myParams.trueValues[param]
@@ -130,8 +133,11 @@ else:
         
         
         NdetRes = np.array( [mymodels.selectionBias(val, Lambda_ntest) for val in grid  ] )
-        muVals=NdetRes[:, 0]*1000
+        muVals=NdetRes[:, 0]#*1000
         NeffVals=NdetRes[:, 1]
+        
+        if not marginalise_R0:
+            muVals*=1000
         
         if param=='R0':
             R0Vals=grid#*1e-09
@@ -158,9 +164,11 @@ else:
         logPosterior_noSel = logLik  + logPrior
         
         
-        
-        logPosterior = logPosterior_noSel + mymodels.Nobs*np.log(R0Vals) + R0Vals*muVals*(R0Vals*muVals-2*NeffVals)/2/NeffVals #- muVals + (3 * mymodels.Nobs + mymodels.Nobs ** 2) / (2 * NeffVals)
-        
+        if not marginalise_R0:
+            logPosterior = logPosterior_noSel + mymodels.Nobs*np.log(R0Vals) + R0Vals*muVals*(R0Vals*muVals-2*NeffVals)/2/NeffVals #- muVals + (3 * mymodels.Nobs + mymodels.Nobs ** 2) / (2 * NeffVals)
+        else:
+            logPosterior = logPosterior_noSel  - mymodels.Nobs*muVals +(3 * mymodels.Nobs + mymodels.Nobs ** 2) / (2 * NeffVals)
+            
         posterior = np.exp(logPosterior-logPosterior.max())
         posterior /=np.trapz(posterior, grid)
         

@@ -13,31 +13,32 @@ dataset_name='mock'
 
 dataset_name_injections='mock'
 
-fout='runFullTry'
-
+fout='runFullOm'
 
 telegramAlert = False
 
-nChains=50
-max_n=1000
+
+params_inference = [ 'H0', 'Om0', 'Xi0']
+#'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh']
+
+nChains=2*len(params_inference)
+max_n=10000
 
 maxNtaus = 150
 checkTauStep = 100
 
 
-params_inference = [ 'H0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh']
-#'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh']
-
 marginalise_rate = True
 selection_integral_uncertainty = True
+
+nPools = 6
 
 
 ###########
 # For testing
 
-
 nSamplesUse= None #100
-nObsUse=50
+nObsUse=None
 nInjUse=None #100
 
 
@@ -62,6 +63,9 @@ lines.append('    return Lambda' )
 with open('getLambda.py', 'w') as f:
     f.write(('\n').join(lines))
 
+
+#####
+# Template for function getLambda
 
 #def get_Lambda(Lambda_test, Lambda_ntest):
     

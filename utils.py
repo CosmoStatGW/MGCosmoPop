@@ -1,10 +1,6 @@
 import sys
 import requests
-import os
 
-
-dirName  = os.path.join(os.path.dirname(os.path.abspath(__file__)))
-dataPath=os.path.join(dirName, 'data')
 
 
 
