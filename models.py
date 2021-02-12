@@ -141,7 +141,7 @@ def dN_dm1dm2dz(z, Lambda, theta):
 def dN_dm1zdm2zddL(Lambda, theta):
     m1z, m2z, dL = theta
     H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
-    z = cosmo.z_from_dLGW_fast(dL, H0,  Om0, w0, Xi0, n)
+    z = cosmo.z_from_dLGW_fast(dL, H0, Om0, w0, Xi0, n)
     #if not (z > 0).all():
     #    print('Parameters H0, Xi0, n, R0, lambdaRedshift,  alpha, beta, ml, sl, mh, sh :')
     #    print(H0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh)
