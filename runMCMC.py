@@ -77,8 +77,8 @@ Lambda_ntest = np.array([myParams.trueValues[param] for param in params_n_infere
 
 
 exp_values= myParams.get_expected_values(params_inference) #[70, 1, 45]
-lowLims = [val-val*perc_variation/100 for val in exp_values] #[20, 0, 20]
-upLims = [val+val*perc_variation/100 for val in exp_values] 
+lowLims = [val-val*perc_variation_init/100 for val in exp_values] #[20, 0, 20]
+upLims = [val+val*perc_variation_init/100 for val in exp_values] 
 Delta = [upLims[i]-lowLims[i] for i in range(len(exp_values))] #[140-20, 10-0, 150-20] 
 
 labels_param= myParams.get_labels(params_inference)#[r"$H_0$", r"$\Xi_0$", r"$m_h$"]
@@ -144,7 +144,7 @@ def main():
     print('Values: %s' %str(Lambda_ntest))
      
     #print('Initial balls for initialization of the walkers: %s' %str(Delta))
-    print(' Initial intervals for initialization of the walkers have an amplitude of +-%s percent around the expeced values of %s'%(perc_variation, str(exp_values)) )
+    print(' Initial intervals for initialization of the walkers have an amplitude of +-%s percent around the expeced values of %s'%(perc_variation_init, str(exp_values)) )
     pos = Delta*np.random.rand(nChains,  ndim)+lowLims
     nwalkers = pos.shape[0]
     #print('Initial positions of the walkers: %s' %str(pos))
