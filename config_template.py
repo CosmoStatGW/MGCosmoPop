@@ -26,6 +26,7 @@ max_n=10000
 maxNtaus = 150
 checkTauStep = 100
 
+perc_variation_init = 30
 
 marginalise_rate = True
 selection_integral_uncertainty = True

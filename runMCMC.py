@@ -77,7 +77,6 @@ Lambda_ntest = np.array([myParams.trueValues[param] for param in params_n_infere
 
 
 exp_values= myParams.get_expected_values(params_inference) #[70, 1, 45]
-perc_variation = 10
 lowLims = [val-val*perc_variation/100 for val in exp_values] #[20, 0, 20]
 upLims = [val+val*perc_variation/100 for val in exp_values] 
 Delta = [upLims[i]-lowLims[i] for i in range(len(exp_values))] #[140-20, 10-0, 150-20] 
