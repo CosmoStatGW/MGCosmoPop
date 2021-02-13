@@ -98,6 +98,7 @@ def log_posterior(Lambda_test, Lambda_ntest, priorLimits):
         return -np.inf
     
     logPost= logLik(Lambda_test, Lambda_ntest)+lp
+    
     ### Selection bias  
     mu, Neff = selectionBias(Lambda_test, Lambda_ntest)
     
@@ -169,7 +170,8 @@ def dN_dm1dm2dz(z, Lambda, theta):
     H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     lambdaBBH = [alpha, beta, ml, sl, mh, sh]
     m1, m2 = m1z / (1 + z), m2z / (1 + z)
-    return Tobs*rateDensityEvol(z, lambdaRedshift, H0, Om0, w0) * massPrior(m1, m2, lambdaBBH)
+    return Tobs*dV_dz(z, H0, Om0, w0)*(1 + z)**(lambdaRedshift-1)* massPrior(m1, m2, lambdaBBH)
+
 
 def dN_dm1zdm2zddL(Lambda, theta):
     m1z, m2z, dL = theta
@@ -188,11 +190,11 @@ def MsourceToMdetJacobian(z):
 
 
 
-def rateDensityEvol(z, lambdaRedshift, H0, Om0, w0):
+def rateDensityEvol(z, lambdaRedshift):
     """
     merger rate density evolution in redshift (un-normalized)
     """
-    return (1 + z)**(lambdaRedshift-1)*dV_dz(z, H0, Om0, w0)
+    return (1 + z)**(lambdaRedshift)
 
 
 

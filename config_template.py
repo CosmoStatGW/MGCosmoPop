@@ -18,7 +18,7 @@ fout='runFullLCDM'
 telegramAlert = False
 
 
-params_inference = [ 'H0', 'Om0', 'Xi0',  'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh']
+params_inference = [ 'H0', 'Om0',  'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh']
 
 nChains=50 #2*len(params_inference)
 max_n=10000
@@ -26,7 +26,7 @@ max_n=10000
 maxNtaus = 150
 checkTauStep = 100
 
-perc_variation_init = 30
+perc_variation_init = 10
 
 marginalise_rate = True
 selection_integral_uncertainty = True

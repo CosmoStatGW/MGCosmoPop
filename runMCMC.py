@@ -141,6 +141,8 @@ def main():
     print('Running inference for parameters: %s' %str(params_inference))
     print('Prior range: %s' %priorLimits)
     print('Fixing parameters: %s' %str(params_n_inference))
+    if marginalise_rate:
+        print('Marginalising over total rate R0')
     print('Values: %s' %str(Lambda_ntest))
      
     #print('Initial balls for initialization of the walkers: %s' %str(Delta))
