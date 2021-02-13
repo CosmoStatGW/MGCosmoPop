@@ -13,16 +13,15 @@ dataset_name='mock'
 
 dataset_name_injections='mock'
 
-fout='runFullOm'
+fout='runFullLCDM'
 
 telegramAlert = False
 
 
-params_inference = [ 'H0', 'Om0'] #  'Xi0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh']
-#'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh']
+params_inference = [ 'H0', 'Om0', 'Xi0',  'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh']
 
-nChains=2*len(params_inference)+1
-max_n=5000
+nChains=50 #2*len(params_inference)
+max_n=10000
 
 maxNtaus = 150
 checkTauStep = 100
@@ -31,17 +30,15 @@ checkTauStep = 100
 marginalise_rate = True
 selection_integral_uncertainty = True
 
-if nChains<6:
-    nPools = nChains
-else:
-    nPools=6
+nPools=5
+
 
 ###########
 # For testing
 
-nSamplesUse= None #100
+nSamplesUse= None
 nObsUse=None
-nInjUse=None #100
+nInjUse=None
 
 
 

@@ -180,17 +180,19 @@ def main():
     #    logpost_function  = log_posterior_unmarg
     
     with Pool(nPools) as pool:
-    	sampler = emcee.EnsembleSampler(nwalkers, ndim, log_posterior, backend=backend, args=(Lambda_ntest,priorLimits), pool=pool)
     	
-    # We'll track how the average autocorrelation time estimate changes
-    	index = 0
-    	autocorr = np.empty(max_n)
-
-    # This will be useful to testing convergence
-    	old_tau = np.inf
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, log_posterior, backend=backend, args=(Lambda_ntest,priorLimits), pool=pool)
+        #sampler.run_mcmc( pos, max_n, progress=True)  
+        
+        
+        # We'll track how the average autocorrelation time estimate changes
+        index = 0
+        autocorr = np.empty(max_n)
+        
+        old_tau = np.inf
 
         # Now we'll sample for up to max_n steps
-    	for sample in sampler.sample(pos, iterations=max_n, progress=True, skip_initial_state_check=False):
+        for sample in sampler.sample(pos, iterations=max_n, progress=True, skip_initial_state_check=False):
             # Only check convergence every 100 steps
             if sampler.iteration % 100:
                 continue

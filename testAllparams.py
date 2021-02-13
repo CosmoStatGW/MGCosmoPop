@@ -20,7 +20,7 @@ plt.rcParams["mathtext.fontset"] = "cm"
 import importlib
 
 
-fout = 'test_oneVar_withNdet_Farr_wCDM_margR0_all'
+fout = 'test_oneVar_1'
 
 marginalise_R0=True
 skip=['n',  ]
@@ -38,6 +38,7 @@ with open('config.py', 'w') as f:
     f.write("\nnInjUse=None  " )
     f.write("\nmarginalise_rate=False")
     f.write("\nselection_integral_uncertainty=True")
+
 
 ##############################
 
@@ -132,12 +133,15 @@ else:
         mymodels = importlib.import_module('models'+param, package=None)
         
         
-        print('Computing Ndet for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
+        print('Computing selection bias for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
         
         
         NdetRes = np.array( [mymodels.selectionBias(val, Lambda_ntest) for val in grid  ] )
         muVals=NdetRes[:, 0]#*1000
         NeffVals=NdetRes[:, 1]
+        
+        t1=time.time()
+        print('\nSelection bias done for '+param+' in %.2fs' %(t1 - in_time))
         
         # This fixes the error I don't understand
         if not marginalise_R0:
@@ -160,7 +164,7 @@ else:
         
         print('Computing likelihood for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
         logLik = np.array( [mymodels.logLik(val, Lambda_ntest) for val in grid ] )
-        print('Likelihood done for %s.' %param)
+        print('\nLikelihood done for '+param+' in %.2fs' %(time.time() - t1))
         
         logPrior = np.array([mymodels.log_prior(val, priorLimits) for val in grid ] )
         
@@ -203,7 +207,7 @@ else:
             
 
 ######
-print('\nDone for '+param+' in %.2fs' %(time.time() - in_time))
+print('\nDone for '+param+'.Total execution time: %.2fs' %(time.time() - in_time))
     
 sys.stdout = sys.__stdout__
 sys.stderr = sys.__stderr__

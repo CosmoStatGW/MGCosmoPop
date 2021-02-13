@@ -28,27 +28,35 @@ def uu(z, Om, w0):
     '''
     Dimensionless comoving distance. Does not depend on H0
     '''
-    return 70/clight*FlatwCDM(H0=70, Om0=Om, w0=w0).comoving_distance(z).value
+    if w0!=-1:
+        return 70/clight*FlatwCDM(H0=70, Om0=Om, w0=w0).comoving_distance(z).value
+    else:
+        return 70/clight*FlatLambdaCDM(H0=70, Om0=Om).comoving_distance(z).value
 
 def E(z, Om, w0):
     '''
     E(z). Does not depend on H0
     '''
-    return FlatwCDM(H0=70, Om0=Om).efunc(z)
+    if w0!=-1:
+        return FlatwCDM(H0=70, Om0=Om).efunc(z)
+    else:
+        return FlatLambdaCDM(H0=70, Om0=Om).efunc(z)
 
-def j(z, Om, w0):
-    '''
-    Jacobian of comoving volume, dimensioneless. Does not depend on H0
-    '''
-    return 4*np.pi*FlatwCDM(H0=70, Om0=Om, w0=w0).differential_comoving_volume(z).value*(70/clight)**3
+#def j(z, Om, w0):
+#    '''
+#    Jacobian of comoving volume, dimensioneless. Does not depend on H0
+#    '''
+#    return 4*np.pi*FlatwCDM(H0=70, Om0=Om, w0=w0).differential_comoving_volume(z).value*(70/clight)**3
 
 
 def dV_dz(z, H0, Om, w0):
     '''
     Jacobian of comoving volume, with correct dimensions [Mpc^3]. Depends on H0
     '''
-    return 4*np.pi*FlatwCDM(H0=H0, Om0=Om, w0=w0).differential_comoving_volume(z).value
-
+    if w0!=-1:
+        return 4*np.pi*FlatwCDM(H0=H0, Om0=Om, w0=w0).differential_comoving_volume(z).value
+    else:
+        return 4*np.pi*FlatLambdaCDM(H0=H0, Om0=Om,).differential_comoving_volume(z).value
 
 def s(z, Xi0, n):
     return (1+z)*Xi(z, Xi0, n)
@@ -69,7 +77,10 @@ def dLGW(z, H0, Om, w0, Xi0, n):
     '''                                                                                                          
     Modified GW luminosity distance in units set by utils.which_unit (default Mpc)                                                                           
     '''
-    cosmo=FlatwCDM(H0=H0, Om0=Om, w0=w0)
+    if w0!=-1:
+        cosmo=FlatwCDM(H0=H0, Om0=Om, w0=w0)
+    else:
+        cosmo=FlatLambdaCDM(H0=H0, Om0=Om)
     return (cosmo.luminosity_distance(z).to(which_unit).value)*Xi(z, Xi0, n)
 
 
@@ -86,11 +97,14 @@ def z_from_dLGW_fast(r, H0, Om, w0, Xi0, n):
     Returns redshift for a given luminosity distance r (in Mpc by default). Vectorized
     '''
     if (Om==Om0GLOB) & (w0==-1.):
-        dLGrid = dLGridGLOB
+        dLGrid = dLGridGLOB/H0*H0GLOB
     else:
-        cosmo = FlatwCDM(H0=H0GLOB, Om0=Om, w0=w0)
+        if w0==-1:
+            cosmo = FlatLambdaCDM(H0=H0, Om0=Om)
+        else:
+            cosmo = FlatwCDM(H0=H0, Om0=Om, w0=w0)
         dLGrid = cosmo.luminosity_distance(zGridGLOB).to(which_unit).value
-    z2dL = interpolate.interp1d( dLGrid/H0*H0GLOB*Xi(zGridGLOB, Xi0, n), zGridGLOB, kind='cubic', bounds_error=False, fill_value=(0,0.), assume_sorted=True)
+    z2dL = interpolate.interp1d( dLGrid*Xi(zGridGLOB, Xi0, n), zGridGLOB, kind='cubic', bounds_error=False, fill_value=(0,0.), assume_sorted=True)
     return z2dL(r)
 
 def z_from_dLGW(dL_GW_val, H0, Om, w0, Xi0, n):
