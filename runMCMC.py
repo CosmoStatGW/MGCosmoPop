@@ -69,6 +69,9 @@ os.environ["OMP_NUM_THREADS"] = "1"
 
 
 # Nobs=100
+allMyPriors = PriorLimits()
+
+priorLimits  = [ (allMyPriors.limInf[param],allMyPriors.limSup[param] ) for param in params_inference ]
 
 
 
@@ -76,19 +79,29 @@ labels_param = [ myParams.names[param] for param in params_inference ] #.sort()
 Lambda_ntest = np.array([myParams.trueValues[param] for param in params_n_inference])
 
 
-exp_values= myParams.get_expected_values(params_inference) #[70, 1, 45]
-lowLims = [val-val*perc_variation_init/100 for val in exp_values] #[20, 0, 20]
-upLims = [val+val*perc_variation_init/100 for val in exp_values] 
+exp_values= np.array(myParams.get_expected_values(params_inference)) #[70, 1, 45]
+eps = [val if val!=0 else 1 for val in exp_values ]
+
+lowLims = [ max( [val-eps[i]*perc_variation_init/100, priorLimits[i][0] ] )  for i,val in enumerate(exp_values) ] 
+upLims = [ min( [ val+eps[i]*perc_variation_init/100, priorLimits[i][1] ]) for i,val in enumerate(exp_values) ] 
+#upLims[exp_values==0]=perc_variation_init/100
+for i in range(len(lowLims)):
+    if lowLims[i]>upLims[i]:
+        lowLim=upLims[i]
+        upLim=lowLims[i]
+        upLims[i]=upLim
+        lowLims[i]=lowLim
+        
+print('lowLims: %s' %lowLims)
+print('upLims: %s' %upLims)
 Delta = [upLims[i]-lowLims[i] for i in range(len(exp_values))] #[140-20, 10-0, 150-20] 
+
+print('Delta: %s' %Delta)
 
 labels_param= myParams.get_labels(params_inference)#[r"$H_0$", r"$\Xi_0$", r"$m_h$"]
 trueValues = myParams.get_true_values(params_inference)#[67.74, 1, 45]
 
 
-
-allMyPriors = PriorLimits()
-
-priorLimits  = [ (allMyPriors.limInf[param],allMyPriors.limSup[param] ) for param in params_inference ]
 
 
 ########################
@@ -141,15 +154,16 @@ def main():
     print('Running inference for parameters: %s' %str(params_inference))
     print('Prior range: %s' %priorLimits)
     print('Fixing parameters: %s' %str(params_n_inference))
+    print('Values: %s' %str(Lambda_ntest))
     if marginalise_rate:
         print('Marginalising over total rate R0')
-    print('Values: %s' %str(Lambda_ntest))
+    
      
     #print('Initial balls for initialization of the walkers: %s' %str(Delta))
     print(' Initial intervals for initialization of the walkers have an amplitude of +-%s percent around the expeced values of %s'%(perc_variation_init, str(exp_values)) )
     pos = Delta*np.random.rand(nChains,  ndim)+lowLims
     nwalkers = pos.shape[0]
-    #print('Initial positions of the walkers: %s' %str(pos))
+    print('Initial positions of the walkers: %s' %str(pos))
     
     scriptname = __file__
     filenameT = scriptname.replace("_", "\_")

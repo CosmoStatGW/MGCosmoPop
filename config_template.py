@@ -13,20 +13,20 @@ dataset_name='mock'
 
 dataset_name_injections='mock'
 
-fout='runFullLCDM'
+fout='runFullAllParams'
 
 telegramAlert = False
 
 
-params_inference = [ 'H0', 'Om0',  'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh']
+params_inference = [ 'H0', 'Om0', 'Xi0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh']
 
-nChains=50 #2*len(params_inference)
+nChains=100 #2*len(params_inference)
 max_n=10000
 
-maxNtaus = 150
+maxNtaus = 100
 checkTauStep = 100
 
-perc_variation_init = 10
+perc_variation_init = 20
 
 marginalise_rate = True
 selection_integral_uncertainty = True

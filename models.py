@@ -56,8 +56,8 @@ def selectionBias(Lambda_test, Lambda_ntest):
     s2 = np.sum(xx * xx) /N_gen**2
     sigmaSq = s2 - mu * mu / N_gen
     Neff = mu * mu / sigmaSq
-    if Neff < 4 * Nobs:
-        print('NEED MORE SAMPLES FOR SELECTION EFFECTS! Values of lambda_test: %s' %str(Lambda_test))
+    #if Neff < 4 * Nobs:
+    #    print('NEED MORE SAMPLES FOR SELECTION EFFECTS! Values of lambda_test: %s' %str(Lambda_test))
     return (mu, Neff)
 
 
@@ -120,37 +120,6 @@ def log_posterior(Lambda_test, Lambda_ntest, priorLimits):
     return logPost
 
 
-
-
-def log_posterior_marg(Lambda_test, Lambda_ntest, priorLimits):
-    
-    lp = log_prior(Lambda_test, priorLimits)
-    if not np.isfinite(lp):
-        return -np.inf
-    
-    ### Selection bias  
-    mu, Neff = selectionBias(Lambda_test, Lambda_ntest)
-    
-    return  logLik(Lambda_test, Lambda_ntest)+lp -Nobs*np.log(mu)+(3 * Nobs + Nobs ** 2) / (2 * Neff)
-    
-
-def log_posterior_unmarg(Lambda_test, Lambda_ntest, priorLimits):
-    
-    lp = log_prior(Lambda_test, priorLimits)
-    if not np.isfinite(lp):
-        return -np.inf
-    
-    ### Selection bias  
-    mu, Neff = selectionBias(Lambda_test, Lambda_ntest)
-    
-    mu*=1000
-    
-    Lambda = get_Lambda(Lambda_test, Lambda_ntest) 
-    H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambd
-    
-    return  logLik(Lambda_test, Lambda_ntest)+lp + Nobs*np.log(R0)-R0*mu +(R0*mu)**2/(2 * Neff) 
-    
-    
 
 
 
