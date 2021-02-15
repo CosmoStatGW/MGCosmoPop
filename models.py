@@ -143,7 +143,7 @@ def log_posterior(Lambda_test, Lambda_ntest, priorLimits):
 
 #####################################################
 
-def run_precompute_obs(Lambda, which_data):
+def run_precompute(Lambda, which_data):
     '''
     Compute only once some quantities that go into selection effects and likelihood
     '''
