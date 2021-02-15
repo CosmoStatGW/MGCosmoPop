@@ -165,8 +165,8 @@ else:
             R0Vals=np.exp(grid)#*1e-09
             logR0vals=grid
         else:
-            R0Vals=np.repeat(np.exp(myParams.trueValues['logR0']), NeffVals.shape)#*1e-09
-            logR0vals=np.repeat(myParams.trueValues['logR0'], NeffVals.shape)
+            R0Vals=np.repeat(np.exp(myParams.trueValues['logR0']), muVals.shape)#*1e-09
+            logR0vals=np.repeat(myParams.trueValues['logR0'], muVals.shape)
         
         plt.plot(grid, R0Vals*muVals)
         plt.xlabel(myParams.names[param]);
