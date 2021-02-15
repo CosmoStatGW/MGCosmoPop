@@ -25,6 +25,7 @@ assert (m1z > 0).all()
 assert (m2z > 0).all()
 assert (dL > 0).all()
 theta_sel, weights_sel, N_gen = data.load_injections_data(dataset_name_injections)
+log_weights_sel = np.log(weights_sel)
 m1z_sel, m2z_sel, dL_sel = theta
 Nobs = theta[0].shape[0]
 Tobs = 2.5
@@ -48,22 +49,23 @@ print('Max z of injections: %s' %zmax)
 
 #####################################################
 
-def selectionBias(Lambda_test, Lambda_ntest):
+def selectionBias(Lambda, m1, m2, z):
     
-    Lambda = get_Lambda(Lambda_test, Lambda_ntest)
+    #Lambda = get_Lambda(Lambda_test, Lambda_ntest)
     #H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     
-    xx = dN_dm1zdm2zddL(Lambda, theta_sel) / weights_sel
+    xx = log_dN_dm1zdm2zddL(Lambda, m1, m2, z) - log_weights_sel
     
     #xx*=CCfast(alpha, beta, ml, sl, mh, sh)
     
-    mu = np.sum(xx) / N_gen
-    s2 = np.sum(xx * xx) /(N_gen*N_gen)
-    sigmaSq = s2 - mu * mu / N_gen
-    Neff = mu * mu / sigmaSq
+    logMu = logsumexp(xx) - N_gen
+    muSq = np.exp(2*logMu)
+    logs2 = logsumexp(xx*xx) -2*N_gen
+    SigmaSq = np.exp(logs2) - muSq / N_gen
+    Neff = muSq / sigmaSq
     if Neff < 4 * Nobs:
         print('NEED MORE SAMPLES FOR SELECTION EFFECTS! Values of lambda_test: %s' %str(Lambda_test))
-    return (mu, Neff)
+    return logMu, Neff
 
 
 def logLik(Lambda, m1, m2, z):
@@ -79,7 +81,8 @@ def logLik(Lambda, m1, m2, z):
     lik -= logOrDistPrior
     Nsamples=np.count_nonzero(lik, axis=-1)
     #return np.log(lik.mean(axis=1)) .sum(axis=(-1))
-    return (logsumexp(lik, axis=-1)/Nsamples).sum()
+    allLogLiks = logsumexp(lik, axis=-1)-Nsamples
+    return (allLogLiks).sum()
 
 
 def log_prior(Lambda_test, priorLimits):
@@ -112,19 +115,20 @@ def log_posterior(Lambda_test, Lambda_ntest, priorLimits):
     logPost= logLik(Lambda, precomputed['source_frame_mass1_observations'],precomputed['source_frame_mass2_observations'],precomputed['z_observations'] )+lp
     
     ### Selection bias
-    mu, Neff = selectionBias(Lambda, precomputed['source_frame_mass1_injections'],precomputed['source_frame_mass2_injections'],precomputed['z_injections'] )
+    logMu, Neff = selectionBias(Lambda, precomputed['source_frame_mass1_injections'],precomputed['source_frame_mass2_injections'],precomputed['z_injections'] )
     
     ## Effects of uncertainty on selection effect and/or marginalisation over total rate
     ## See 1904.10879
     
     if marginalise_rate:
-        logPost -= Nobs*np.log(mu)
+        logPost -= Nobs*logMu
         if selection_integral_uncertainty:
             logPost+=(3 * Nobs + Nobs * Nobs) / (2 * Neff)
     else:
-        Lambda = get_Lambda(Lambda_test, Lambda_ntest) 
+        #Lambda = get_Lambda(Lambda_test, Lambda_ntest) 
         H0, Om0, w0, Xi0, n, logR0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda 
         logPost+= Nobs*logR0 #np.log(R0)
+        mu=np.exp(logMu)
         R0 = np.exp(logR0)
         logPost -= R0*mu
         if selection_integral_uncertainty:
