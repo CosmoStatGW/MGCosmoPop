@@ -136,7 +136,7 @@ else:
         
         myLambda = importlib.import_module('getLambda'+param, package=None)
         #Lambda_func = globals()['getLambda'+param]
-        precomputed = run_precompute(Lambda)
+        precomputed = mymodels.run_precompute(Lambda)
         
         print('Computing selection bias for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
         
