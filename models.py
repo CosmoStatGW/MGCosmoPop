@@ -221,7 +221,7 @@ def rateDensityEvol(z, lambdaRedshift):
 
 #####################################################
 
-def log_massPrior(m1, m2, lambdaBBH):
+def logMassPrior(m1, m2, lambdaBBH):
     """
     lambdaBBH is the array of parameters of the BBH mass function 
     """
