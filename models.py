@@ -26,7 +26,7 @@ assert (m2z > 0).all()
 assert (dL > 0).all()
 theta_sel, weights_sel, N_gen = data.load_injections_data(dataset_name_injections)
 log_weights_sel = np.log(weights_sel)
-m1z_sel, m2z_sel, dL_sel = theta
+m1z_sel, m2z_sel, dL_sel = theta_sel
 Nobs = theta[0].shape[0]
 Tobs = 2.5
 OrMassPrior =  data.originalMassPrior(m1z, m2z)
