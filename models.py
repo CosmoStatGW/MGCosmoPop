@@ -115,7 +115,7 @@ def log_posterior(Lambda_test, Lambda_ntest, priorLimits):
     logPost= logLik(Lambda, precomputed['source_frame_mass1_observations'],precomputed['source_frame_mass2_observations'],precomputed['z_observations'] )+lp
     
     ### Selection bias
-    logMu, Neff = selectionBias(Lambda, precomputed['source_frame_mass1_injections'],precomputed['source_frame_mass2_injections'],precomputed['z_injections'] )
+    logMu, Neff = selectionBias(Lambda, precomputed['source_frame_mass1_injections'], precomputed['source_frame_mass2_injections'], precomputed['z_injections'] )
     
     ## Effects of uncertainty on selection effect and/or marginalisation over total rate
     ## See 1904.10879

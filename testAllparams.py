@@ -132,12 +132,19 @@ else:
         #from models import log_posterior
         mymodels = importlib.import_module('models'+param, package=None)
         
+        print('Computing precomputed quantities for %s... ' %(param ) )
+        
+        myLambda = importlib.import_module('getLambda'+param, package=None)
+        #Lambda_func = globals()['getLambda'+param]
+        Lambda=myLambda.get_Lambda(Lambda_test, Lambda_ntest)
+        precomputed = run_precompute(Lambda)
         
         print('Computing selection bias for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
         
         
-        NdetRes = np.array( [mymodels.selectionBias(val, Lambda_ntest) for val in grid  ] )
-        muVals=NdetRes[:, 0]#*1000
+        NdetRes = np.array( [mymodels.selectionBias(val, precomputed['source_frame_mass1_injections'], precomputed['source_frame_mass2_injections'], precomputed['z_injections']) for val in grid  ] )
+        logMuVals=NdetRes[:, 0]
+        muVals= np.exp(logMuVals)#*1000
         NeffVals=NdetRes[:, 1]
         
         t1=time.time()
@@ -165,7 +172,7 @@ else:
         print('N_det at true value of %s: %s '%(truth, R0Vals[np.argwhere(grid==truth)]*muVals[np.argwhere(grid==truth)] ) )
         
         print('Computing likelihood for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
-        logLik = np.array( [mymodels.logLik(val, Lambda_ntest) for val in grid ] )
+        logLik = np.array( [mymodels.logLik(Lambda, precomputed['source_frame_mass1_observations'],precomputed['source_frame_mass2_observations'],precomputed['z_observations'] ) for val in grid ] )
         print('\nLikelihood done for '+param+' in %.2fs' %(time.time() - t1))
         
         logPrior = np.array([mymodels.log_prior(val, priorLimits) for val in grid ] )
@@ -177,7 +184,7 @@ else:
         if not marginalise_R0:
             logPosterior = logPosterior_noSel + mymodels.Nobs*logR0vals + R0Vals*muVals*(R0Vals*muVals-2*NeffVals)/2/NeffVals #- muVals + (3 * mymodels.Nobs + mymodels.Nobs ** 2) / (2 * NeffVals)
         else:
-            logPosterior = logPosterior_noSel  - mymodels.Nobs*np.log(muVals) +(3 * mymodels.Nobs + mymodels.Nobs ** 2) / (2 * NeffVals)
+            logPosterior = logPosterior_noSel  - mymodels.Nobs*logMuVals +(3 * mymodels.Nobs + mymodels.Nobs ** 2) / (2 * NeffVals)
             
         posterior = np.exp(logPosterior-logPosterior.max())
         posterior /=np.trapz(posterior, grid)
