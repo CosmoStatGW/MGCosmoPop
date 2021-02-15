@@ -49,13 +49,13 @@ print('Max z of injections: %s' %zmax)
 
 #####################################################
 
-def selectionBias(Lambda,precomputed):
+def selectionBias(Lambda, precomputed_inj):
     
-    m1, m2, z = precomputed['m1'], precomputed['m2'], precomputed['z']
+    #m1, m2, z = precomputed['m1'], precomputed['m2'], precomputed['z']
     #Lambda = get_Lambda(Lambda_test, Lambda_ntest)
     #H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     
-    xx = log_dN_dm1zdm2zddL(Lambda, m1, m2, z) - log_weights_sel
+    xx = log_dN_dm1zdm2zddL(Lambda, precomputed_inj['m1'], precomputed_inj['m2'], precomputed_inj['z']) - log_weights_sel
     
     #xx*=CCfast(alpha, beta, ml, sl, mh, sh)
     
@@ -69,16 +69,16 @@ def selectionBias(Lambda,precomputed):
     return logMu, Neff
 
 
-def logLik(Lambda, precomputed):
+def logLik(Lambda, precomputed_obs):
     """
     Lambda:
      H0, Xi0, n, gamma, alpha, beta, ml, sl, mh, sh
     
     Returns log likelihood for all data
     """
-    m1, m2, z = precomputed['m1'], precomputed['m2'], precomputed['z']
+    #m1, m2, z = precomputed['m1'], precomputed['m2'], precomputed['z']
     #Lambda = get_Lambda(Lambda_test, Lambda_ntest)
-    lik = log_dN_dm1zdm2zddL(Lambda, m1, m2, z)
+    lik = log_dN_dm1zdm2zddL(Lambda, precomputed_obs['m1'], precomputed_obs['m2'], precomputed_obs['z'])
     lik -= logOrMassPrior
     lik -= logOrDistPrior
     Nsamples=np.count_nonzero(lik, axis=-1)
@@ -149,17 +149,19 @@ def run_precompute(Lambda, which_data):
     '''
     H0, Om0, w0, Xi0, n, logR0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     
-    precomputed={}
     if which_data=='obs':
-        precomputed['z'] = get_redshift(dL, H0, Om0, w0, Xi0, n)
-        precomputed['m2'] = m1z / (1 + precomputed['z'])    
-        precomputed['m1'] = m2z / (1 + precomputed['z'])
+        precomputed_obs={}
+        precomputed_obs['z'] = get_redshift(  dL, H0, Om0, w0, Xi0, n)
+        precomputed_obs['m2'] = m1z / (1 + precomputed_obs['z'])    
+        precomputed_obs['m1'] = m2z / (1 + precomputed_obs['z'])
+        return precomputed_obs
     elif which_data=='inj':
-        precomputed['z'] = get_redshift(dL_sel, H0, Om0, w0, Xi0, n)
-        precomputed['m2'] = m1z_sel / (1 + precomputed['z'])    
-        precomputed['m1'] = m2z_sel / (1 + precomputed['z'])
+        precomputed_inj={}
+        precomputed_inj['z'] = get_redshift( dL_sel, H0, Om0, w0, Xi0, n)
+        precomputed_inj['m2'] = m1z_sel / (1 + precomputed_inj['z'])    
+        precomputed_inj['m1'] = m2z_sel / (1 + precomputed_inj['z'])
         
-    return precomputed
+        return precomputed_inj
 
 
 
