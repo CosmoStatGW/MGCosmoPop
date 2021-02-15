@@ -65,7 +65,7 @@ def selectionBias(Lambda, precomputed_inj):
     SigmaSq = np.exp(logs2) - muSq / N_gen
     Neff = muSq / SigmaSq
     if Neff < 4 * Nobs:
-        print('NEED MORE SAMPLES FOR SELECTION EFFECTS! Values of lambda_test: %s' %str(Lambda_test))
+        print('NEED MORE SAMPLES FOR SELECTION EFFECTS! ') #Values of lambda_test: %s' %str(Lambda_test))
     return logMu, Neff
 
 

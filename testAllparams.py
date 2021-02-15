@@ -140,18 +140,19 @@ else:
         
         print('Computing selection bias for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
         
-        NdetRes=np.zeros( (grid.shape[0], 2 ) )
+        NdetRes=np.zeros( grid.shape[0] )  #2 ) )
         for i,val in enumerate(grid):
             Lambda = myLambda.get_Lambda(val, Lambda_ntest)
             precomputed_inj = mymodels.run_precompute(Lambda, which_data='inj')
+            print(precomputed_inj['m1'].shape)
             NdetRes[i] = mymodels.selectionBias(Lambda, precomputed_inj)
             
        # NdetRes = np.array( [mymodels.selectionBias(val, precomputed['source_frame_mass1_injections'], precomputed['source_frame_mass2_injections'], precomputed['z_injections']) for val in grid  ] )
         
         
-        logMuVals=NdetRes[:, 0]
+        logMuVals=NdetRes#[:, 0]
         muVals= np.exp(logMuVals)#*1000
-        NeffVals=NdetRes[:, 1]
+        #NeffVals=NdetRes[:, 1]
         
         t1=time.time()
         print('\nSelection bias done for '+param+' in %.2fs' %(t1 - in_time))
@@ -193,9 +194,9 @@ else:
         
         
         if not marginalise_R0:
-            logPosterior = logPosterior_noSel + mymodels.Nobs*logR0vals + R0Vals*muVals*(R0Vals*muVals-2*NeffVals)/2/NeffVals #- muVals + (3 * mymodels.Nobs + mymodels.Nobs ** 2) / (2 * NeffVals)
+            logPosterior = logPosterior_noSel + mymodels.Nobs*logR0vals - R0Vals*muVals #+ R0Vals*muVals*(R0Vals*muVals-2*NeffVals)/2/NeffVals #- muVals + (3 * mymodels.Nobs + mymodels.Nobs ** 2) / (2 * NeffVals)
         else:
-            logPosterior = logPosterior_noSel  - mymodels.Nobs*logMuVals +(3 * mymodels.Nobs + mymodels.Nobs ** 2) / (2 * NeffVals)
+            logPosterior = logPosterior_noSel  - mymodels.Nobs*logMuVals #+(3 * mymodels.Nobs + mymodels.Nobs ** 2) / (2 * NeffVals)
             
         posterior = np.exp(logPosterior-logPosterior.max())
         posterior /=np.trapz(posterior, grid)
