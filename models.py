@@ -56,8 +56,8 @@ def selectionBias(Lambda_test, Lambda_ntest):
     s2 = np.sum(xx * xx) /N_gen**2
     sigmaSq = s2 - mu * mu / N_gen
     Neff = mu * mu / sigmaSq
-    #if Neff < 4 * Nobs:
-    #    print('NEED MORE SAMPLES FOR SELECTION EFFECTS! Values of lambda_test: %s' %str(Lambda_test))
+    if Neff < 4 * Nobs:
+        print('NEED MORE SAMPLES FOR SELECTION EFFECTS! Values of lambda_test: %s' %str(Lambda_test))
     return (mu, Neff)
 
 
@@ -111,9 +111,10 @@ def log_posterior(Lambda_test, Lambda_ntest, priorLimits):
             logPost+=(3 * Nobs + Nobs ** 2) / (2 * Neff)
     else:
         Lambda = get_Lambda(Lambda_test, Lambda_ntest) 
-        H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda 
-        logPost+= Nobs*np.log(R0)
-        logPost-= R0*mu
+        H0, Om0, w0, Xi0, n, logR0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda 
+        logPost+= Nobs*logR0 #np.log(R0)
+        R0 = np.exp(logR0)
+        logPost -= R0*mu
         if selection_integral_uncertainty:
             logPost+= (R0*mu)**2/ (2 * Neff)
     
@@ -136,7 +137,7 @@ def dN_dm1dm2dz(z, Lambda, theta):
      lambdaBBH is the parameters of the BBH mass function 
     """
     m1z, m2z, dL = theta
-    H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
+    H0, Om0, w0, Xi0, n, logR0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     lambdaBBH = [alpha, beta, ml, sl, mh, sh]
     m1, m2 = m1z / (1 + z), m2z / (1 + z)
     return Tobs*dV_dz(z, H0, Om0, w0)*(1 + z)**(lambdaRedshift-1)* massPrior(m1, m2, lambdaBBH)
@@ -144,7 +145,7 @@ def dN_dm1dm2dz(z, Lambda, theta):
 
 def dN_dm1zdm2zddL(Lambda, theta):
     m1z, m2z, dL = theta
-    H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
+    H0, Om0, w0, Xi0, n, logR0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     z = z_from_dLGW_fast(dL, H0, Om0, w0, Xi0, n)
     #if not (z > 0).all():
     #    print('Parameters H0, Xi0, n, R0, lambdaRedshift,  alpha, beta, ml, sl, mh, sh :')
@@ -176,8 +177,8 @@ def massPrior(m1, m2, lambdaBBH):
     """
     alpha, beta, ml, sl, mh, sh = lambdaBBH
     #return m1 ** (-alpha) * (m2 / m1) ** beta * f_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh) * f_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh) * C1(m1, beta, ml) * C2(alpha, ml, mh)
-    #return (m1/30)**(-alpha)*(m2/30)**(beta)*f_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh)*f_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh) /f_smooth(30, ml=ml, sl=sl, mh=mh, sh=sh)**2#/(30**2)
-    return (m1)**(-alpha)*(m2)**(beta)*f_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh)*f_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh)/CCfast(alpha, beta, ml, sl, mh, sh)
+    return (m1/30)**(-alpha)*(m2/30)**(beta)*f_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh)*f_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh) /f_smooth(30, ml=ml, sl=sl, mh=mh, sh=sh)**2/(30**2)
+    #return (m1)**(-alpha)*(m2)**(beta)*f_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh)*f_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh)/CCfast(alpha, beta, ml, sl, mh, sh)
 
 def C1(m, beta, ml):
     if beta != -1:

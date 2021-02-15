@@ -7,6 +7,7 @@ Created on Fri Feb  5 11:51:38 2021
 """
 
 import glob
+import numpy as np
 
 
 class Params(object):
@@ -17,14 +18,14 @@ class Params(object):
         
         if dataset_name=='mock':
             
-            self.allParams = [ 'H0', 'Om0', 'w0', 'Xi0', 'n', 'R0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh' ]
+            self.allParams = [ 'H0', 'Om0', 'w0', 'Xi0', 'n', 'logR0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh' ]
         
             self.trueValues = {'H0':glob.H0GLOB,
                                'Om0':glob.Om0GLOB,
                                'w0':-1.,
                            'Xi0':1.0, 
                            'n':1.91, 
-                           'R0': 60 *1e-09, #64.4 , # Gpc^-3 yr^-1
+                           'logR0': np.log10(64.4 *1e-09), #60 , # Gpc^-3 yr^-1
                            'lambdaRedshift':3.0,
                            'alpha':0.75,
                            'beta':0.0, 
@@ -38,7 +39,7 @@ class Params(object):
                           'w0':r'$w_{0}$',
                            'Xi0':r'$\Xi_0$', 
                            'n':r'$n$', 
-                           'R0':r'$R_0$', 
+                           'logR0':r'log$R_0$', 
                            'lambdaRedshift':r'$\lambda$',
                            'alpha':r'$\alpha$',
                            'beta':r'$\beta$', 
@@ -78,7 +79,7 @@ class PriorLimits(object):
                            'Om0':0.05,
                            'w0':-2,
                            'n':0, 
-                           'R0':1*1e-09, # Gpc^-3 yr^-1
+                           'logR0': np.log10(1e-08), # Gpc^-3 yr^-1
                            'lambdaRedshift':-15,
                            'alpha':-5,
                            'beta':-5, 
@@ -91,7 +92,7 @@ class PriorLimits(object):
                            'w0':-0.1,
                            'Xi0':10, 
                            'n':10, 
-                           'R0':200*1e-09,
+                           'logR0': np.log10(1e-07),
                            'lambdaRedshift':10,
                            'alpha':10,
                            'beta':10, 

@@ -20,9 +20,9 @@ plt.rcParams["mathtext.fontset"] = "cm"
 import importlib
 
 
-fout = 'test_oneVar_1'
+fout = 'test_changeNorm'
 
-marginalise_R0=True
+marginalise_R0=False
 skip=['n',  ]
 
 perc_variation=15
@@ -42,8 +42,8 @@ with open('config.py', 'w') as f:
 
 ##############################
 
-if marginalise_R0 and 'R0' not in skip:
-    skip.append('R0')
+if marginalise_R0 and 'logR0' not in skip:
+    skip.append('logR0')
 
 in_time=time.time()
 
@@ -88,19 +88,19 @@ else:
         print('True value: %s' %truth)
         eps=truth
         if truth==0:
-            eps=1e-01
-        if param=='R0':
-            truth*=1e09
-            limInf = 1e09*myPriorLims.limInf[param]
-            limSup=1e09*myPriorLims.limSup[param]
-        else:
-            limInf = myPriorLims.limInf[param]
-            limSup=myPriorLims.limSup[param]
+            eps=1
+        #if param=='logR0':
+        #    truth*=1e09
+        #    limInf = 1e09*myPriorLims.limInf[param]
+        #    limSup=1e09*myPriorLims.limSup[param]
+        #else:
+        limInf = myPriorLims.limInf[param]
+        limSup=myPriorLims.limSup[param]
         grid = np.sort(np.concatenate( [np.array([truth,]) , np.linspace( limInf, truth-(eps*perc_variation/100)-0.01, 5), np.linspace(truth-(eps*perc_variation/100), truth+(eps*perc_variation/100), npoints) , np.linspace( truth+(eps*perc_variation/100)+0.01, limSup, 5)]) )
         grid=np.unique(grid, axis=0)
-        if param=='R0':
-            grid*=1e-09
-            truth=myParams.trueValues[param]
+        #if param=='R0':
+        #    grid*=1e-09
+        #    truth=myParams.trueValues[param]
         
         params_n_inference = [nparam for nparam in myParams.allParams if nparam!= param]
 
@@ -144,13 +144,15 @@ else:
         print('\nSelection bias done for '+param+' in %.2fs' %(t1 - in_time))
         
         # This fixes the error I don't understand
-        if not marginalise_R0:
-            muVals*=1000
+        #if not marginalise_R0:
+        #    muVals*=1000
         
-        if param=='R0':
-            R0Vals=grid#*1e-09
+        if param=='logR0':
+            R0Vals=np.exp(grid)#*1e-09
+            logR0vals=grid
         else:
-            R0Vals=np.repeat(myParams.trueValues['R0'], NeffVals.shape)#*1e-09
+            R0Vals=np.repeat(np.exp(myParams.trueValues['logR0']), NeffVals.shape)#*1e-09
+            logR0vals=np.repeat(myParams.trueValues['logR0'], NeffVals.shape)
         
         plt.plot(grid, R0Vals*muVals)
         plt.xlabel(myParams.names[param]);
@@ -173,7 +175,7 @@ else:
         
         
         if not marginalise_R0:
-            logPosterior = logPosterior_noSel + mymodels.Nobs*np.log(R0Vals) + R0Vals*muVals*(R0Vals*muVals-2*NeffVals)/2/NeffVals #- muVals + (3 * mymodels.Nobs + mymodels.Nobs ** 2) / (2 * NeffVals)
+            logPosterior = logPosterior_noSel + mymodels.Nobs*logR0vals + R0Vals*muVals*(R0Vals*muVals-2*NeffVals)/2/NeffVals #- muVals + (3 * mymodels.Nobs + mymodels.Nobs ** 2) / (2 * NeffVals)
         else:
             logPosterior = logPosterior_noSel  - mymodels.Nobs*np.log(muVals) +(3 * mymodels.Nobs + mymodels.Nobs ** 2) / (2 * NeffVals)
             
