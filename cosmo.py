@@ -59,7 +59,7 @@ def dV_dz(z, H0, Om, w0):
         return 4*np.pi*FlatLambdaCDM(H0=H0, Om0=Om,).differential_comoving_volume(z).value
 
 def log_dV_dz(z, H0, Om0, w0):
-        return np.log(4*np.pi)+3*np.log(clight)-3*np.log(H0)+2*np.log(uu(z, Om, w0))-np.log(E(z, Om, w0))
+        return np.log(4*np.pi)+3*np.log(clight)-3*np.log(H0)+2*np.log(uu(z, Om0, w0))-np.log(E(z, Om0, w0))
     
 
 
@@ -79,7 +79,7 @@ def ddL_dz(z, H0, Om, w0, Xi0, n):
 
 
 def log_ddL_dz(z, H0, Om0, w0, Xi0, n):
-    return np.log(clight)-np.log(H0)+np.log(sPrime(z, Xi0, n)*uu(z, Om, w0)+s(z, Xi0, n)/E(z, Om, w0))
+    return np.log(clight)-np.log(H0)+np.log(sPrime(z, Xi0, n)*uu(z, Om0, w0)+s(z, Xi0, n)/E(z, Om0, w0))
 
 
 def dLGW(z, H0, Om, w0, Xi0, n):
