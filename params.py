@@ -25,7 +25,7 @@ class Params(object):
                                'w0':-1.,
                            'Xi0':1.0, 
                            'n':1.91, 
-                           'logR0': np.log10(64.4 *1e-09), #60 , # Gpc^-3 yr^-1
+                           'logR0': np.log(64.4 *1e-09), #60 , # Gpc^-3 yr^-1
                            'lambdaRedshift':3.0,
                            'alpha':0.75,
                            'beta':0.0, 
@@ -79,7 +79,7 @@ class PriorLimits(object):
                            'Om0':0.05,
                            'w0':-2,
                            'n':0, 
-                           'logR0': np.log10(1e-08), # Gpc^-3 yr^-1
+                           'logR0': np.log(1e-08), # Gpc^-3 yr^-1
                            'lambdaRedshift':-15,
                            'alpha':-5,
                            'beta':-5, 
@@ -92,7 +92,7 @@ class PriorLimits(object):
                            'w0':-0.1,
                            'Xi0':10, 
                            'n':10, 
-                           'logR0': np.log10(1e-07),
+                           'logR0': np.log(1e-07),
                            'lambdaRedshift':10,
                            'alpha':10,
                            'beta':10, 
