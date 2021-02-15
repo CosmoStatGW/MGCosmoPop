@@ -60,13 +60,13 @@ def selectionBias(Lambda, precomputed_inj):
     #xx*=CCfast(alpha, beta, ml, sl, mh, sh)
     
     logMu = logsumexp(xx) - N_gen
-    muSq = np.exp(2*logMu)
-    logs2 = logsumexp(xx*xx) -2*N_gen
-    SigmaSq = np.exp(logs2) - muSq / N_gen
-    Neff = muSq / SigmaSq
-    if Neff < 4 * Nobs:
-        print('NEED MORE SAMPLES FOR SELECTION EFFECTS! ') #Values of lambda_test: %s' %str(Lambda_test))
-    return logMu, Neff
+    #muSq = np.exp(2*logMu)
+    #logs2 = logsumexp(xx*xx) -2*N_gen
+    #SigmaSq = np.exp(logs2) - muSq / N_gen
+    #Neff = muSq / SigmaSq
+    #if Neff < 4 * Nobs:
+    #    print('NEED MORE SAMPLES FOR SELECTION EFFECTS! ') #Values of lambda_test: %s' %str(Lambda_test))
+    return logMu#, Neff
 
 
 def logLik(Lambda, precomputed_obs):

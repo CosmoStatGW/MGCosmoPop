@@ -145,7 +145,7 @@ else:
             Lambda = myLambda.get_Lambda(val, Lambda_ntest)
             precomputed_inj = mymodels.run_precompute(Lambda, which_data='inj')
             print(precomputed_inj['m1'].shape)
-            NdetRes[i] = mymodels.selectionBias(Lambda, precomputed_inj)
+            NdetRes[i] = mymodels.selectionBias(Lambda, precomputed_inj)[0]
             
        # NdetRes = np.array( [mymodels.selectionBias(val, precomputed['source_frame_mass1_injections'], precomputed['source_frame_mass2_injections'], precomputed['z_injections']) for val in grid  ] )
         
