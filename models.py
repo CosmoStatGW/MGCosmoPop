@@ -146,6 +146,7 @@ def run_precompute(Lambda):
     '''
     H0, Om0, w0, Xi0, n, logR0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     
+    precomputed={}
     precomputed['z_observations'] = get_redshift(dL, H0, Om0, w0, Xi0, n)
     precomputed['z_injections'] = get_redshift(dL_sel, H0, Om0, w0, Xi0, n)
     precomputed['source_frame_mass1_observations'] = m1z / (1 + precomputed['z_observations'])
