@@ -63,7 +63,7 @@ def selectionBias(Lambda, precomputed_inj):
     muSq = np.exp(2*logMu)
     logs2 = logsumexp(xx*xx) -2*N_gen
     SigmaSq = np.exp(logs2) - muSq / N_gen
-    Neff = muSq / sigmaSq
+    Neff = muSq / SigmaSq
     if Neff < 4 * Nobs:
         print('NEED MORE SAMPLES FOR SELECTION EFFECTS! Values of lambda_test: %s' %str(Lambda_test))
     return logMu, Neff
@@ -156,12 +156,12 @@ def run_precompute(Lambda, which_data):
         precomputed_obs['m1'] = m2z / (1 + precomputed_obs['z'])
         return precomputed_obs
     elif which_data=='inj':
-        print('Precomuting with inj data')
+        #print('Precomuting with inj data')
         precomputed_inj={}
         precomputed_inj['z'] = get_redshift( dL_sel, H0, Om0, w0, Xi0, n)
         precomputed_inj['m2'] = m1z_sel / (1 + precomputed_inj['z'])    
         precomputed_inj['m1'] = m2z_sel / (1 + precomputed_inj['z'])
-        print(precomputed_inj['m1'].shape)
+        #print(precomputed_inj['m1'].shape)
         return precomputed_inj
 
 
