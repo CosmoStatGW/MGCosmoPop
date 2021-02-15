@@ -136,13 +136,18 @@ else:
         
         myLambda = importlib.import_module('getLambda'+param, package=None)
         #Lambda_func = globals()['getLambda'+param]
-        Lambda=myLambda.get_Lambda(Lambda_test, Lambda_ntest)
         precomputed = run_precompute(Lambda)
         
         print('Computing selection bias for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
         
+        NdetRes=np.zeros( (grid.shape[0], 2 ) )
+        for i,val in enumerate(grid):
+            Lambda=myLambda.get_Lambda(val, Lambda_ntest)
+            NdetRes[i] = mymodels.selectionBias(Lambda, precomputed['source_frame_mass1_injections'], precomputed['source_frame_mass2_injections'], precomputed['z_injections'])
+            
+       # NdetRes = np.array( [mymodels.selectionBias(val, precomputed['source_frame_mass1_injections'], precomputed['source_frame_mass2_injections'], precomputed['z_injections']) for val in grid  ] )
         
-        NdetRes = np.array( [mymodels.selectionBias(val, precomputed['source_frame_mass1_injections'], precomputed['source_frame_mass2_injections'], precomputed['z_injections']) for val in grid  ] )
+        
         logMuVals=NdetRes[:, 0]
         muVals= np.exp(logMuVals)#*1000
         NeffVals=NdetRes[:, 1]
@@ -172,7 +177,11 @@ else:
         print('N_det at true value of %s: %s '%(truth, R0Vals[np.argwhere(grid==truth)]*muVals[np.argwhere(grid==truth)] ) )
         
         print('Computing likelihood for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
-        logLik = np.array( [mymodels.logLik(Lambda, precomputed['source_frame_mass1_observations'],precomputed['source_frame_mass2_observations'],precomputed['z_observations'] ) for val in grid ] )
+        logLik=np.zeros(grid.shape[0] )
+        for i,val in enumerate(grid):
+            Lambda=myLambda.get_Lambda(val, Lambda_ntest)
+            logLik[i] = mymodels.logLik(Lambda, precomputed['source_frame_mass1_observations'],precomputed['source_frame_mass2_observations'],precomputed['z_observations'] )
+        #logLik = np.array( [mymodels.logLik(Lambda, precomputed['source_frame_mass1_observations'],precomputed['source_frame_mass2_observations'],precomputed['z_observations'] ) for val in grid ] )
         print('\nLikelihood done for '+param+' in %.2fs' %(time.time() - t1))
         
         logPrior = np.array([mymodels.log_prior(val, priorLimits) for val in grid ] )
