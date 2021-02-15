@@ -143,8 +143,8 @@ else:
         NdetRes=np.zeros( (grid.shape[0], 2 ) )
         for i,val in enumerate(grid):
             Lambda=myLambda.get_Lambda(val, Lambda_ntest)
-            precomputed = mymodels.run_precompute(Lambda)
-            NdetRes[i] = mymodels.selectionBias(Lambda, precomputed['source_frame_mass1_injections'], precomputed['source_frame_mass2_injections'], precomputed['z_injections'])
+            precomputed_inj = mymodels.run_precompute(Lambda, which_data='inj')
+            NdetRes[i] = mymodels.selectionBias(Lambda, precomputed_inj)
             
        # NdetRes = np.array( [mymodels.selectionBias(val, precomputed['source_frame_mass1_injections'], precomputed['source_frame_mass2_injections'], precomputed['z_injections']) for val in grid  ] )
         
@@ -181,8 +181,8 @@ else:
         logLik=np.zeros(grid.shape[0] )
         for i,val in enumerate(grid):
             Lambda=myLambda.get_Lambda(val, Lambda_ntest)
-            precomputed = mymodels.run_precompute(Lambda)
-            logLik[i] = mymodels.logLik(Lambda, precomputed['source_frame_mass1_observations'],precomputed['source_frame_mass2_observations'],precomputed['z_observations'] )
+            precomputed = mymodels.run_precompute(Lambda, which_data='obs')
+            logLik[i] = mymodels.logLik(Lambda, precomputed)
         #logLik = np.array( [mymodels.logLik(Lambda, precomputed['source_frame_mass1_observations'],precomputed['source_frame_mass2_observations'],precomputed['z_observations'] ) for val in grid ] )
         print('\nLikelihood done for '+param+' in %.2fs' %(time.time() - t1))
         

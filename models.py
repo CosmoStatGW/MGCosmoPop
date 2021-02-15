@@ -49,8 +49,9 @@ print('Max z of injections: %s' %zmax)
 
 #####################################################
 
-def selectionBias(Lambda, m1, m2, z):
+def selectionBias(Lambda,precomputed):
     
+    m1, m2, z = precomputed['m1'], precomputed['m2'], precomputed['z']
     #Lambda = get_Lambda(Lambda_test, Lambda_ntest)
     #H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     
@@ -68,13 +69,14 @@ def selectionBias(Lambda, m1, m2, z):
     return logMu, Neff
 
 
-def logLik(Lambda, m1, m2, z):
+def logLik(Lambda, precomputed):
     """
     Lambda:
      H0, Xi0, n, gamma, alpha, beta, ml, sl, mh, sh
     
     Returns log likelihood for all data
     """
+    m1, m2, z = precomputed['m1'], precomputed['m2'], precomputed['z']
     #Lambda = get_Lambda(Lambda_test, Lambda_ntest)
     lik = log_dN_dm1zdm2zddL(Lambda, m1, m2, z)
     lik -= logOrMassPrior
@@ -110,12 +112,13 @@ def log_posterior(Lambda_test, Lambda_ntest, priorLimits):
     Lambda = get_Lambda(Lambda_test, Lambda_ntest)
     
     # Compute source frame masses and redshifts
-    precomputed = run_precompute(Lambda)
+    precomputed_obs = run_precompute(Lambda, which_data='obs')
     
-    logPost= logLik(Lambda, precomputed['source_frame_mass1_observations'],precomputed['source_frame_mass2_observations'],precomputed['z_observations'] )+lp
+    logPost= logLik(Lambda, precomputed_obs )+lp
     
     ### Selection bias
-    logMu, Neff = selectionBias(Lambda, precomputed['source_frame_mass1_injections'], precomputed['source_frame_mass2_injections'], precomputed['z_injections'] )
+    precomputed_inj = run_precompute(Lambda, which_data='inj')
+    logMu, Neff = selectionBias(Lambda, precomputed_inj )
     
     ## Effects of uncertainty on selection effect and/or marginalisation over total rate
     ## See 1904.10879
@@ -140,24 +143,25 @@ def log_posterior(Lambda_test, Lambda_ntest, priorLimits):
 
 #####################################################
 
-def run_precompute(Lambda):
+def run_precompute_obs(Lambda, which_data):
     '''
     Compute only once some quantities that go into selection effects and likelihood
     '''
     H0, Om0, w0, Xi0, n, logR0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     
     precomputed={}
-    precomputed['z_observations'] = get_redshift(dL, H0, Om0, w0, Xi0, n)
-    precomputed['z_injections'] = get_redshift(dL_sel, H0, Om0, w0, Xi0, n)
-    precomputed['source_frame_mass1_observations'] = m1z / (1 + precomputed['z_observations'])
-    precomputed['source_frame_mass1_injections'] = m1z_sel / (1 + precomputed['z_injections'])
-    
-    precomputed['source_frame_mass2_observations'] = m2z / (1 + precomputed['z_observations'])
-    precomputed['source_frame_mass2_injections'] = m2z_sel / (1 + precomputed['z_injections'])
-    
-    # Add normalization of mass function here if needed
-    
+    if which_data=='obs':
+        precomputed['z'] = get_redshift(dL, H0, Om0, w0, Xi0, n)
+        precomputed['m2'] = m1z / (1 + precomputed['z'])    
+        precomputed['m1'] = m2z / (1 + precomputed['z'])
+    elif which_data=='inj':
+        precomputed['z'] = get_redshift(dL_sel, H0, Om0, w0, Xi0, n)
+        precomputed['m2'] = m1z_sel / (1 + precomputed['z'])    
+        precomputed['m1'] = m2z_sel / (1 + precomputed['z'])
+        
     return precomputed
+
+
 
 
 def get_redshift(dL, H0, Om0, w0, Xi0, n):
