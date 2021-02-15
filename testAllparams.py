@@ -20,7 +20,7 @@ plt.rcParams["mathtext.fontset"] = "cm"
 import importlib
 
 
-fout = 'test_changeNorm'
+fout = 'test_Log'
 
 marginalise_R0=False
 skip=['n',  ]
