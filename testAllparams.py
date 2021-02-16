@@ -146,7 +146,7 @@ else:
             Lambda = myLambda.get_Lambda(val, Lambda_ntest)
             m1_inj, m2_inj, z_inj = mymodels.get_mass_redshift(Lambda, which_data='inj')
             #print(precomputed_inj['m1'].shape)
-            NdetRes[i] = mymodels.selectionBias(Lambda, precomputed_inj, get_neff = selection_integral_uncertainty)
+            NdetRes[i] = mymodels.selectionBias(Lambda, m1_inj, m2_inj, z_inj, get_neff = selection_integral_uncertainty)
             
        # NdetRes = np.array( [mymodels.selectionBias(val, precomputed['source_frame_mass1_injections'], precomputed['source_frame_mass2_injections'], precomputed['z_injections']) for val in grid  ] )
         
