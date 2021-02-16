@@ -269,7 +269,7 @@ def logMassPrior(m1, m2, lambdaBBH):
     alpha, beta, ml, sl, mh, sh = lambdaBBH
     
     # initialize pdf to 0 (-> logpdf to negative infinity)
-    logpdf = np.repeat(-np.inf, m1.shape)
+    logpdf = np.full( m1.shape, -np.inf)
     print('logMassPrior initial logpdf shape: %s' %str(logpdf.shape))
     
     # Do not evaluate if m1, m2 are outside support
