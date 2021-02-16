@@ -20,56 +20,64 @@ from scipy.special import logsumexp
 
 print('Loading data...')
 theta = data.load_data(dataset_name)
+Nobs = theta[0].shape[0]
 m1z, m2z, dL = theta
 assert (m1z > 0).all()
 assert (m2z > 0).all()
 assert (dL > 0).all()
-theta_sel, weights_sel, N_gen = data.load_injections_data(dataset_name_injections)
-log_weights_sel = np.log(weights_sel)
-m1z_sel, m2z_sel, dL_sel = theta_sel
-Nobs = theta[0].shape[0]
 Tobs = 2.5
-OrMassPrior =  data.originalMassPrior(m1z, m2z)
-OrDistPrior  = data.originalDistPrior(dL)
-logOrMassPrior =  data.originalMassPrior(m1z, m2z)
-logOrDistPrior  = data.originalDistPrior(dL)
-print('Done data.')
+Nsamples=np.count_nonzero(theta, axis=-1)
+
 print('theta shape: %s' % str(theta.shape))
 print('We have %s observations' % Nobs)
 
+print('Loading injections...')
+theta_sel, weights_sel, N_gen = data.load_injections_data(dataset_name_injections)
+log_weights_sel = np.log(weights_sel)
+m1z_sel, m2z_sel, dL_sel = theta_sel
 print('Number of total injections: %s' %N_gen)
 print('Number of injections with SNR>8: %s' %weights_sel.shape[0])
 zmax=z_at_value(Planck15.luminosity_distance, dL_sel.max()*u.Mpc)
 print('Max z of injections: %s' %zmax)
 
-#####################################################
-#####################################################
+
+
+OrMassPrior =  data.originalMassPrior(m1z, m2z)
+OrDistPrior  = data.originalDistPrior(dL)
+logOrMassPrior =  data.originalMassPrior(m1z, m2z)
+logOrDistPrior  = data.originalDistPrior(dL)
 
 
 
 #####################################################
+#####################################################
 
-def selectionBias(Lambda, precomputed_inj):
+
+
+#####################################################
+
+def selectionBias(Lambda, m1, m2, z, get_neff=False):
     
     #m1, m2, z = precomputed['m1'], precomputed['m2'], precomputed['z']
     #Lambda = get_Lambda(Lambda_test, Lambda_ntest)
     #H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     
-    xx = log_dN_dm1zdm2zddL(Lambda, precomputed_inj['m1'], precomputed_inj['m2'], precomputed_inj['z']) - log_weights_sel
-    
-    #xx*=CCfast(alpha, beta, ml, sl, mh, sh)
-    
+    xx = log_dN_dm1zdm2zddL(Lambda, m1, m2, z) - log_weights_sel
+        
     logMu = logsumexp(xx) - N_gen
-    #muSq = np.exp(2*logMu)
-    #logs2 = logsumexp(xx*xx) -2*N_gen
-    #SigmaSq = np.exp(logs2) - muSq / N_gen
-    #Neff = muSq / SigmaSq
-    #if Neff < 4 * Nobs:
-    #    print('NEED MORE SAMPLES FOR SELECTION EFFECTS! ') #Values of lambda_test: %s' %str(Lambda_test))
-    return logMu#, Neff
+    if not get_neff:
+        return logMu, np.repeat(np.Nan,logMu.shape[0] )
+    else:
+        muSq = np.exp(2*logMu)
+        logs2 = logsumexp(2*xx) -2*N_gen
+        SigmaSq = np.exp(logs2) - muSq / N_gen
+        Neff = muSq / SigmaSq
+        if Neff < 4 * Nobs:
+            print('NEED MORE SAMPLES FOR SELECTION EFFECTS! ') #Values of lambda_test: %s' %str(Lambda_test))
+        return logMu, Neff
 
 
-def logLik(Lambda, precomputed_obs):
+def logLik(Lambda, m1, m2, z):
     """
     Lambda:
      H0, Xi0, n, gamma, alpha, beta, ml, sl, mh, sh
@@ -78,13 +86,12 @@ def logLik(Lambda, precomputed_obs):
     """
     #m1, m2, z = precomputed['m1'], precomputed['m2'], precomputed['z']
     #Lambda = get_Lambda(Lambda_test, Lambda_ntest)
-    lik = log_dN_dm1zdm2zddL(Lambda, precomputed_obs['m1'], precomputed_obs['m2'], precomputed_obs['z'])
-    lik -= logOrMassPrior
-    lik -= logOrDistPrior
-    Nsamples=np.count_nonzero(lik, axis=-1)
+    logLik_ = log_dN_dm1zdm2zddL(Lambda, m1, m2, z)
+    logLik_ -= logOrMassPrior
+    logLik_ -= logOrDistPrior
     #return np.log(lik.mean(axis=1)) .sum(axis=(-1))
-    allLogLiks = logsumexp(lik, axis=-1)-Nsamples
-    return (allLogLiks).sum()
+    allLogLiks = logsumexp(logLik_, axis=-1)-Nsamples
+    return allLogLiks.sum()
 
 
 def log_prior(Lambda_test, priorLimits):
@@ -112,13 +119,12 @@ def log_posterior(Lambda_test, Lambda_ntest, priorLimits):
     Lambda = get_Lambda(Lambda_test, Lambda_ntest)
     
     # Compute source frame masses and redshifts
-    precomputed_obs = run_precompute(Lambda, which_data='obs')
-    
-    logPost= logLik(Lambda, precomputed_obs )+lp
+    m1_obs, m2_obs, z_obs = get_mass_redshift(Lambda, which_data='obs')
+    logPost= logLik(Lambda, m1_obs, m2_obs, z_obs )+lp
     
     ### Selection bias
-    precomputed_inj = run_precompute(Lambda, which_data='inj')
-    logMu, Neff = selectionBias(Lambda, precomputed_inj )
+    m1_inj, m2_inj, z_inj = get_mass_redshift(Lambda, which_data='inj')
+    logMu, Neff = selectionBias(Lambda, m1_inj, m2_inj, z_inj, get_neff = selection_integral_uncertainty )
     
     ## Effects of uncertainty on selection effect and/or marginalisation over total rate
     ## See 1904.10879
@@ -143,26 +149,24 @@ def log_posterior(Lambda_test, Lambda_ntest, priorLimits):
 
 #####################################################
 
-def run_precompute(Lambda, which_data):
+def get_mass_redshift(Lambda, which_data):
     '''
     Compute only once some quantities that go into selection effects and likelihood
     '''
     H0, Om0, w0, Xi0, n, logR0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     
     if which_data=='obs':
-        precomputed_obs={}
-        precomputed_obs['z'] = get_redshift(  dL, H0, Om0, w0, Xi0, n)
-        precomputed_obs['m2'] = m1z / (1 + precomputed_obs['z'])    
-        precomputed_obs['m1'] = m2z / (1 + precomputed_obs['z'])
-        return precomputed_obs
+        
+        z = get_redshift(  dL, H0, Om0, w0, Xi0, n)
+        m1 = m1z / (1 + z)    
+        m2 = m2z / (1 + z)
     elif which_data=='inj':
         #print('Precomuting with inj data')
-        precomputed_inj={}
-        precomputed_inj['z'] = get_redshift( dL_sel, H0, Om0, w0, Xi0, n)
-        precomputed_inj['m2'] = m1z_sel / (1 + precomputed_inj['z'])    
-        precomputed_inj['m1'] = m2z_sel / (1 + precomputed_inj['z'])
-        #print(precomputed_inj['m1'].shape)
-        return precomputed_inj
+        z = get_redshift( dL_sel, H0, Om0, w0, Xi0, n)
+        m1 = m1z_sel / (1 + z)    
+        m2 = m2z_sel / (1 + z)
+        
+    return m1, m2, z
 
 
 
@@ -229,10 +233,7 @@ def logMassPrior(m1, m2, lambdaBBH):
     lambdaBBH is the array of parameters of the BBH mass function 
     """
     alpha, beta, ml, sl, mh, sh = lambdaBBH
-    #return m1 ** (-alpha) * (m2 / m1) ** beta * f_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh) * f_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh) * C1(m1, beta, ml) * C2(alpha, ml, mh)
-    return np.log(m1/30)*(-alpha)+np.log(m2/30)*(beta)+np.log(f_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh)) +np.log(f_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh)) -np.log(f_smooth(30, ml=ml, sl=sl, mh=mh, sh=sh))*2-2*np.log(30)
-    #return (m1)**(-alpha)*(m2)**(beta)*f_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh)*f_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh)/CCfast(alpha, beta, ml, sl, mh, sh)
-
+    return np.log(m1)*(-alpha)+np.log(m2)*(beta)+alpha*np.log(30)-beta*np.log(30)+logf_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh) +logf_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh) -2*logf_smooth(30, ml=ml, sl=sl, mh=mh, sh=sh)-2*np.log(30)
 
 
 def massPrior(m1, m2, lambdaBBH):
@@ -258,6 +259,9 @@ def C2(alpha, ml, mh):
 
 def f_smooth(m, ml=5, sl=0.1, mh=45, sh=0.1):
     return ss.norm().cdf((np.log(m) - np.log(ml)) / sl) * (1 - ss.norm().cdf((np.log(m) - np.log(mh)) / sh))
+
+def logf_smooth(m, ml=5, sl=0.1, mh=45, sh=0.1):
+    return np.log(ss.norm().cdf((np.log(m)-np.log(ml))/sl))+np.log((1-ss.norm().cdf((np.log(m)-np.log(mh))/sh)))
 
 
 def CCfast(alpha=0.75, beta=0, ml=5, sl=0.1, mh=45, sh=0.1):
