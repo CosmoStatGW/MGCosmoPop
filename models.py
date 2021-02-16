@@ -154,8 +154,7 @@ def get_mass_redshift(Lambda, which_data):
     '''
     H0, Om0, w0, Xi0, n, logR0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     
-    if which_data=='obs':
-        
+    if which_data=='obs':      
         z = get_redshift(  dL, H0, Om0, w0, Xi0, n)
         m1 = m1z / (1 + z)    
         m2 = m2z / (1 + z)
@@ -247,7 +246,9 @@ def eval_fsmooth(m, ml=5, sl=0.1, mh=45, sh=0.1, nSigma=5):
     # nontrivial values; elsewhere we leave it = to zero
     m = m[support]
     logPdf[support] = logf_smooth(m, ml=ml, sl=sl, mh=mh, sh=sh)-logf_smooth(30, ml=ml, sl=sl, mh=mh, sh=sh)
- 
+    
+    print('Eval fsmooth shape: %s' %str(logPdf.shape))
+    
     return logPdf
 
 
@@ -268,17 +269,19 @@ def logMassPrior(m1, m2, lambdaBBH):
     alpha, beta, ml, sl, mh, sh = lambdaBBH
     
     # initialize pdf to 0 (-> logpdf to negative infinity)
-    logpdf = np.repeat(-np.inf, m1.shape[0])
+    logpdf = np.repeat(-np.inf, m1.shape)
+    print('logMassPrior initial logpdf shape: %s' %str(logpdf.shape))
     
     # Do not evaluate if m1, m2 are outside support
     support = eval_pdf_support(m1, ml=ml, sl=sl, mh=mh, sh=sh )
     m1, m2 = m1[support], m2[support]
-    
+    print('logMassPrior m1 shape after applying mask: %s' %str(m1.shape))
+    print('logMassPrior logpdf[support] shape : %s' %str(logpdf[support].shape))
     # Check where to evaluate f_smooth and do it ;
     # only evaluate if m is between [ ml-5sl, mh +5sh ]
     m1_smooth = eval_fsmooth(m1, ml=ml, sl=sl, mh=mh, sh=sh )
     m2_smooth = eval_fsmooth(m2, ml=ml, sl=sl, mh=mh, sh=sh )
-    
+    print('logMassPrior m2_smooth shape: %s' %str(m2_smooth.shape))
     # add in the smoothings where needed, and set logpdf to zero (-> pdf to 1)
     # inside the rest of support 
     logpdf[support] = (m1_smooth+m2_smooth)

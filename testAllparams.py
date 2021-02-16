@@ -151,7 +151,7 @@ else:
        # NdetRes = np.array( [mymodels.selectionBias(val, precomputed['source_frame_mass1_injections'], precomputed['source_frame_mass2_injections'], precomputed['z_injections']) for val in grid  ] )
         
         
-        logMuVals=NdetRes[:, 0]
+        logMuVals=NdetRes[:, 0].astype('float128')
         muVals= np.exp(logMuVals)#*1000
         NeffVals=NdetRes[:, 1]
         
@@ -165,11 +165,13 @@ else:
         if param=='logR0':
             R0Vals=np.exp(grid)#*1e-09
             logR0vals=grid
+            grid_plot = R0Vals
         else:
             R0Vals=np.repeat(np.exp(myParams.trueValues['logR0']), muVals.shape)#*1e-09
             logR0vals=np.repeat(myParams.trueValues['logR0'], muVals.shape)
-        
-        plt.plot(R0Vals, R0Vals*muVals)
+            grid_plot= grid
+            
+        plt.plot(grid_plot, R0Vals*muVals)
         plt.xlabel(myParams.names[param]);
         plt.ylabel(r'$N_{det}$');
         plt.axvline(np.exp(truth), ls='--', color='k', lw=2);
@@ -178,7 +180,7 @@ else:
         plt.close()
         
         
-        plt.plot(R0Vals, logMuVals+logR0vals )
+        plt.plot(grid_plot, logMuVals+logR0vals )
         plt.xlabel(myParams.names[param]);
         plt.ylabel(r'log$N_{det}$');
         plt.axvline(np.exp(truth), ls='--', color='k', lw=2);
