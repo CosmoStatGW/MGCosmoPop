@@ -22,6 +22,16 @@ def originalDistPrior(dL):
 ###############################################
 
 def load_data(dataset_name):
+    
+    '''
+    Returns a tuple (theta, Nsamples)
+    -   theta is a np array of shape ( 3 x N_observations x max_n_samples )
+        where  max_n_samples is the largest number of samples in all the observations;
+        events with less samples should be filled with zeros (or -1)
+    - Nsamples is an array of length N_observations, containing the number of samples for each observation
+    
+    '''
+    
     if dataset_name=='mock':
         return load_mock_data()
     elif dataset_name=='O3':
@@ -56,8 +66,8 @@ def load_mock_data():
             m2det_samples = np.array(phi['posteriors']['m2det'])[:nObsUse, :nSamplesUse] # m2
             dl_samples = np.array(phi['posteriors']['dl'])[:nObsUse, :nSamplesUse]*10**3 
             
-        
-    return np.array([m1det_samples, m2det_samples, dl_samples])
+    theta =   np.array([m1det_samples, m2det_samples, dl_samples])
+    return theta, np.count_nonzero(theta, axis=-1)
 
 
 

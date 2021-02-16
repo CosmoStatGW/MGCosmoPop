@@ -19,14 +19,13 @@ from scipy.special import logsumexp
 #####################################################
 
 print('Loading data...')
-theta = data.load_data(dataset_name)
+theta, Nsamples = data.load_data(dataset_name)
 Nobs = theta[0].shape[0]
 m1z, m2z, dL = theta
 assert (m1z > 0).all()
 assert (m2z > 0).all()
 assert (dL > 0).all()
 Tobs = 2.5
-Nsamples=np.count_nonzero(theta, axis=-1)
 
 print('theta shape: %s' % str(theta.shape))
 print('We have %s observations' % Nobs)
@@ -66,7 +65,7 @@ def selectionBias(Lambda, m1, m2, z, get_neff=False):
         
     logMu = logsumexp(xx) - N_gen
     if not get_neff:
-        return logMu, np.repeat(np.Nan,logMu.shape[0] )
+        return logMu, np.repeat(np.NaN,logMu.shape[0] )
     else:
         muSq = np.exp(2*logMu)
         logs2 = logsumexp(2*xx) -2*N_gen
@@ -228,12 +227,70 @@ def rateDensityEvol(z, lambdaRedshift):
 
 #####################################################
 
+def eval_fsmooth(m, ml=5, sl=0.1, mh=45, sh=0.1, nSigma=5):
+    
+    pdf = numpy.zeros_like(m)
+    
+    support_low = (
+        ( ml-nSigma*sl <= m) &
+        (ml+nSigma*sl >= m)
+    )
+
+    support_high = (
+        ( mh-nSigma*sh <= m) &
+        (mh+nSigma*sh >= m)
+    )
+
+    support = ( (support_low)  &  (support_high) )
+    
+    # We evaluate the smooth component of the logPdf only where it has 
+    # nontrivial values; elsewhere we leave it = to zero
+    m = m[support]
+    logPdf[support] = logf_smooth(m, ml=ml, sl=sl, mh=mh, sh=sh)-logf_smooth(30, ml=ml, sl=sl, mh=mh, sh=sh)
+ 
+    return logPdf
+
+
+def eval_pdf_support(m, ml=5, sl=0.1, mh=45, sh=0.1, nSigma=5):
+        
+    support =  (
+        ( ml-nSigma*sl > m) |
+        (mh+nSigma*sh < m)
+    )    
+
+    return support
+    
+
 def logMassPrior(m1, m2, lambdaBBH):
     """
     lambdaBBH is the array of parameters of the BBH mass function 
     """
     alpha, beta, ml, sl, mh, sh = lambdaBBH
-    return np.log(m1)*(-alpha)+np.log(m2)*(beta)+alpha*np.log(30)-beta*np.log(30)+logf_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh) +logf_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh) -2*logf_smooth(30, ml=ml, sl=sl, mh=mh, sh=sh)-2*np.log(30)
+    
+    # initialize pdf to 0 (-> logpdf to negative infinity)
+    logpdf = np.repeat(-np.inf, m1.shape[0])
+    
+    # Do not evaluate if m1, m2 are outside support
+    support = eval_pdf_support(m1, ml=ml, sl=sl, mh=mh, sh=sh )
+    m1, m2 = m1[support], m2[support]
+    
+    # Check where to evaluate f_smooth and do it ;
+    # only evaluate if m is between [ ml-5sl, mh +5sh ]
+    m1_smooth = eval_fsmooth(m1, ml=ml, sl=sl, mh=mh, sh=sh )
+    m2_smooth = eval_fsmooth(m2, ml=ml, sl=sl, mh=mh, sh=sh )
+    
+    # add in the smoothings where needed, and set logpdf to zero (-> pdf to 1)
+    # inside the rest of support 
+    logpdf[support] = (m1_smooth+m2_smooth)
+    
+    # add the power law components
+    logpdf[support] += ( np.log(m1)*(-alpha)+alpha*np.log(30) )
+    logpdf[support] += (  np.log(m2)*(beta) -beta*np.log(30) )
+    
+    # normalization 
+    logpdf[support]-= 2*np.log(30)
+    
+    return logpdf
 
 
 def massPrior(m1, m2, lambdaBBH):
