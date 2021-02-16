@@ -228,10 +228,12 @@ def rateDensityEvol(z, lambdaRedshift):
 
 def eval_fsmooth(m, ml=5, sl=0.1, mh=45, sh=0.1, nSigma=5):
     
+    lowlim = max(0, ml-nSigma*sl)
+    
     logPdf = np.zeros_like(m)
     
     support_low = (
-        ( ml-nSigma*sl <= m) &
+        ( lowlim <= m) &
         (ml+nSigma*sl >= m)
     )
 
@@ -241,11 +243,18 @@ def eval_fsmooth(m, ml=5, sl=0.1, mh=45, sh=0.1, nSigma=5):
     )
 
     support = ( (support_low)  &  (support_high) )
-    
+
     # We evaluate the smooth component of the logPdf only where it has 
     # nontrivial values; elsewhere we leave it = to zero
-    m = m[support]
-    logPdf[support] = logf_smooth(m, ml=ml, sl=sl, mh=mh, sh=sh)-logf_smooth(30, ml=ml, sl=sl, mh=mh, sh=sh)
+    if m.ndim==1:
+        m = m[support]
+        logPdf[support] = logf_smooth(m, ml=ml, sl=sl, mh=mh, sh=sh)-logf_smooth(30, ml=ml, sl=sl, mh=mh, sh=sh)
+    else:
+        mask = ~support
+        # set to nan the points outside the support. 
+        # Then, do not evaluate f_smooth there, but leave them to zero
+        m = np.ma.array( m,  mask=mask, fill_value=np.NaN).data
+        logPdf = np.where( ~np.isnan(m.data), logf_smooth(m.data, ml=ml, sl=sl, mh=mh, sh=sh)-logf_smooth(30, ml=ml, sl=sl, mh=mh, sh=sh)  , 0)
     
     print('Eval fsmooth shape: %s' %str(logPdf.shape))
     
@@ -253,12 +262,12 @@ def eval_fsmooth(m, ml=5, sl=0.1, mh=45, sh=0.1, nSigma=5):
 
 
 def eval_pdf_support(m, ml=5, sl=0.1, mh=45, sh=0.1, nSigma=5):
-        
+    lowlim = max(0, ml-nSigma*sl)
     support =  (
-        ( ml-nSigma*sl > m) |
-        (mh+nSigma*sh < m)
+        ( lowlim < m) |
+        (mh+nSigma*sh > m)
     )    
-
+    print('Eval eval_pdf_support shape: %s' %str(support.shape))
     return support
     
 
@@ -268,31 +277,50 @@ def logMassPrior(m1, m2, lambdaBBH):
     """
     alpha, beta, ml, sl, mh, sh = lambdaBBH
     
-    # initialize pdf to 0 (-> logpdf to negative infinity)
+    support = eval_pdf_support(m1, ml=ml, sl=sl, mh=mh, sh=sh )
     logpdf = np.full( m1.shape, -np.inf)
+    # initialize pdf to 0 (-> logpdf to negative infinity)
     print('logMassPrior initial logpdf shape: %s' %str(logpdf.shape))
     
-    # Do not evaluate if m1, m2 are outside support
-    support = eval_pdf_support(m1, ml=ml, sl=sl, mh=mh, sh=sh )
-    m1, m2 = m1[support], m2[support]
-    print('logMassPrior m1 shape after applying mask: %s' %str(m1.shape))
-    print('logMassPrior logpdf[support] shape : %s' %str(logpdf[support].shape))
-    # Check where to evaluate f_smooth and do it ;
-    # only evaluate if m is between [ ml-5sl, mh +5sh ]
-    m1_smooth = eval_fsmooth(m1, ml=ml, sl=sl, mh=mh, sh=sh )
-    m2_smooth = eval_fsmooth(m2, ml=ml, sl=sl, mh=mh, sh=sh )
-    print('logMassPrior m2_smooth shape: %s' %str(m2_smooth.shape))
-    # add in the smoothings where needed, and set logpdf to zero (-> pdf to 1)
-    # inside the rest of support 
-    logpdf[support] = (m1_smooth+m2_smooth)
-    
-    # add the power law components
-    logpdf[support] += ( np.log(m1)*(-alpha)+alpha*np.log(30) )
-    logpdf[support] += (  np.log(m2)*(beta) -beta*np.log(30) )
-    
-    # normalization 
-    logpdf[support]-= 2*np.log(30)
-    
+    if m1.ndim==1:
+        
+        # Do not evaluate if m1, m2 are outside support
+        # 1D version:
+        m1, m2 = m1[support], m2[support]
+        print('logMassPrior m1 shape after applying mask: %s' %str(m1.shape))
+        print('logMassPrior logpdf[support] shape : %s' %str(logpdf[support].shape))
+        # Check where to evaluate f_smooth and do it ;
+        # only evaluate if m is between [ ml-5sl, mh +5sh ]
+        m1_smooth = eval_fsmooth(m1, ml=ml, sl=sl, mh=mh, sh=sh )
+        m2_smooth = eval_fsmooth(m2, ml=ml, sl=sl, mh=mh, sh=sh )
+        print('logMassPrior m2_smooth shape: %s' %str(m2_smooth.shape))
+        # add in the smoothings where needed, and set logpdf to zero (-> pdf to 1)
+        # inside the rest of support 
+        logpdf[support] = (m1_smooth+m2_smooth)
+        
+        # add the power law components
+        logpdf[support] += ( np.log(m1)*(-alpha)+alpha*np.log(30) )
+        logpdf[support] += (  np.log(m2)*(beta) -beta*np.log(30) )
+            
+        # normalization 
+        logpdf[support]-= 2*np.log(30)
+    else:
+        mask = ~support
+        m1 = np.ma.array( m1,  mask=mask, fill_value=-1).data
+        m2 = np.ma.array( m2,  mask=mask, fill_value=-1).data
+        
+        m1_smooth = eval_fsmooth(m1, ml=ml, sl=sl, mh=mh, sh=sh )
+        m2_smooth = eval_fsmooth(m2, ml=ml, sl=sl, mh=mh, sh=sh )
+        print('logMassPrior m2_smooth shape: %s' %str(m2_smooth.shape))
+        
+        powLaw_m2 = np.log(m2)*(beta) -beta*np.log(30)
+        powLaw_m1 =np.log(m1)*(-alpha)+alpha*np.log(30)
+        
+        norm = - 2*np.log(30)
+        
+        logpdf = np.where(mask, m1_smooth+m2_smooth+powLaw_m2+powLaw_m1+norm,  -np.inf )
+        
+        
     return logpdf
 
 

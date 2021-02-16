@@ -190,6 +190,7 @@ else:
         plt.savefig( os.path.join(out_path, param+'_logNdet.pdf'))
         plt.close()
         
+        print('log(N_det) at true value of %s: %s '%(truth, logR0vals[np.argwhere(grid==truth)]+logMuVals[np.argwhere(grid==truth)] ) )
         print('N_det at true value of %s: %s '%(truth, R0Vals[np.argwhere(grid==truth)]*muVals[np.argwhere(grid==truth)] ) )
         
         print('Computing likelihood for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
