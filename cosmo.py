@@ -5,18 +5,20 @@ Created on Fri Feb 12 17:00:13 2021
 
 @author: Michi
 """
+
+#from Globals import *
+import Globals
 import numpy as np
 from astropy.cosmology import FlatwCDM, FlatLambdaCDM
 from scipy import interpolate
 #from astropy import constants as const
 #import astropy.units as u
 from scipy.optimize import fsolve
-from glob import *
 
 
-cosmoglob = FlatwCDM(H0=H0GLOB, Om0=Om0GLOB, w0=-1)
-zGridGLOB = np.concatenate([ np.logspace(start=-15, stop=np.log10(9.99e-09), base=10, num=10), np.logspace(start=-8, stop=np.log10(7.99), base=10, num=1000), np.logspace(start=np.log10(8), stop=5, base=10, num=100)])
-dLGridGLOB = cosmoglob.luminosity_distance(zGridGLOB).to(which_unit).value
+cosmoGlobals = FlatwCDM(H0=Globals.H0GLOB, Om0=Globals.Om0GLOB, w0=-1)
+zGridGlobals = np.concatenate([ np.logspace(start=-15, stop=np.log10(9.99e-09), base=10, num=10), np.logspace(start=-8, stop=np.log10(7.99), base=10, num=1000), np.logspace(start=np.log10(8), stop=5, base=10, num=100)])
+dLGridGlobals = cosmoGlobals.luminosity_distance(zGridGlobals).to(Globals.which_unit).value
 
 
 
@@ -29,9 +31,9 @@ def uu(z, Om, w0):
     Dimensionless comoving distance. Does not depend on H0
     '''
     if w0!=-1:
-        return 70/clight*FlatwCDM(H0=70, Om0=Om, w0=w0, Neff=0).comoving_distance(z).value
+        return 70/Globals.clight*FlatwCDM(H0=70, Om0=Om, w0=w0, Neff=0).comoving_distance(z).value
     else:
-        return 70/clight*FlatLambdaCDM(H0=70, Om0=Om).comoving_distance(z).value
+        return 70/Globals.clight*FlatLambdaCDM(H0=70, Om0=Om).comoving_distance(z).value
 
 def E(z, Om, w0):
     '''
@@ -59,7 +61,7 @@ def dV_dz(z, H0, Om, w0):
         return 4*np.pi*FlatLambdaCDM(H0=H0, Om0=Om,).differential_comoving_volume(z).value
 
 def log_dV_dz(z, H0, Om0, w0):
-        return np.log(4*np.pi)+3*np.log(clight)-3*np.log(H0)+2*np.log(uu(z, Om0, w0))-np.log(E(z, Om0, w0))
+        return np.log(4*np.pi)+3*np.log(Globals.clight)-3*np.log(H0)+2*np.log(uu(z, Om0, w0))-np.log(E(z, Om0, w0))
     
 
 
@@ -75,11 +77,11 @@ def ddL_dz(z, H0, Om, w0, Xi0, n):
     '''
      Jacobian d(DL)/dz  [Mpc]
     '''
-    return (sPrime(z, Xi0, n)*uu(z, Om, w0)+s(z, Xi0, n)/E(z, Om, w0))*(clight/H0)
+    return (sPrime(z, Xi0, n)*uu(z, Om, w0)+s(z, Xi0, n)/E(z, Om, w0))*(Globals.clight/H0)
 
 
 def log_ddL_dz(z, H0, Om0, w0, Xi0, n):
-    return np.log(clight)-np.log(H0)+np.log(sPrime(z, Xi0, n)*uu(z, Om0, w0)+s(z, Xi0, n)/E(z, Om0, w0))
+    return np.log(Globals.clight)-np.log(H0)+np.log(sPrime(z, Xi0, n)*uu(z, Om0, w0)+s(z, Xi0, n)/E(z, Om0, w0))
 
 
 def dLGW(z, H0, Om, w0, Xi0, n):
@@ -90,7 +92,7 @@ def dLGW(z, H0, Om, w0, Xi0, n):
         cosmo=FlatwCDM(H0=H0, Om0=Om, w0=w0, Neff=0)
     else:
         cosmo=FlatLambdaCDM(H0=H0, Om0=Om)
-    return (cosmo.luminosity_distance(z).to(which_unit).value)*Xi(z, Xi0, n)
+    return (cosmo.luminosity_distance(z).to(Globals.which_unit).value)*Xi(z, Xi0, n)
 
 
 def Xi(z, Xi0, n):
@@ -105,15 +107,15 @@ def z_from_dLGW_fast(r, H0, Om, w0, Xi0, n):
     '''
     Returns redshift for a given luminosity distance r (in Mpc by default). Vectorized
     '''
-    if (Om==Om0GLOB) & (w0==-1.):
-        dLGrid = dLGridGLOB/H0*H0GLOB
+    if (Om==Globals.Om0GLOB) & (w0==-1.):
+        dLGrid = dLGridGlobals/H0*Globals.H0GLOB
     else:
         if w0==-1:
             cosmo = FlatLambdaCDM(H0=H0, Om0=Om, Neff=0)
         else:
             cosmo = FlatwCDM(H0=H0, Om0=Om, w0=w0, Neff=0)
-        dLGrid = cosmo.luminosity_distance(zGridGLOB).to(which_unit).value
-    z2dL = interpolate.interp1d( dLGrid*Xi(zGridGLOB, Xi0, n), zGridGLOB, kind='cubic', bounds_error=False, fill_value=(0,0.), assume_sorted=True)
+        dLGrid = cosmo.luminosity_distance(zGridGlobals).to(Globals.which_unit).value
+    z2dL = interpolate.interp1d( dLGrid*Xi(zGridGlobals, Xi0, n), zGridGlobals, kind='cubic', bounds_error=False, fill_value=(0,0.), assume_sorted=True)
     return z2dL(r)
 
 def z_from_dLGW(dL_GW_val, H0, Om, w0, Xi0, n):
