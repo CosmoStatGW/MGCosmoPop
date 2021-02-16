@@ -166,15 +166,17 @@ else:
             R0Vals=np.exp(grid)#*1e-09
             logR0vals=grid
             grid_plot = R0Vals
+            truth_vline = np.exp(truth)
         else:
             R0Vals=np.repeat(np.exp(myParams.trueValues['logR0']), muVals.shape)#*1e-09
             logR0vals=np.repeat(myParams.trueValues['logR0'], muVals.shape)
             grid_plot= grid
+            truth_vline = truth
             
         plt.plot(grid_plot, R0Vals*muVals)
         plt.xlabel(myParams.names[param]);
         plt.ylabel(r'$N_{det}$');
-        plt.axvline(np.exp(truth), ls='--', color='k', lw=2);
+        plt.axvline(truth_vline, ls='--', color='k', lw=2);
         #plt.axhline(5267, ls=':', color='k', lw=1.5);
         plt.savefig( os.path.join(out_path, param+'_Ndet.pdf'))
         plt.close()
@@ -183,7 +185,7 @@ else:
         plt.plot(grid_plot, logMuVals+logR0vals )
         plt.xlabel(myParams.names[param]);
         plt.ylabel(r'log$N_{det}$');
-        plt.axvline(np.exp(truth), ls='--', color='k', lw=2);
+        plt.axvline(truth_vline, ls='--', color='k', lw=2);
         #plt.axhline(5267, ls=':', color='k', lw=1.5);
         plt.savefig( os.path.join(out_path, param+'_logNdet.pdf'))
         plt.close()
