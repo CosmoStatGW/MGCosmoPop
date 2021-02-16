@@ -34,6 +34,7 @@ print('Loading injections...')
 theta_sel, weights_sel, N_gen = data.load_injections_data(dataset_name_injections)
 log_weights_sel = np.log(weights_sel)
 m1z_sel, m2z_sel, dL_sel = theta_sel
+logN_gen=np.log(N_gen)
 print('Number of total injections: %s' %N_gen)
 print('Number of injections with SNR>8: %s' %weights_sel.shape[0])
 zmax=z_at_value(Planck15.luminosity_distance, dL_sel.max()*u.Mpc)
@@ -63,7 +64,7 @@ def selectionBias(Lambda, m1, m2, z, get_neff=False):
     
     xx = log_dN_dm1zdm2zddL(Lambda, m1, m2, z) - log_weights_sel
         
-    logMu = logsumexp(xx) - N_gen
+    logMu = logsumexp(xx) - logN_gen
     if not get_neff:
         return logMu, np.NaN #np.repeat(np.NaN, logMu.shape[0] )
     else:

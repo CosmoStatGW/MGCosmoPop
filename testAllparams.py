@@ -20,7 +20,7 @@ plt.rcParams["mathtext.fontset"] = "cm"
 import importlib
 
 
-fout = 'test_Log_2'
+fout = 'test_Log_4'
 
 marginalise_R0=False
 selection_integral_uncertainty=False
@@ -192,6 +192,9 @@ else:
         
         print('log(N_det) at true value of %s: %s '%(truth, logR0vals[np.argwhere(grid==truth)]+logMuVals[np.argwhere(grid==truth)] ) )
         print('N_det at true value of %s: %s '%(truth, R0Vals[np.argwhere(grid==truth)]*muVals[np.argwhere(grid==truth)] ) )
+        
+        print('log(alpha) at true value of %s: %s '%(truth, logMuVals[np.argwhere(grid==truth)] ) )
+        print('alpha at true value of %s: %s '%(truth, muVals[np.argwhere(grid==truth)] ) )
         
         print('Computing likelihood for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
         logLik=np.zeros(grid.shape[0] )
