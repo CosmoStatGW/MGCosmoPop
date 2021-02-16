@@ -65,7 +65,7 @@ def selectionBias(Lambda, m1, m2, z, get_neff=False):
         
     logMu = logsumexp(xx) - N_gen
     if not get_neff:
-        return logMu, np.repeat(np.NaN,logMu.shape[0] )
+        return logMu, np.NaN #np.repeat(np.NaN, logMu.shape[0] )
     else:
         muSq = np.exp(2*logMu)
         logs2 = logsumexp(2*xx) -2*N_gen
@@ -229,7 +229,7 @@ def rateDensityEvol(z, lambdaRedshift):
 
 def eval_fsmooth(m, ml=5, sl=0.1, mh=45, sh=0.1, nSigma=5):
     
-    pdf = numpy.zeros_like(m)
+    logPdf = np.zeros_like(m)
     
     support_low = (
         ( ml-nSigma*sl <= m) &
