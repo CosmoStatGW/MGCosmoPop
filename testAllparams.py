@@ -133,7 +133,7 @@ else:
         #from models import log_posterior
         mymodels = importlib.import_module('models'+param, package=None)
         
-        print('Computing precomputed quantities for %s... ' %(param ) )
+        #print('Computing precomputed quantities for %s... ' %(param ) )
         
         myLambda = importlib.import_module('getLambda'+param, package=None)
         #Lambda_func = globals()['getLambda'+param]
@@ -169,12 +169,21 @@ else:
             R0Vals=np.repeat(np.exp(myParams.trueValues['logR0']), muVals.shape)#*1e-09
             logR0vals=np.repeat(myParams.trueValues['logR0'], muVals.shape)
         
-        plt.plot(grid, R0Vals*muVals)
+        plt.plot(R0Vals, R0Vals*muVals)
         plt.xlabel(myParams.names[param]);
         plt.ylabel(r'$N_{det}$');
-        plt.axvline(truth, ls='--', color='k', lw=2);
+        plt.axvline(np.exp(truth), ls='--', color='k', lw=2);
         #plt.axhline(5267, ls=':', color='k', lw=1.5);
         plt.savefig( os.path.join(out_path, param+'_Ndet.pdf'))
+        plt.close()
+        
+        
+        plt.plot(R0Vals, logMuVals+logR0vals )
+        plt.xlabel(myParams.names[param]);
+        plt.ylabel(r'log$N_{det}$');
+        plt.axvline(np.exp(truth), ls='--', color='k', lw=2);
+        #plt.axhline(5267, ls=':', color='k', lw=1.5);
+        plt.savefig( os.path.join(out_path, param+'_logNdet.pdf'))
         plt.close()
         
         print('N_det at true value of %s: %s '%(truth, R0Vals[np.argwhere(grid==truth)]*muVals[np.argwhere(grid==truth)] ) )
