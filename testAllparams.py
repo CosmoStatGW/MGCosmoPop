@@ -140,8 +140,8 @@ else:
         print('Computing priorfor %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
         logPrior=np.zeros(grid.shape[0] )
         for i,val in enumerate(grid):
-             Lambda = myLambda.get_Lambda(val, Lambda_ntest)
-             logPrior[i] = mymodels.log_prior(Lambda, myPriorLims )
+             #Lambda = myLambda.get_Lambda(val, Lambda_ntest)
+             logPrior[i] = mymodels.log_prior(val, myPriorLims, param )
         print('log prior: %s ' %logPrior)
         
         
