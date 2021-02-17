@@ -122,7 +122,7 @@ def z_from_dLGW_fast(r, H0, Om, w0, Xi0, n):
         else:
             cosmo = FlatwCDM(H0=H0, Om0=Om, w0=w0, Neff=0)
         dLGrid = cosmo.luminosity_distance(zGridGlobals).to(Globals.which_unit).value
-    z2dL = interpolate.interp1d( dLGrid*Xi(zGridGlobals, Xi0, n), zGridGlobals, kind='cubic', bounds_error=False, fill_value=(0,0), assume_sorted=False)
+    z2dL = interpolate.interp1d( dLGrid*Xi(zGridGlobals, Xi0, n), zGridGlobals, kind='cubic', bounds_error=False, fill_value=(0,np.NaN), assume_sorted=True)
     return z2dL(r)
 
 def z_from_dLGW(dL_GW_val, H0, Om, w0, Xi0, n):

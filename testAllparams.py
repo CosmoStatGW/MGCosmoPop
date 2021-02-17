@@ -8,17 +8,17 @@ Created on Thu Feb 11 13:59:58 2021
 import time
 import sys
 import os
-from params import Params, PriorLimits
+from params import Params#, PriorLimits
 import argparse
 import utils
 #import cosmo
-from glob import *
+#from glob import *
 import numpy as np
 import matplotlib.pyplot as plt
 plt.rcParams["font.family"] = 'serif'
 plt.rcParams["mathtext.fontset"] = "cm"
 import importlib
-
+import Globals
 
 fout = 'test_Log_correct_withUnc'
 
@@ -51,7 +51,7 @@ with open('config.py', 'w') as f:
     f.write("\nmyPriorLimits = allMyPriors.priorLimits(params_inference)")
     
     
-
+config = importlib.import_module('config', package=None)
 
 ##############################
 
@@ -66,7 +66,7 @@ FLAGS = parser.parse_args()
 param = FLAGS.param
 
 
-out_path=os.path.join(dirName, 'results', fout)
+out_path=os.path.join(Globals.dirName, 'results', fout)
 if not os.path.exists(out_path):
         print('Creating directory %s' %out_path)
         os.makedirs(out_path)
@@ -88,8 +88,8 @@ sys.stderr = myLog
 
     
 myParams = Params(dataset_name)
-myPriorLims = PriorLimits()
-myPriorLims.set_priors(priors_types=priors_types, priors_params=priors_params)
+#myPriorLims = PriorLimits()
+#myPriorLims.set_priors(priors_types=priors_types, priors_params=priors_params)
 
 
 print('Parameter: %s' %param)
@@ -105,8 +105,8 @@ else:
         if truth==0:
             eps=1
 
-        limInf = myPriorLims.limInf[param]
-        limSup=myPriorLims.limSup[param]
+        limInf = config.myPriorLims.limInf[param]
+        limSup=config.myPriorLims.limSup[param]
         grid = np.sort(np.concatenate( [np.array([truth,]) , np.linspace( limInf, truth-(eps*perc_variation/100)-0.01, 5), np.linspace(truth-(eps*perc_variation/100), truth+(eps*perc_variation/100), npoints) , np.linspace( truth+(eps*perc_variation/100)+0.01, limSup, 5)]) )
         grid=np.unique(grid, axis=0)
 
