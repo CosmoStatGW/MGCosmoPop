@@ -13,34 +13,39 @@ dataset_name='mock'
 
 dataset_name_injections='mock'
 
-fout='runFullAllParams'
+fout='runFullR0test'
 
 telegramAlert = False
 
 
-params_inference = [ 'H0', 'Om0', 'Xi0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh']
+params_inference = [ 'H0', 'Om0', 'Xi0', 'R0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh']
 
-nChains=100 #2*len(params_inference)
-max_n=10000
+
+priors_types = {'R0': 'flatLog'}
+priors_params = None #{'Om0': {'mu':0.3, 'sigma':0.01} }
+
+nChains=25 #2*len(params_inference)
+max_n=300
 
 maxNtaus = 100
 checkTauStep = 100
 
 perc_variation_init = 20
 
-marginalise_rate = True
+marginalise_rate = False
 selection_integral_uncertainty = True
 
-nPools=5
+nPools=4
 
 
 ###########
 # For testing
 
-nSamplesUse= None
-nObsUse=None
-nInjUse=None
+nSamplesUse= 100
+nObsUse=50
+nInjUse=100
 
+verbose_bias = False
 
 
 

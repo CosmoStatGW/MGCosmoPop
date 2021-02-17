@@ -60,7 +60,7 @@ logOrDistPrior  = data.originalDistPrior(dL)
 
 #####################################################
 
-def selectionBias(Lambda, m1, m2, z, get_neff=False):
+def selectionBias(Lambda, m1, m2, z, get_neff=False, verbose=False):
     
     #m1, m2, z = precomputed['m1'], precomputed['m2'], precomputed['z']
     #Lambda = get_Lambda(Lambda_test, Lambda_ntest)
@@ -75,13 +75,13 @@ def selectionBias(Lambda, m1, m2, z, get_neff=False):
         muSq = mu*mu
         SigmaSq = np.sum(xx*xx)/N_gen**2 - muSq/N_gen
         Neff = muSq/SigmaSq
-        if Neff < 4 * Nobs:
+        if Neff < 4 * Nobs and verbose:
             print('NEED MORE SAMPLES FOR SELECTION EFFECTS! ') #Values of lambda_test: %s' %str(Lambda_test))
         return mu, Neff
 
 
 
-def logSelectionBias(Lambda, m1, m2, z, get_neff=False):
+def logSelectionBias(Lambda, m1, m2, z, get_neff=False, verbose=False):
     
     #m1, m2, z = precomputed['m1'], precomputed['m2'], precomputed['z']
     #Lambda = get_Lambda(Lambda_test, Lambda_ntest)
@@ -98,7 +98,7 @@ def logSelectionBias(Lambda, m1, m2, z, get_neff=False):
         #logSigmaSq = -logN_gen-2*logMu+logsumexp(2*xx)
         SigmaSq = np.exp(logs2) - muSq/N_gen
         Neff = muSq/SigmaSq
-        if Neff < 4 * Nobs:
+        if Neff < 4 * Nobs and verbose:
             print('NEED MORE SAMPLES FOR SELECTION EFFECTS! ')#Values of lambda_test: %s' %str(Lambda_test))
         return logMu, Neff
 
@@ -136,7 +136,7 @@ def log_prior(Lambda_test, priorLimits):
 
 
 
-def log_posterior(Lambda_test, Lambda_ntest, priorLimits):
+def log_posterior(Lambda_test, Lambda_ntest, priorLimits, verbose_bias):
     
     lp = log_prior(Lambda_test, priorLimits)
     if not np.isfinite(lp):
@@ -150,7 +150,7 @@ def log_posterior(Lambda_test, Lambda_ntest, priorLimits):
     
     ### Selection bias
     m1_inj, m2_inj, z_inj = get_mass_redshift(Lambda, which_data='inj')
-    logMu, Neff = logSelectionBias(Lambda, m1_inj, m2_inj, z_inj, get_neff = config.selection_integral_uncertainty )
+    logMu, Neff = logSelectionBias(Lambda, m1_inj, m2_inj, z_inj, get_neff = config.selection_integral_uncertainty, verbose=verbose_bias )
     
     ## Effects of uncertainty on selection effect and/or marginalisation over total rate
     ## See 1904.10879

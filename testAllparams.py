@@ -23,12 +23,16 @@ import importlib
 fout = 'test_Log_correct_withUnc'
 
 marginalise_R0=False
-selection_integral_uncertainty=True
+selection_integral_uncertainty=False
 skip=['n',  ]
 
 perc_variation=15
 npoints=5
 dataset_name='mock'
+
+
+priors_types = {'R0': 'flatLog'}
+priors_params = None #{'Om0': {'mu':0.3, 'sigma':0.01} }
 
 
 with open('config.py', 'w') as f:
@@ -77,7 +81,8 @@ sys.stderr = myLog
     
 myParams = Params(dataset_name)
 myPriorLims = PriorLimits()
-    
+myPriorLims.set_priors(priors_types=priors_types, priors_params=priors_params)
+
 print('Parameter: %s' %param)
     #for param in myParams.allParams:
         
@@ -204,7 +209,7 @@ else:
         print('\nLikelihood done for '+param+' in %.2fs' %(time.time() - t1))
         
         logPrior = np.array([mymodels.log_prior(val, priorLimits) for val in grid ] )
-        
+        print('log prior: %s ' %logPrior)
         #logPosterior = np.array( [mymodels.log_posterior(val, Lambda_ntest, priorLimits) for val in grid ] )
         logPosterior_noSel = logLik  + logPrior
         
