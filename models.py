@@ -150,7 +150,7 @@ def log_posterior(Lambda_test, Lambda_ntest, priorLimits):
     
     ### Selection bias
     m1_inj, m2_inj, z_inj = get_mass_redshift(Lambda, which_data='inj')
-    logMu, Neff = selectionBias(Lambda, m1_inj, m2_inj, z_inj, get_neff = config.selection_integral_uncertainty )
+    logMu, Neff = logSelectionBias(Lambda, m1_inj, m2_inj, z_inj, get_neff = config.selection_integral_uncertainty )
     
     ## Effects of uncertainty on selection effect and/or marginalisation over total rate
     ## See 1904.10879

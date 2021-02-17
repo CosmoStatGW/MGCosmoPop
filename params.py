@@ -8,7 +8,8 @@ Created on Fri Feb  5 11:51:38 2021
 
 import glob
 import numpy as np
-
+import Globals
+import astropy.units as u
 
 class Params(object):
 
@@ -25,7 +26,7 @@ class Params(object):
                                'w0':-1.,
                            'Xi0':1.0, 
                            'n':1.91, 
-                           'logR0': np.log(64.4 *1e-09), #60 , # Gpc^-3 yr^-1
+                           'logR0': np.log(64.4), #60 , # Gpc^-3 yr^-1
                            'lambdaRedshift':3.0,
                            'alpha':0.75,
                            'beta':0.0, 
@@ -47,6 +48,11 @@ class Params(object):
                            'sl':r'$\sigma_l$', 
                            'mh':r'$M_h$',
                            'sh':r'$\sigma_h$'}
+             
+            if Globals.which_unit==u.Mpc:
+                self.trueValues['logR0']-=9*np.log(10)
+                print('New fiducial value for logR0 using yr^-1 Mpc^-3: %s' %self.trueValues['logR0'])
+                 
     
         
         else:
@@ -79,7 +85,7 @@ class PriorLimits(object):
                            'Om0':0.05,
                            'w0':-2,
                            'n':0, 
-                           'logR0': np.log(1e-08), # Gpc^-3 yr^-1
+                           'logR0': np.log(1), # Gpc^-3 yr^-1
                            'lambdaRedshift':-15,
                            'alpha':-5,
                            'beta':-5, 
@@ -92,7 +98,7 @@ class PriorLimits(object):
                            'w0':-0.1,
                            'Xi0':10, 
                            'n':10, 
-                           'logR0': np.log(1e-07),
+                           'logR0': np.log(200),
                            'lambdaRedshift':10,
                            'alpha':10,
                            'beta':10, 
@@ -101,4 +107,10 @@ class PriorLimits(object):
                            'mh':200,
                            'sh':1}
                 
+    #def set_dist_unit(self, to='Mpc'):
+        if Globals.which_unit==u.Mpc:
+            self.limInf['logR0']-=9*np.log(10)
+            self.limSup['logR0']-=9*np.log(10)
+        print('New lower limit for logR0 using yr^-1 Mpc^-3: %s' %self.limInf['logR0'])
+        print('New upper limit for logR0 using yr^-1 Mpc^-3: %s' %self.limSup['logR0'])
         
