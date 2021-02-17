@@ -31,8 +31,8 @@ npoints=5
 dataset_name='mock'
 
 
-priors_types = {'R0': 'flatLog'}
-priors_params = None #{'Om0': {'mu':0.3, 'sigma':0.01} }
+priors_types = {'R0': 'flatLog', 'Om0':gauss}
+priors_params = {'Om0': {'mu':0.3, 'sigma':0.01} }
 
 
 with open('config.py', 'w') as f:
@@ -138,6 +138,11 @@ else:
         #Lambda_func = globals()['getLambda'+param]
         
         
+        logPrior = np.array([mymodels.log_prior(val, priorLimits, myPriorLims.logVals(val) ) for val in grid ] )
+        print('log prior: %s ' %logPrior)
+        
+        
+        
         print('Computing selection bias for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
         
         NdetRes=np.zeros( (grid.shape[0] , 2 ) )
@@ -208,8 +213,7 @@ else:
         #logLik = np.array( [mymodels.logLik(Lambda, precomputed['source_frame_mass1_observations'],precomputed['source_frame_mass2_observations'],precomputed['z_observations'] ) for val in grid ] )
         print('\nLikelihood done for '+param+' in %.2fs' %(time.time() - t1))
         
-        logPrior = np.array([mymodels.log_prior(val, priorLimits) for val in grid ] )
-        print('log prior: %s ' %logPrior)
+        
         #logPosterior = np.array( [mymodels.log_posterior(val, Lambda_ntest, priorLimits) for val in grid ] )
         logPosterior_noSel = logLik  + logPrior
         

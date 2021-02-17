@@ -120,7 +120,7 @@ def logLik(Lambda, m1, m2, z):
     return allLogLiks.sum()
 
 
-def log_prior(Lambda_test, priorLimits):
+def log_prior(Lambda_test, priorLimits, func):
     if np.isscalar(Lambda_test):
         limInf, limSup = priorLimits[0]
         condition = limInf < Lambda_test < limSup
@@ -130,7 +130,7 @@ def log_prior(Lambda_test, priorLimits):
             condition &= limInf < Lambda_test[i] < limSup
 
     if condition:
-        return 0.0
+        return func(Lambda_test)
     return -np.inf
 
 
