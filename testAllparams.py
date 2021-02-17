@@ -31,8 +31,8 @@ npoints=5
 dataset_name='mock'
 
 
-priors_types = {'R0': 'flatLog', 'Om0':'gauss'}
-priors_params = {'Om0': {'mu':0.3, 'sigma':0.01} }
+#priors_types = {'R0': 'flatLog', 'Om0':'gauss'}
+#priors_params = {'Om0': {'mu':0.3, 'sigma':0.01} }
 
 
 with open('config.py', 'w') as f:
@@ -43,6 +43,14 @@ with open('config.py', 'w') as f:
     f.write("\nnInjUse=None  " )
     f.write("\nmarginalise_rate=False")
     f.write("\nselection_integral_uncertainty=True")
+    f.write("\nverbose_bias=True")
+    f.write("\nallMyPriors = PriorLimits()")
+    f.write("\npriors_types = PriorLimits()")
+    f.write("\npriors_params = PriorLimits()")
+    f.write("\nallMyPriors.set_priors(priors_types={'R0': 'flatLog', 'Om0':'gauss'}, priors_params={'Om0': {'mu':0.3, 'sigma':0.01} })")
+    f.write("\nmyPriorLimits = allMyPriors.priorLimits(params_inference)")
+    
+    
 
 
 ##############################
@@ -82,6 +90,7 @@ sys.stderr = myLog
 myParams = Params(dataset_name)
 myPriorLims = PriorLimits()
 myPriorLims.set_priors(priors_types=priors_types, priors_params=priors_params)
+
 
 print('Parameter: %s' %param)
     #for param in myParams.allParams:
@@ -141,7 +150,7 @@ else:
         logPrior=np.zeros(grid.shape[0] )
         for i,val in enumerate(grid):
              #Lambda = myLambda.get_Lambda(val, Lambda_ntest)
-             logPrior[i] = mymodels.log_prior(val, myPriorLims, param )
+             logPrior[i] = mymodels.log_prior(val)
         print('log prior: %s ' %logPrior)
         
         

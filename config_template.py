@@ -5,7 +5,7 @@ Created on Mon Feb  8 16:45:34 2021
 
 @author: Michi
 """
-from params import Params
+from params import Params, PriorLimits
 
 
 
@@ -13,7 +13,7 @@ dataset_name='mock'
 
 dataset_name_injections='mock'
 
-fout='runFullR0test'
+fout='runFullR0test_2'
 
 telegramAlert = False
 
@@ -21,8 +21,8 @@ telegramAlert = False
 params_inference = [ 'H0', 'Om0', 'Xi0', 'R0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh']
 
 
-priors_types = {'R0': 'flatLog'}
-priors_params = None #{'Om0': {'mu':0.3, 'sigma':0.01} }
+priors_types = {'R0': 'flatLog','Om0':'gauss' }
+priors_params = {'Om0': {'mu':0.3, 'sigma':0.01} }
 
 nChains=25 #2*len(params_inference)
 max_n=300
@@ -57,6 +57,9 @@ verbose_bias = False
 myParams = Params(dataset_name)
 params_n_inference = [param for param in myParams.allParams if param not in params_inference]
 
+allMyPriors = PriorLimits()
+allMyPriors.set_priors(priors_types=priors_types, priors_params=priors_params)
+myPriorLimits = allMyPriors.priorLimits(params_inference)
 
 lines=[]
 lines.append('def get_Lambda(Lambda_test, Lambda_ntest):')

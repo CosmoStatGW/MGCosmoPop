@@ -120,34 +120,36 @@ def logLik(Lambda, m1, m2, z):
     return allLogLiks.sum()
 
 
-def log_prior(Lambda_test, priorLimits, params_inference):
+def log_prior(Lambda_test):
     
     #  = [ (priorLimits.limInf[param], priorLimits.limSup[param] ) for param in priorLimits.names ]
     
+    
     if np.isscalar(Lambda_test):
-        limInf = priorLimits.limInf[params_inference]
-        limSup = priorLimits.limSup[params_inference]#priorLimits[0]
+        #limInf = priorLimits.limInf[params_inference]
+        #limSup = priorLimits.limSup[params_inference]#priorLimits[0]
+        limInf, limSup =  config.myPriorLimits[0]
         condition = limInf < Lambda_test < limSup
     else:
         condition = True
-        for i, param in enumerate(params_inference): #(limInf, limSup) in enumerate(priorLimits):
-            limInf = priorLimits.limInf[param]
-            limSup = priorLimits.limSup[param]
+        for i,(limInf, limSup) in enumerate(config.myPriorLimits): #param in enumerate(params_inference): #(limInf, limSup) in enumerate(priorLimits):
+            #limInf = priorLimits.limInf[param]
+            #limSup = priorLimits.limSup[param]
             condition &= limInf < Lambda_test[i] < limSup
 
     if condition:
-        return priorLimits.get_logVals(Lambda_test, params_inference)
+        return config.allMyPriors.get_logVals(Lambda_test, config.params_inference)
     else: 
         return -np.inf
 
 
 
 
-def log_posterior(Lambda_test, Lambda_ntest, priorLimits, verbose_bias, params_inference):
+def log_posterior(Lambda_test, Lambda_ntest):
     
     
     
-    lp = log_prior(Lambda_test, priorLimits, params_inference)
+    lp = log_prior(Lambda_test)
     if not np.isfinite(lp):
         return -np.inf
     
@@ -158,7 +160,7 @@ def log_posterior(Lambda_test, Lambda_ntest, priorLimits, verbose_bias, params_i
     
     ### Selection bias
     m1_inj, m2_inj, z_inj = get_mass_redshift(Lambda, which_data='inj')
-    logMu, Neff = logSelectionBias(Lambda, m1_inj, m2_inj, z_inj, get_neff = config.selection_integral_uncertainty, verbose=verbose_bias )
+    logMu, Neff = logSelectionBias(Lambda, m1_inj, m2_inj, z_inj, get_neff = config.selection_integral_uncertainty, verbose=config.verbose_bias )
     
     ## Effects of uncertainty on selection effect and/or marginalisation over total rate
     ## See 1904.10879

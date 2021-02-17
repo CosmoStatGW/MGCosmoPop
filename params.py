@@ -91,7 +91,7 @@ class PriorLimits(object):
                            'Om0':0.05,
                            'w0':-2,
                            'n':0, 
-                           'R0': 1, # Gpc^-3 yr^-1
+                           'R0': 0.01, # Gpc^-3 yr^-1
                            'lambdaRedshift':-15,
                            'alpha':-5,
                            'beta':-5, 
@@ -128,6 +128,10 @@ class PriorLimits(object):
                            'sh':lambda x: 0.,
                            'R0': lambda x: 0,      
         }
+        
+        
+        
+        
         if Globals.which_unit==u.Mpc:
             #self.limInf['logR0']-=9*np.log(10)
             #self.limSup['logR0']-=9*np.log(10)
@@ -173,8 +177,9 @@ class PriorLimits(object):
          if not np.isscalar(Lambda_test):
              return np.array([ self.logVals[param](Lambda_test[i]) for i,param in enumerate(params_inference) ]).sum()
          else:
-             self.logVals[params_inference](Lambda_test)
+             return self.logVals[params_inference](Lambda_test)
              
              
-             
+    def priorLimits(self, params_inference):
+         return [ (self.limInf[param], self.limSup[param] ) for param in params_inference ]       
         

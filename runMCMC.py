@@ -53,7 +53,7 @@ import shutil
 #from data import *
 #from config import *
 #from models import *
-from params import PriorLimits
+#from params import PriorLimits
 #from glob import *
 from utils import Logger
 import config
@@ -70,12 +70,11 @@ os.environ["OMP_NUM_THREADS"] = "1"
 
 
 
-
 # Nobs=100
-allMyPriors = PriorLimits()
-allMyPriors.set_priors(priors_types=config.priors_types, priors_params=config.priors_params)
+#allMyPriors = PriorLimits()
+#allMyPriors.set_priors(priors_types=config.priors_types, priors_params=config.priors_params)
 
-priorLimits  = [ (allMyPriors.limInf[param],allMyPriors.limSup[param] ) for param in config.params_inference ]
+
 
 
 
@@ -86,8 +85,8 @@ Lambda_ntest = np.array([config.myParams.trueValues[param] for param in config.p
 exp_values= np.array(config.myParams.get_expected_values(config.params_inference)) #[70, 1, 45]
 eps = [val if val!=0 else 1 for val in exp_values ]
 
-lowLims = [ max( [val-eps[i]*config.perc_variation_init/100, priorLimits[i][0] ] )  for i,val in enumerate(exp_values) ] 
-upLims = [ min( [ val+eps[i]*config.perc_variation_init/100, priorLimits[i][1] ]) for i,val in enumerate(exp_values) ] 
+lowLims = [ max( [val-eps[i]*config.perc_variation_init/100, config.myPriorLimits[i][0] ] )  for i,val in enumerate(exp_values) ] 
+upLims = [ min( [ val+eps[i]*config.perc_variation_init/100, config.myPriorLimits[i][1] ]) for i,val in enumerate(exp_values) ] 
 #upLims[exp_values==0]=perc_variation_init/100
 for i in range(len(lowLims)):
     if lowLims[i]>upLims[i]:
@@ -159,7 +158,7 @@ def main():
         raise ValueError('You cannot marfinalise on R0 and run inference on R0 at the same time. Change marginalise_rate to False if running inference on R0.' )
     
     print('Running inference for parameters: %s' %str(config.params_inference))
-    print('Prior range: %s' %priorLimits)
+    print('Prior range: %s' %config.myPriorLimits)
     print('Fixing parameters: %s' %str(config.params_n_inference))
     print('Values: %s' %str(Lambda_ntest))
     if config.marginalise_rate:
@@ -203,7 +202,7 @@ def main():
     
     with Pool(config.nPools) as pool:
     	
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, models.log_posterior, backend=backend, args=(Lambda_ntest, allMyPriors, config.verbose_bias, config.params_inference), pool=pool)
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, models.log_posterior, backend=backend, args=(Lambda_ntest, ), pool=pool)
         #sampler.run_mcmc( pos, max_n, progress=True)  
         
         
