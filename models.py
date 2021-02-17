@@ -24,6 +24,7 @@ from scipy.special import logsumexp
 print('Loading data...')
 theta, Nsamples = data.load_data(config.dataset_name)
 Nobs = theta[0].shape[0]
+logNobs = np.log(Nobs)
 m1z, m2z, dL = theta
 assert (m1z > 0).all()
 assert (m2z > 0).all()
@@ -65,18 +66,40 @@ def selectionBias(Lambda, m1, m2, z, get_neff=False):
     #Lambda = get_Lambda(Lambda_test, Lambda_ntest)
     #H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     
-    xx = log_dN_dm1zdm2zddL(Lambda, m1, m2, z) - log_weights_sel
+    xx = dN_dm1zdm2zddL(Lambda, m1, m2, z)/weights_sel
         
-    logMu = logsumexp(xx) - logN_gen
+    mu = xx.sum()/N_gen
+    if not get_neff:
+        return mu, np.NaN #np.repeat(np.NaN, logMu.shape[0] )
+    else:
+        muSq = mu*mu
+        SigmaSq = np.sum(xx*xx)/N_gen**2 - muSq/N_gen
+        Neff = muSq/SigmaSq
+        if Neff < 4 * Nobs:
+            print('NEED MORE SAMPLES FOR SELECTION EFFECTS! ') #Values of lambda_test: %s' %str(Lambda_test))
+        return mu, Neff
+
+
+
+def logSelectionBias(Lambda, m1, m2, z, get_neff=False):
+    
+    #m1, m2, z = precomputed['m1'], precomputed['m2'], precomputed['z']
+    #Lambda = get_Lambda(Lambda_test, Lambda_ntest)
+    #H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
+    
+    logxx = log_dN_dm1zdm2zddL(Lambda, m1, m2, z) - log_weights_sel   
+    logMu = logsumexp(logxx) - logN_gen
+    
     if not get_neff:
         return logMu, np.NaN #np.repeat(np.NaN, logMu.shape[0] )
     else:
-        muSq = np.exp(2*logMu)
-        logs2 = logsumexp(2*xx) -2*N_gen
-        SigmaSq = np.exp(logs2) - muSq / N_gen
-        Neff = muSq / SigmaSq
+        muSq = np.exp(2*logMu).astype('float128')
+        logs2 = (logsumexp(2*logxx) -2*logN_gen).astype('float128')
+        #logSigmaSq = -logN_gen-2*logMu+logsumexp(2*xx)
+        SigmaSq = np.exp(logs2) - muSq/N_gen
+        Neff = muSq/SigmaSq
         if Neff < 4 * Nobs:
-            print('NEED MORE SAMPLES FOR SELECTION EFFECTS! ') #Values of lambda_test: %s' %str(Lambda_test))
+            print('NEED MORE SAMPLES FOR SELECTION EFFECTS! ')#Values of lambda_test: %s' %str(Lambda_test))
         return logMu, Neff
 
 

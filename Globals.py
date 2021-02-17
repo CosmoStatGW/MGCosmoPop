@@ -11,7 +11,7 @@ from astropy import constants as const
 import os
 
 
-which_unit=u.Mpc
+which_unit=u.Gpc
 
 H0GLOB = Planck15.H0.value # In km/s/Mpc
 Om0GLOB = Planck15.Om0

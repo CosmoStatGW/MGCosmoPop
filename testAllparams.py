@@ -20,7 +20,7 @@ plt.rcParams["mathtext.fontset"] = "cm"
 import importlib
 
 
-fout = 'test_Log_5'
+fout = 'test_Log_correct'
 
 marginalise_R0=False
 selection_integral_uncertainty=False

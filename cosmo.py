@@ -12,8 +12,9 @@ import numpy as np
 from astropy.cosmology import FlatwCDM, FlatLambdaCDM
 from scipy import interpolate
 #from astropy import constants as const
-#import astropy.units as u
+import astropy.units as u
 from scipy.optimize import fsolve
+
 
 
 cosmoGlobals = FlatwCDM(H0=Globals.H0GLOB, Om0=Globals.Om0GLOB, w0=-1)
@@ -31,9 +32,9 @@ def uu(z, Om, w0):
     Dimensionless comoving distance. Does not depend on H0
     '''
     if w0!=-1:
-        return 70/Globals.clight*FlatwCDM(H0=70, Om0=Om, w0=w0, Neff=0).comoving_distance(z).value
+        return 70/Globals.clight*FlatwCDM(H0=70, Om0=Om, w0=w0, Neff=0).comoving_distance(z).to(u.Mpc).value
     else:
-        return 70/Globals.clight*FlatLambdaCDM(H0=70, Om0=Om).comoving_distance(z).value
+        return 70/Globals.clight*FlatLambdaCDM(H0=70, Om0=Om).comoving_distance(z).to(u.Mpc).value
 
 def E(z, Om, w0):
     '''
@@ -56,13 +57,15 @@ def dV_dz(z, H0, Om, w0):
     Jacobian of comoving volume, with correct dimensions [Mpc^3]. Depends on H0
     '''
     if w0!=-1:
-        return 4*np.pi*FlatwCDM(H0=H0, Om0=Om, w0=w0, Neff=0).differential_comoving_volume(z).value
+        return 4*np.pi*FlatwCDM(H0=H0, Om0=Om, w0=w0, Neff=0).differential_comoving_volume(z).to(Globals.which_unit**3/u.sr).value
     else:
-        return 4*np.pi*FlatLambdaCDM(H0=H0, Om0=Om,).differential_comoving_volume(z).value
+        return 4*np.pi*FlatLambdaCDM(H0=H0, Om0=Om,).differential_comoving_volume(z).to(Globals.which_unit**3/u.sr).value
 
 def log_dV_dz(z, H0, Om0, w0):
-        return np.log(4*np.pi)+3*np.log(Globals.clight)-3*np.log(H0)+2*np.log(uu(z, Om0, w0))-np.log(E(z, Om0, w0))
-    
+    res =  np.log(4*np.pi)+3*np.log(Globals.clight)-3*np.log(H0)+2*np.log(uu(z, Om0, w0))-np.log(E(z, Om0, w0))
+    if Globals.which_unit==u.Gpc:
+        res -=9*np.log(10)
+    return res
 
 
 def s(z, Xi0, n):
@@ -77,12 +80,16 @@ def ddL_dz(z, H0, Om, w0, Xi0, n):
     '''
      Jacobian d(DL)/dz  [Mpc]
     '''
+    if Globals.which_unit==u.Gpc:
+        H0*=1e03
     return (sPrime(z, Xi0, n)*uu(z, Om, w0)+s(z, Xi0, n)/E(z, Om, w0))*(Globals.clight/H0)
 
 
 def log_ddL_dz(z, H0, Om0, w0, Xi0, n):
-    return np.log(Globals.clight)-np.log(H0)+np.log(sPrime(z, Xi0, n)*uu(z, Om0, w0)+s(z, Xi0, n)/E(z, Om0, w0))
-
+    res =  np.log(Globals.clight)-np.log(H0)+np.log(sPrime(z, Xi0, n)*uu(z, Om0, w0)+s(z, Xi0, n)/E(z, Om0, w0))
+    if Globals.which_unit==u.Gpc:
+        res -= 3*np.log(10)
+    return res
 
 def dLGW(z, H0, Om, w0, Xi0, n):
     '''                                                                                                          
