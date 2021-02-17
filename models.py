@@ -125,7 +125,8 @@ def log_prior(Lambda_test, priorLimits, params_inference):
     #  = [ (priorLimits.limInf[param], priorLimits.limSup[param] ) for param in priorLimits.names ]
     
     if np.isscalar(Lambda_test):
-        limInf, limSup = priorLimits.limInf[params_inference[0]] #priorLimits[0]
+        limInf = priorLimits.limInf[params_inference]
+        limSup = priorLimits.limSup[params_inference]#priorLimits[0]
         condition = limInf < Lambda_test < limSup
     else:
         condition = True
