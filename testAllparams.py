@@ -36,7 +36,8 @@ dataset_name='mock'
 
 
 with open('config.py', 'w') as f:
-    f.write("dataset_name='%s'" %dataset_name)
+    f.write("from params import Params, PriorLimits")
+    f.write("\ndataset_name='%s'" %dataset_name)
     f.write("\ndataset_name_injections='%s'" %dataset_name)
     f.write("\nnObsUse=None " ) #%nObsUse)
     f.write("\nnSamplesUse=None  " )
