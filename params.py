@@ -170,7 +170,11 @@ class PriorLimits(object):
     def get_logVals(self, Lambda_test, params_inference ):
         
         # H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
-         
-         return np.array([ self.logVals[param](Lambda_test[i]) for i,param in enumerate(params_inference) ]).sum()
-         
+         if not np.isscalar(Lambda_test):
+             return np.array([ self.logVals[param](Lambda_test[i]) for i,param in enumerate(params_inference) ]).sum()
+         else:
+             self.logVals[params_inference](Lambda_test)
+             
+             
+             
         
