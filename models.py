@@ -129,9 +129,9 @@ def log_prior(Lambda, priorLimits):
     #    condition = limInf < Lambda < limSup
     #else:
         condition = True
-        for i, (limInf, limSup) in enumerate(priorLimits):
-            limInf = priorLimits.limInf[priorLimits.allParams[i]]
-            limSup = priorLimits.limSup[priorLimits.allParams[i]]
+        for i, param in enumerate(priorLimits.allParams): #(limInf, limSup) in enumerate(priorLimits):
+            limInf = priorLimits.limInf[param]
+            limSup = priorLimits.limSup[param]
             condition &= limInf < Lambda[i] < limSup
 
         if condition:

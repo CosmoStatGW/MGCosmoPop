@@ -31,7 +31,7 @@ npoints=5
 dataset_name='mock'
 
 
-priors_types = {'R0': 'flatLog', 'Om0':gauss}
+priors_types = {'R0': 'flatLog', 'Om0':'gauss'}
 priors_params = {'Om0': {'mu':0.3, 'sigma':0.01} }
 
 
