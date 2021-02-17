@@ -136,7 +136,7 @@ else:
         
         myLambda = importlib.import_module('getLambda'+param, package=None)
         #Lambda_func = globals()['getLambda'+param]
-        
+        print('Grid values: %s' %str(grid) )
         print('Computing priorfor %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
         logPrior=np.zeros(grid.shape[0] )
         for i,val in enumerate(grid):

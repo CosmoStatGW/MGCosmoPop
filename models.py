@@ -120,39 +120,40 @@ def logLik(Lambda, m1, m2, z):
     return allLogLiks.sum()
 
 
-def log_prior(Lambda, priorLimits):
+def log_prior(Lambda_test, priorLimits, params_inference):
     
     #  = [ (priorLimits.limInf[param], priorLimits.limSup[param] ) for param in priorLimits.names ]
     
-    #if np.isscalar(Lambda):
-    #    limInf, limSup = priorLimits.limInf[priorLimits.names[i]] #priorLimits[0]
-    #    condition = limInf < Lambda < limSup
-    #else:
+    if np.isscalar(Lambda_test):
+        limInf, limSup = priorLimits.limInf[params_inference[0]] #priorLimits[0]
+        condition = limInf < Lambda_test < limSup
+    else:
         condition = True
-        for i, param in enumerate(priorLimits.allParams): #(limInf, limSup) in enumerate(priorLimits):
+        for i, param in enumerate(params_inference): #(limInf, limSup) in enumerate(priorLimits):
             limInf = priorLimits.limInf[param]
             limSup = priorLimits.limSup[param]
-            condition &= limInf < Lambda[i] < limSup
+            condition &= limInf < Lambda_test[i] < limSup
 
-        if condition:
-            return priorLimits.get_logVals(Lambda)
-        else: return -np.inf
+    if condition:
+        return priorLimits.get_logVals(Lambda_test, params_inference)
+    else: 
+        return -np.inf
 
 
 
 
-def log_posterior(Lambda_test, Lambda_ntest, priorLimits, verbose_bias):
+def log_posterior(Lambda_test, Lambda_ntest, priorLimits, verbose_bias, params_inference):
     
-    Lambda = get_Lambda(Lambda_test, Lambda_ntest)
     
-    lp = log_prior(Lambda, priorLimits)
+    
+    lp = log_prior(Lambda_test, priorLimits, params_inference)
     if not np.isfinite(lp):
         return -np.inf
     
-    
+    Lambda = get_Lambda(Lambda_test, Lambda_ntest)
     # Compute source frame masses and redshifts
     m1_obs, m2_obs, z_obs = get_mass_redshift(Lambda, which_data='obs')
-    logPost= logLik(Lambda, m1_obs, m2_obs, z_obs )+lp
+    logPost= logLik(Lambda, m1_obs, m2_obs, z_obs )+ lp
     
     ### Selection bias
     m1_inj, m2_inj, z_inj = get_mass_redshift(Lambda, which_data='inj')
