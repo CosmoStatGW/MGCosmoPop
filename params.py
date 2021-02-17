@@ -11,6 +11,8 @@ import numpy as np
 import Globals
 import astropy.units as u
 
+names = [ 'H0', 'Om0', 'w0', 'Xi0', 'n', 'R0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh' ]
+
 class Params(object):
 
     def __init__(self, dataset_name ):
@@ -19,7 +21,7 @@ class Params(object):
         
         if dataset_name=='mock':
             
-            self.allParams = [ 'H0', 'Om0', 'w0', 'Xi0', 'n', 'R0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh' ]
+            self.allParams = names
         
             self.trueValues = {'H0':Globals.H0GLOB,
                                'Om0':Globals.Om0GLOB,
@@ -81,6 +83,8 @@ class Params(object):
 class PriorLimits(object):
     
     def __init__(self,):
+        
+        self.allParams = names
         
         self.limInf = {'H0': 20, 
                            'Xi0':0.1, 
@@ -161,7 +165,11 @@ class PriorLimits(object):
                         self._set_prior(key, priorType=ptype)
                     else:
                         raise ValueError('Supported priors are : flat, flatLog, gauss')
-            
 
-def flatlog_val(x):
-    return 0.
+    def get_logVals(self, Lambda ):
+        
+        # H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
+         
+         return np.array([ self.logVals[param](Lambda[i]) for i,param in enumerate(self.allParams) ]).sum()
+         
+        

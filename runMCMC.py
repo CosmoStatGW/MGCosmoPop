@@ -203,7 +203,7 @@ def main():
     
     with Pool(config.nPools) as pool:
     	
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, models.log_posterior, backend=backend, args=(Lambda_ntest,priorLimits, config.verbose_bias), pool=pool)
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, models.log_posterior, backend=backend, args=(Lambda_ntest, allMyPriors, config.verbose_bias), pool=pool)
         #sampler.run_mcmc( pos, max_n, progress=True)  
         
         

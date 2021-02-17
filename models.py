@@ -120,29 +120,35 @@ def logLik(Lambda, m1, m2, z):
     return allLogLiks.sum()
 
 
-def log_prior(Lambda_test, priorLimits, func):
-    if np.isscalar(Lambda_test):
-        limInf, limSup = priorLimits[0]
-        condition = limInf < Lambda_test < limSup
-    else:
+def log_prior(Lambda, priorLimits):
+    
+    #  = [ (priorLimits.limInf[param], priorLimits.limSup[param] ) for param in priorLimits.names ]
+    
+    #if np.isscalar(Lambda):
+    #    limInf, limSup = priorLimits.limInf[priorLimits.names[i]] #priorLimits[0]
+    #    condition = limInf < Lambda < limSup
+    #else:
         condition = True
         for i, (limInf, limSup) in enumerate(priorLimits):
-            condition &= limInf < Lambda_test[i] < limSup
+            limInf = priorLimits.limInf[priorLimits.allParams[i]]
+            limSup = priorLimits.limSup[priorLimits.allParams[i]]
+            condition &= limInf < Lambda[i] < limSup
 
-    if condition:
-        return func(Lambda_test)
-    return -np.inf
+        if condition:
+            return priorLimits.get_logVals(Lambda)
+        else: return -np.inf
 
 
 
 
 def log_posterior(Lambda_test, Lambda_ntest, priorLimits, verbose_bias):
     
-    lp = log_prior(Lambda_test, priorLimits)
+    Lambda = get_Lambda(Lambda_test, Lambda_ntest)
+    
+    lp = log_prior(Lambda, priorLimits)
     if not np.isfinite(lp):
         return -np.inf
     
-    Lambda = get_Lambda(Lambda_test, Lambda_ntest)
     
     # Compute source frame masses and redshifts
     m1_obs, m2_obs, z_obs = get_mass_redshift(Lambda, which_data='obs')

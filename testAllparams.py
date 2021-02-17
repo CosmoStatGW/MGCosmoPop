@@ -105,7 +105,7 @@ else:
         params_n_inference = [nparam for nparam in myParams.allParams if nparam!= param]
 
         Lambda_ntest = np.array([myParams.trueValues[param] for param in params_n_inference])
-        priorLimits  = [ (myPriorLims.limInf[param],myPriorLims.limSup[param] ), ]
+        #priorLimits  = [ (myPriorLims.limInf[param],myPriorLims.limSup[param] ), ]
         
         print('Writing get_Lambda:' )
         lines=[]
@@ -137,8 +137,11 @@ else:
         myLambda = importlib.import_module('getLambda'+param, package=None)
         #Lambda_func = globals()['getLambda'+param]
         
-        
-        logPrior = np.array([mymodels.log_prior(val, priorLimits, myPriorLims.logVals(val) ) for val in grid ] )
+        print('Computing priorfor %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
+        logPrior=np.zeros(grid.shape[0] )
+        for i,val in enumerate(grid):
+             Lambda = myLambda.get_Lambda(val, Lambda_ntest)
+             logPrior[i] = mymodels.log_prior(Lambda, myPriorLims )
         print('log prior: %s ' %logPrior)
         
         
