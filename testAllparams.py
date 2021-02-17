@@ -57,7 +57,7 @@ with open('config.py', 'w') as f:
     #f.write("\npriors_params = None")
     f.write("\nparams_inference = ['%s',]"%param)
     f.write("\nallMyPriors.set_priors(priors_types={'R0': 'flatLog', 'Om0':'gauss'}, priors_params={'Om0': {'mu':0.3, 'sigma':0.01} })")
-    f.write("\nmyPriorLimits = allMyPriors.priorLimits(params_inference)")
+    f.write("\nmyPriorLims = allMyPriors.priorLimits(params_inference)")
     
     
 config = importlib.import_module('config', package=None)
