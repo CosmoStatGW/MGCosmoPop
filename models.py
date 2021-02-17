@@ -161,10 +161,11 @@ def log_posterior(Lambda_test, Lambda_ntest, priorLimits):
             logPost+=(3 * Nobs + Nobs * Nobs) / (2 * Neff)
     else:
         #Lambda = get_Lambda(Lambda_test, Lambda_ntest) 
-        H0, Om0, w0, Xi0, n, logR0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda 
-        logPost+= Nobs*logR0 #np.log(R0)
+        H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda 
+        logR0 = np.log(R0)
+        logPost += Nobs*logR0 #np.log(R0)
         mu=np.exp(logMu)
-        R0 = np.exp(logR0)
+        #R0 = np.exp(logR0)
         logPost -= R0*mu
         if config.selection_integral_uncertainty:
             logPost+= (R0*mu)*(R0*mu)/ (2 * Neff)
@@ -179,7 +180,7 @@ def get_mass_redshift(Lambda, which_data):
     '''
     Compute only once some quantities that go into selection effects and likelihood
     '''
-    H0, Om0, w0, Xi0, n, logR0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
+    H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     
     if which_data=='obs':      
         z = get_redshift(  dL, H0, Om0, w0, Xi0, n)
@@ -218,20 +219,20 @@ def dN_dm1dm2dz(Lambda, m1, m2, z):
      Lambda = (H0, Xi0, n, lambdaRedshift, lambdaBBH ) 
      lambdaBBH is the parameters of the BBH mass function 
     """
-    H0, Om0, w0, Xi0, n, logR0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
+    H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     lambdaBBH = [alpha, beta, ml, sl, mh, sh]
     return Tobs*cosmo.dV_dz(z, H0, Om0, w0)*(1 + z)**(lambdaRedshift-1)* massPrior(m1, m2, lambdaBBH)
 
 
 def dN_dm1zdm2zddL(Lambda, m1, m2, z):
-    H0, Om0, w0, Xi0, n, logR0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
+    H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     #return dN_dm1dm2dz(Lambda, m1, m2) / ( MsourceToMdetJacobian(z) * ddL_dz(z, H0, Om0, w0, Xi0, n) )
     lambdaBBH = [alpha, beta, ml, sl, mh, sh]
     return Tobs*cosmo.dV_dz(z, H0, Om0, w0)*(1 + z)**(lambdaRedshift-1)* massPrior(m1, m2, lambdaBBH)/  ((1 + z)*(1 + z)) / cosmo.ddL_dz(z, H0, Om0, w0, Xi0, n) 
 
 
 def log_dN_dm1zdm2zddL(Lambda, m1, m2, z):
-    H0, Om0, w0, Xi0, n, logR0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
+    H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     #return dN_dm1dm2dz(Lambda, m1, m2) / ( MsourceToMdetJacobian(z) * ddL_dz(z, H0, Om0, w0, Xi0, n) )
     lambdaBBH = [alpha, beta, ml, sl, mh, sh]
     return np.log(Tobs)+cosmo.log_dV_dz(z, H0, Om0, w0)+np.log(1 + z)*(lambdaRedshift-1)+ logMassPrior(m1, m2, lambdaBBH)-2*np.log(1 + z) - cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n) 

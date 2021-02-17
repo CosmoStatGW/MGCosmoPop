@@ -19,14 +19,14 @@ class Params(object):
         
         if dataset_name=='mock':
             
-            self.allParams = [ 'H0', 'Om0', 'w0', 'Xi0', 'n', 'logR0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh' ]
+            self.allParams = [ 'H0', 'Om0', 'w0', 'Xi0', 'n', 'R0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh' ]
         
             self.trueValues = {'H0':glob.H0GLOB,
                                'Om0':glob.Om0GLOB,
                                'w0':-1.,
                            'Xi0':1.0, 
                            'n':1.91, 
-                           'logR0': np.log(64.4), #60 , # Gpc^-3 yr^-1
+                           'R0': 64.4, #60 , # Gpc^-3 yr^-1
                            'lambdaRedshift':3.0,
                            'alpha':0.75,
                            'beta':0.0, 
@@ -40,7 +40,7 @@ class Params(object):
                           'w0':r'$w_{0}$',
                            'Xi0':r'$\Xi_0$', 
                            'n':r'$n$', 
-                           'logR0':r'log$R_0$', 
+                           'R0':r'$R_0$', 
                            'lambdaRedshift':r'$\lambda$',
                            'alpha':r'$\alpha$',
                            'beta':r'$\beta$', 
@@ -50,8 +50,10 @@ class Params(object):
                            'sh':r'$\sigma_h$'}
              
             if Globals.which_unit==u.Mpc:
-                self.trueValues['logR0']-=9*np.log(10)
-                print('New fiducial value for logR0 using yr^-1 Mpc^-3: %s' %self.trueValues['logR0'])
+                #self.trueValues['logR0']-=9*np.log(10)
+                #print('New fiducial value for logR0 using yr^-1 Mpc^-3: %s' %self.trueValues['logR0'])
+                self.trueValues['R0']*=1e-09
+                print('New fiducial value for R0 using yr^-1 Mpc^-3: %s' %self.trueValues['R0'])
                  
     
         
@@ -85,7 +87,7 @@ class PriorLimits(object):
                            'Om0':0.05,
                            'w0':-2,
                            'n':0, 
-                           'logR0': np.log(1), # Gpc^-3 yr^-1
+                           'R0': np.log(1), # Gpc^-3 yr^-1
                            'lambdaRedshift':-15,
                            'alpha':-5,
                            'beta':-5, 
@@ -98,7 +100,7 @@ class PriorLimits(object):
                            'w0':-0.1,
                            'Xi0':10, 
                            'n':10, 
-                           'logR0': np.log(200),
+                           'R0': np.log(200),
                            'lambdaRedshift':10,
                            'alpha':10,
                            'beta':10, 
@@ -109,8 +111,12 @@ class PriorLimits(object):
                 
     #def set_dist_unit(self, to='Mpc'):
         if Globals.which_unit==u.Mpc:
-            self.limInf['logR0']-=9*np.log(10)
-            self.limSup['logR0']-=9*np.log(10)
-        print('New lower limit for logR0 using yr^-1 Mpc^-3: %s' %self.limInf['logR0'])
-        print('New upper limit for logR0 using yr^-1 Mpc^-3: %s' %self.limSup['logR0'])
+            #self.limInf['logR0']-=9*np.log(10)
+            #self.limSup['logR0']-=9*np.log(10)
+            self.limInf['R0']*=1e-09
+            self.limSup['R0']*=1e-09
+        #print('New lower limit for logR0 using yr^-1 Mpc^-3: %s' %self.limInf['logR0'])
+        #print('New upper limit for logR0 using yr^-1 Mpc^-3: %s' %self.limSup['logR0'])
+        print('New lower limit for R0 using yr^-1 Mpc^-3: %s' %self.limInf['R0'])
+        print('New upper limit for R0 using yr^-1 Mpc^-3: %s' %self.limSup['R0'])
         

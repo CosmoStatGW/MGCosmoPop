@@ -20,10 +20,10 @@ plt.rcParams["mathtext.fontset"] = "cm"
 import importlib
 
 
-fout = 'test_Log_correct'
+fout = 'test_Log_correct_withUnc'
 
 marginalise_R0=False
-selection_integral_uncertainty=False
+selection_integral_uncertainty=True
 skip=['n',  ]
 
 perc_variation=15
@@ -43,8 +43,8 @@ with open('config.py', 'w') as f:
 
 ##############################
 
-if marginalise_R0 and 'logR0' not in skip:
-    skip.append('logR0')
+if marginalise_R0 and 'R0' not in skip:
+    skip.append('R0')
 
 in_time=time.time()
 
@@ -90,18 +90,12 @@ else:
         eps=truth
         if truth==0:
             eps=1
-        #if param=='logR0':
-        #    truth*=1e09
-        #    limInf = 1e09*myPriorLims.limInf[param]
-        #    limSup=1e09*myPriorLims.limSup[param]
-        #else:
+
         limInf = myPriorLims.limInf[param]
         limSup=myPriorLims.limSup[param]
         grid = np.sort(np.concatenate( [np.array([truth,]) , np.linspace( limInf, truth-(eps*perc_variation/100)-0.01, 5), np.linspace(truth-(eps*perc_variation/100), truth+(eps*perc_variation/100), npoints) , np.linspace( truth+(eps*perc_variation/100)+0.01, limSup, 5)]) )
         grid=np.unique(grid, axis=0)
-        #if param=='R0':
-        #    grid*=1e-09
-        #    truth=myParams.trueValues[param]
+
         
         params_n_inference = [nparam for nparam in myParams.allParams if nparam!= param]
 
@@ -162,38 +156,42 @@ else:
         #if not marginalise_R0:
         #    muVals*=1000
         
-        if param=='logR0':
-            R0Vals=np.exp(grid)#*1e-09
-            logR0vals=grid
-            grid_plot = R0Vals
-            truth_vline = np.exp(truth)
+        if param=='R0':
+            R0Vals=grid #np.exp(grid)#*1e-09
+        #    logR0vals=grid
+        #    grid_plot = R0Vals
+        #    truth_vline = np.exp(truth)
         else:
-            R0Vals=np.repeat(np.exp(myParams.trueValues['logR0']), muVals.shape)#*1e-09
-            logR0vals=np.repeat(myParams.trueValues['logR0'], muVals.shape)
-            grid_plot= grid
-            truth_vline = truth
+            R0Vals=np.repeat(myParams.trueValues['R0'], muVals.shape)#*1e-09
+        #    logR0vals=np.repeat(myParams.trueValues['logR0'], muVals.shape)
+        #    grid_plot= grid
+        #    truth_vline = truth
+        logR0vals=np.log(R0Vals)
+        grid_plot= grid
+        truth_vline = truth
+        
             
         plt.plot(grid_plot, R0Vals*muVals)
         plt.xlabel(myParams.names[param]);
         plt.ylabel(r'$N_{det}$');
         plt.axvline(truth_vline, ls='--', color='k', lw=2);
-        #plt.axhline(5267, ls=':', color='k', lw=1.5);
+        plt.axhline(5267, ls=':', color='k', lw=1.5);
         plt.savefig( os.path.join(out_path, param+'_Ndet.pdf'))
         plt.close()
         
         
-        plt.plot(grid_plot, logMuVals+logR0vals )
-        plt.xlabel(myParams.names[param]);
-        plt.ylabel(r'log$N_{det}$');
-        plt.axvline(truth_vline, ls='--', color='k', lw=2);
+        #plt.plot(grid_plot, logMuVals+logR0vals )
+        #plt.xlabel(myParams.names[param]);
+        #plt.ylabel(r'log$N_{det}$');
+        #plt.axvline(truth_vline, ls='--', color='k', lw=2);
         #plt.axhline(5267, ls=':', color='k', lw=1.5);
-        plt.savefig( os.path.join(out_path, param+'_logNdet.pdf'))
-        plt.close()
+        #plt.savefig( os.path.join(out_path, param+'_logNdet.pdf'))
+        #plt.close()
         
-        print('log(N_det) at true value of %s: %s '%(truth, logR0vals[np.argwhere(grid==truth)]+logMuVals[np.argwhere(grid==truth)] ) )
+        #print('log(N_det) at true value of %s: %s '%(truth, logR0vals[np.argwhere(grid==truth)]+logMuVals[np.argwhere(grid==truth)] ) )
         print('N_det at true value of %s: %s '%(truth, R0Vals[np.argwhere(grid==truth)]*muVals[np.argwhere(grid==truth)] ) )
         
-        print('log(alpha) at true value of %s: %s '%(truth, logMuVals[np.argwhere(grid==truth)] ) )
+        #print('log(alpha) at true value of %s: %s '%(truth, logMuVals[np.argwhere(grid==truth)] ) )
         print('alpha at true value of %s: %s '%(truth, muVals[np.argwhere(grid==truth)] ) )
         
         print('Computing likelihood for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
