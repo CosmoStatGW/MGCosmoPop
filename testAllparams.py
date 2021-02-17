@@ -34,6 +34,13 @@ dataset_name='mock'
 #priors_types = {'R0': 'flatLog', 'Om0':'gauss'}
 #priors_params = {'Om0': {'mu':0.3, 'sigma':0.01} }
 
+in_time=time.time()
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--param", default='H0', type=str, required=True)
+FLAGS = parser.parse_args()
+param = FLAGS.param
+
 
 with open('config.py', 'w') as f:
     f.write("from params import Params, PriorLimits")
@@ -46,8 +53,9 @@ with open('config.py', 'w') as f:
     f.write("\nselection_integral_uncertainty=True")
     f.write("\nverbose_bias=True")
     f.write("\nallMyPriors = PriorLimits()")
-    f.write("\npriors_types = PriorLimits()")
-    f.write("\npriors_params = PriorLimits()")
+    #f.write("\npriors_types = {'R0': 'flatLog'}")
+    #f.write("\npriors_params = None")
+    f.write("\nparams_inference = [%s,]"%param)
     f.write("\nallMyPriors.set_priors(priors_types={'R0': 'flatLog', 'Om0':'gauss'}, priors_params={'Om0': {'mu':0.3, 'sigma':0.01} })")
     f.write("\nmyPriorLimits = allMyPriors.priorLimits(params_inference)")
     
@@ -59,12 +67,7 @@ config = importlib.import_module('config', package=None)
 if marginalise_R0 and 'R0' not in skip:
     skip.append('R0')
 
-in_time=time.time()
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--param", default='H0', type=str, required=True)
-FLAGS = parser.parse_args()
-param = FLAGS.param
 
 
 out_path=os.path.join(Globals.dirName, 'results', fout)
