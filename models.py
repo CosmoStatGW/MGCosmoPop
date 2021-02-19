@@ -18,7 +18,7 @@ from astropy.cosmology import  Planck15, z_at_value
 #from scipy.integrate import cumtrapz
 #import astropy.units as u
 import numpy as np
-#from scipy.special import logsumexp
+from scipy.special import logsumexp
 #####################################################
 #####################################################
 
@@ -35,6 +35,8 @@ assert (dL > 0).all()
 
 print('theta shape: %s' % str(theta.shape))
 print('We have %s observations' % Nobs)
+
+#print('Number of samples: %s' %str(Nsamples.shape) )
 
 
 print('Loading injections from %s dataset...' %config.dataset_name_injections)
@@ -126,10 +128,17 @@ def logLik(Lambda, m1, m2, z):
     logLik_ = log_dN_dm1zdm2zddL(Lambda, m1, m2, z)
     logLik_ -= logOrMassPrior
     logLik_ -= logOrDistPrior
+    #print(m1, m2, z)
     #return np.log(lik.mean(axis=1)) .sum(axis=(-1))
-    allLogLiks = np.logaddexp.reduce(logLik_, axis=-1)-logNsamples
-    
+    # allLogLiks = np.logaddexp.reduce(logLik_, axis=-1)-logNsamples
+    allLogLiks = logsumexp(logLik_, axis=-1)-logNsamples
+    #print('allLogLiks shape: %s' %str(allLogLiks.shape))
     ll=allLogLiks.sum()
+    #print('ll1 logsumexp: %s' %ll)
+    #print('ll2 np: %s' %(np.logaddexp.reduce(logLik_, axis=-1)-logNsamples).sum())
+    #lik = np.exp(logLik_) #dN_dm1zdm2zddL(Lambda, m1, m2, z)
+    #print('log ll1 : %s' % np.log( lik.mean(axis=1)).sum(axis=(-1)))
+    
     if np.isnan(ll):
         raise ValueError('NaN value for logLik. Values of Lambda: %s%s' %(str(config.allMyPriors.allParams), str(Lambda) ) )
 
@@ -159,10 +168,14 @@ def log_prior(Lambda_test, priorLimits, params_inference, pNames, pParams):
     lp = 0
     for i,param in enumerate(params_inference):
             pname= pNames[param]
+            if np.isscalar(Lambda_test):
+                    x = Lambda_test
+            else:
+                    x=Lambda_test[i]
             if pname=='flatLog':
-                lp-=np.log(Lambda_test[i])
+                lp-=np.log(x)
             elif pname=='gauss':
-                x = Lambda_test[i]
+                #x = Lambda_test[i]
                 mu, sigma = pParams[param]['mu'], pParams[param]['sigma']
                 if np.abs(x-mu)<7*sigma:
                     return np.NINF

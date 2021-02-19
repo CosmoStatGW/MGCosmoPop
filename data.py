@@ -76,9 +76,12 @@ def load_mock_data():
         print('Using distances in Mpc')
         dl_samples*=1e03
     theta =   np.array([m1det_samples, m2det_samples, dl_samples])
-    return theta, np.count_nonzero(theta, axis=-1)
+    return theta, np.count_nonzero(m1det_samples, axis=-1)
 
 
+############################
+# Injections
+############################
 
 def load_injections_data(dataset_name_injections):
     if dataset_name_injections=='mock':

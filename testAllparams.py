@@ -22,7 +22,7 @@ import Globals
 from scipy.integrate import quad
 import scipy.stats as ss
 
-fout = 'test_plotAlphaWithR'
+fout = 'test_plotAlphaWithR_small2'
 
 marginalise_R0=False
 selection_integral_uncertainty=True
@@ -48,9 +48,9 @@ with open('config.py', 'w') as f:
     f.write("from params import Params, PriorLimits")
     f.write("\ndataset_name='%s'" %dataset_name)
     f.write("\ndataset_name_injections='%s'" %dataset_name)
-    f.write("\nnObsUse=None " ) #%nObsUse)
-    f.write("\nnSamplesUse=None  " )
-    f.write("\nnInjUse=None  " )
+    f.write("\nnObsUse=10 " ) #%nObsUse)
+    f.write("\nnSamplesUse=500  " )
+    f.write("\nnInjUse=1000  " )
     f.write("\nmarginalise_rate=%s"%marginalise_R0)
     f.write("\nselection_integral_uncertainty=%s"%selection_integral_uncertainty)
     f.write("\nverbose_bias=True")
@@ -119,7 +119,7 @@ else:
         #limInf = config.myPriorLims.limInf[param]
         #limSup=config.myPriorLims.limSup[param]
         limInf, limSup =  myPriorLims[0]
-        grid = np.sort(np.concatenate( [np.array([truth,]) , np.linspace( limInf, truth-(eps*perc_variation/100)-0.01, 5), np.linspace(truth-(eps*perc_variation/100), truth+(eps*perc_variation/100), npoints) , np.linspace( truth+(eps*perc_variation/100)+0.01, limSup, 5)]) )
+        grid = np.sort(np.concatenate( [np.array([truth,]) , np.linspace( limInf+0.001, truth-(eps*perc_variation/100)-0.01, 5), np.linspace(truth-(eps*perc_variation/100), truth+(eps*perc_variation/100), npoints) , np.linspace( truth+(eps*perc_variation/100)+0.01, limSup-0.001, 5)]) )
         grid=np.unique(grid, axis=0)
 
         
@@ -269,12 +269,12 @@ else:
         print('Computing likelihood for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
         logLik=np.zeros(grid.shape[0] )
         for i,val in enumerate(grid):
-            Lambda=myLambda.get_Lambda(val, Lambda_ntest)
+            Lambda = myLambda.get_Lambda(val, Lambda_ntest)
             m1_obs, m2_obs, z_obs = mymodels.get_mass_redshift(Lambda, which_data='obs')
             logLik[i] = mymodels.logLik(Lambda, m1_obs, m2_obs, z_obs)
         #logLik = np.array( [mymodels.logLik(Lambda, precomputed['source_frame_mass1_observations'],precomputed['source_frame_mass2_observations'],precomputed['z_observations'] ) for val in grid ] )
         print('\nLikelihood done for '+param+' in %.2fs' %(time.time() - t1))
-        
+        print(logLik)
         
         #logPosterior = np.array( [mymodels.log_posterior(val, Lambda_ntest, priorLimits) for val in grid ] )
         logPosterior_noSel = logLik  + logPrior
@@ -283,13 +283,13 @@ else:
         if not marginalise_R0:
             logPosterior = logPosterior_noSel + mymodels.Nobs*logR0vals - R0Vals*muVals 
             if selection_integral_uncertainty:
-                logPosterior+= (R0Vals*muVals*R0Vals*muVals)/2/NeffVals-ss.norm(loc=muVals, scale=muVals**2/NeffVals).logsf(0)+ss.norm(loc=R0Vals*muVals**2/NeffVals-muVals, scale=muVals**2/NeffVals).logsf(0)
+                logPosterior+= (R0Vals*muVals*R0Vals*muVals)/2/NeffVals#-ss.norm(loc=muVals, scale=muVals**2/NeffVals).logsf(0)+ss.norm(loc=R0Vals*muVals**2/NeffVals-muVals, scale=muVals**2/NeffVals).logsf(0)
         else:
             logPosterior = logPosterior_noSel  - mymodels.Nobs*logMuVals 
             if selection_integral_uncertainty:
                 logPosterior+=(3 * mymodels.Nobs + mymodels.Nobs ** 2) / (2 * NeffVals)
                 
-        
+        np.savetxt( os.path.join(out_path, param+'_lik.txt') , np.stack([grid, logLik], axis=1) )
         #if not np.isfinite(logPosterior.max()):
         #    keep = np.where( np.isfinite(logPosterior) )
         #    logPosterior = logPosterior[keep]
@@ -313,6 +313,8 @@ else:
         plt.ylabel(r'$p$');
         plt.axvline(truth, ls='--', color='k', lw=2);
         plt.legend()
+        if param=='R0':
+            plt.xscale('log')
         plt.savefig( os.path.join(out_path, param+'_logpost.pdf'))
         plt.close()
         
@@ -322,6 +324,8 @@ else:
         plt.xlabel(myParams.names[param]);
         plt.ylabel(r'$p$');
         plt.legend()
+        if param=='R0':
+            plt.xscale('log')
         plt.axvline(truth, ls='--', color='k', lw=2);
         plt.savefig( os.path.join(out_path, param+'_post.pdf'))
         plt.close()
