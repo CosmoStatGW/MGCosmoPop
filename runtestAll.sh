@@ -1,7 +1,7 @@
 #!/bin/bash
-
+#"R0" "lambdaRedshift" "alpha"
 declare -a allGoalParams=("H0" "Om0" "Xi0" "n" "R0" "lambdaRedshift" "alpha" "beta" "ml" "sl" "mh" "sh" )
-
+#"R0" "lambdaRedshift" "alpha" 
 i=1 
 for par in ${allGoalParams[@]};do
     echo $par

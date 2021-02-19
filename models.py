@@ -32,11 +32,13 @@ assert (m1z > 0).all()
 assert (m2z > 0).all()
 assert (dL > 0).all()
 
+assert(m2z<m1z).all()
+
 
 print('theta shape: %s' % str(theta.shape))
 print('We have %s observations' % Nobs)
 
-#print('Number of samples: %s' %str(Nsamples.shape) )
+print('Number of samples: %s' %Nsamples )
 
 
 print('Loading injections from %s dataset...' %config.dataset_name_injections)
@@ -129,9 +131,10 @@ def logLik(Lambda, m1, m2, z):
     logLik_ -= logOrMassPrior
     logLik_ -= logOrDistPrior
     #print(m1, m2, z)
+    #print('logLik_ shape: %s' %str(logLik_.shape))
     #return np.log(lik.mean(axis=1)) .sum(axis=(-1))
-    # allLogLiks = np.logaddexp.reduce(logLik_, axis=-1)-logNsamples
-    allLogLiks = logsumexp(logLik_, axis=-1)-logNsamples
+    allLogLiks = np.logaddexp.reduce(logLik_, axis=-1)-logNsamples
+    #allLogLiks = logsumexp(logLik_, axis=-1)-logNsamples
     #print('allLogLiks shape: %s' %str(allLogLiks.shape))
     ll=allLogLiks.sum()
     #print('ll1 logsumexp: %s' %ll)
@@ -286,11 +289,11 @@ def log_dN_dm1dm2dz(Lambda, m1, m2, z):
     """
     H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     lambdaBBH = [alpha, beta, ml, sl, mh, sh]
-    mmin = ml-7*sl
-    mmax = mh+7*sh
-    where_compute = (m2 < m1) & (mmin < m2) & (m1 < mmax)
-    return np.where(where_compute, logTobs+cosmo.log_dV_dz(z, H0, Om0, w0)+log_dtobsdtdet(z) +log_dNdVdt(z, lambdaRedshift)+logMassPrior(m1, m2, lambdaBBH), np.NINF)
-
+    #mmin = ml-15*sl
+    #mmax = mh+15*sh
+    #where_compute = (mmin < m2) & (m1 < mmax) #& (m2 < m1) 
+    #return np.where(where_compute, logTobs+cosmo.log_dV_dz(z, H0, Om0, w0)+log_dtobsdtdet(z) +log_dNdVdt(z, lambdaRedshift)+logMassPrior(m1, m2, lambdaBBH), np.NINF)
+    return logTobs+cosmo.log_dV_dz(z, H0, Om0, w0)+log_dtobsdtdet(z) +log_dNdVdt(z, lambdaRedshift)+logMassPrior(m1, m2, lambdaBBH)
 
 def log_dtobsdtdet(z):
     return -np.log1p(z)
@@ -309,11 +312,11 @@ def log_dN_dm1zdm2zddL(Lambda, m1, m2, z):
     H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     #return dN_dm1dm2dz(Lambda, m1, m2) / ( MsourceToMdetJacobian(z) * ddL_dz(z, H0, Om0, w0, Xi0, n) )
     #lambdaBBH = [alpha, beta, ml, sl, mh, sh]
-    mmin = ml-7*sl
-    mmax = mh+7*sh
-    where_compute = (m2 < m1) & (mmin < m2) & (m1 < mmax) 
-    return np.where(where_compute, log_dN_dm1dm2dz(Lambda, m1, m2, z)-log_dMsourcedMdet(z) - cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n), np.NINF)  
-
+    #mmin = ml-15*sl
+    #mmax = mh+15*sh
+    #where_compute =  (mmin < m2) & (m1 < mmax)  # (m2 < m1)
+    #return np.where(where_compute, log_dN_dm1dm2dz(Lambda, m1, m2, z)-log_dMsourcedMdet(z) - cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n), np.NINF)  
+    return log_dN_dm1dm2dz(Lambda, m1, m2, z)-log_dMsourcedMdet(z) - cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n)
 
 def log_dMsourcedMdet(z):
     return 2*np.log1p(z)

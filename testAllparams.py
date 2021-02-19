@@ -22,7 +22,7 @@ import Globals
 from scipy.integrate import quad
 import scipy.stats as ss
 
-fout = 'test_plotAlphaWithR_small2'
+fout = 'test_fin'
 
 marginalise_R0=False
 selection_integral_uncertainty=True
@@ -33,7 +33,7 @@ npoints=5
 dataset_name='mock'
 
 
-priors_types = {'R0': 'flatLog'} #, 'Om0':'gauss'}
+priors_types = None#{R0': 'flatLog'} #, 'Om0':'gauss'}
 priors_params = None#{'Om0': {'mu':0.3, 'sigma':0.01} }
 
 in_time=time.time()
@@ -48,9 +48,9 @@ with open('config.py', 'w') as f:
     f.write("from params import Params, PriorLimits")
     f.write("\ndataset_name='%s'" %dataset_name)
     f.write("\ndataset_name_injections='%s'" %dataset_name)
-    f.write("\nnObsUse=10 " ) #%nObsUse)
-    f.write("\nnSamplesUse=500  " )
-    f.write("\nnInjUse=1000  " )
+    f.write("\nnObsUse=None " ) #%nObsUse)
+    f.write("\nnSamplesUse=None  " )
+    f.write("\nnInjUse=None  " )
     f.write("\nmarginalise_rate=%s"%marginalise_R0)
     f.write("\nselection_integral_uncertainty=%s"%selection_integral_uncertainty)
     f.write("\nverbose_bias=True")
@@ -266,12 +266,17 @@ else:
         #print('log(alpha) at true value of %s: %s '%(truth, logMuVals[np.argwhere(grid==truth)] ) )
         print('alpha at true value of %s: %s '%(truth, al_t) )
         
+        
+        ##########################################################################
+        ##########################################################################
+        ##########################################################################
+        
         print('Computing likelihood for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
         logLik=np.zeros(grid.shape[0] )
         for i,val in enumerate(grid):
             Lambda = myLambda.get_Lambda(val, Lambda_ntest)
             m1_obs, m2_obs, z_obs = mymodels.get_mass_redshift(Lambda, which_data='obs')
-            logLik[i] = mymodels.logLik(Lambda, m1_obs, m2_obs, z_obs)
+            logLik[i] = mymodels.logLik( Lambda, m1_obs, m2_obs, z_obs)
         #logLik = np.array( [mymodels.logLik(Lambda, precomputed['source_frame_mass1_observations'],precomputed['source_frame_mass2_observations'],precomputed['z_observations'] ) for val in grid ] )
         print('\nLikelihood done for '+param+' in %.2fs' %(time.time() - t1))
         print(logLik)
