@@ -22,9 +22,9 @@ import Globals
 from scipy.integrate import quad
 import scipy.stats as ss
 
-fout = 'test_plotAlphaMarginalR'
+fout = 'test_plotAlphaWithR'
 
-marginalise_R0=True
+marginalise_R0=False
 selection_integral_uncertainty=True
 skip=['n',  ]
 
@@ -48,8 +48,8 @@ with open('config.py', 'w') as f:
     f.write("from params import Params, PriorLimits")
     f.write("\ndataset_name='%s'" %dataset_name)
     f.write("\ndataset_name_injections='%s'" %dataset_name)
-    f.write("\nnObsUse=10 " ) #%nObsUse)
-    f.write("\nnSamplesUse=50  " )
+    f.write("\nnObsUse=None " ) #%nObsUse)
+    f.write("\nnSamplesUse=None  " )
     f.write("\nnInjUse=None  " )
     f.write("\nmarginalise_rate=%s"%marginalise_R0)
     f.write("\nselection_integral_uncertainty=%s"%selection_integral_uncertainty)

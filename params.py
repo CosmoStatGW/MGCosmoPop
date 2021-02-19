@@ -97,7 +97,7 @@ class PriorLimits(object):
                            'Om0':0.05,
                            'w0':-2,
                            'n':0, 
-                           'R0': 0.01, # Gpc^-3 yr^-1
+                           'R0': 1e-03, # Gpc^-3 yr^-1
                            'lambdaRedshift':-15,
                            'alpha':-5,
                            'beta':-5, 
@@ -110,7 +110,7 @@ class PriorLimits(object):
                            'w0':-0.1,
                            'Xi0':10, 
                            'n':10, 
-                           'R0': 1000,
+                           'R0': 1e-05,
                            'lambdaRedshift':10,
                            'alpha':10,
                            'beta':10, 
