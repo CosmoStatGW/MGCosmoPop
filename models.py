@@ -151,19 +151,24 @@ def log_prior(Lambda_test, priorLimits, params_inference, pNames, pParams):
             #limInf = priorLimits.limInf[param]
             #limSup = priorLimits.limSup[param]
             condition &= limInf < Lambda_test[i] < limSup
-
-    if condition:
-        lp = 0
-        for i,param in enumerate(params_inference):
+    
+    if not condition:
+        return np.NINF
+    
+    
+    lp = 0
+    for i,param in enumerate(params_inference):
             pname= pNames[param]
             if pname=='flatLog':
                 lp-=np.log(Lambda_test[i])
             elif pname=='gauss':
+                x = Lambda_test[i]
                 mu, sigma = pParams[param]['mu'], pParams[param]['sigma']
-                lp+= (-np.log(sigma)-(Lambda_test[i]-mu)**2/(2*sigma**2)) 
-        return lp#func(Lambda_test, params_inference) #config.allMyPriors.get_logVals(Lambda_test, params_inference) # sum of log priors of all the variables
-    else: 
-        return -np.inf
+                if np.abs(x-mu)<7*sigma:
+                    return np.NINF
+                lp+= (-np.log(sigma)-(x-mu)**2/(2*sigma**2)) 
+    return lp#func(Lambda_test, params_inference) #config.allMyPriors.get_logVals(Lambda_test, params_inference) # sum of log priors of all the variables
+
 
 
 

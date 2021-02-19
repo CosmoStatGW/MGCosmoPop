@@ -14,19 +14,19 @@ dataset_name='mock'
 dataset_name_injections='mock' # LVC
 ifar_th = 1.
 
-fout='runFullR0testPickle'
+fout='runFullWithR0'
 
 telegramAlert = False
 
 
-params_inference = [ 'H0', 'Om0', 'Xi0', 'R0','lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh']
+params_inference = [ 'H0', 'Om0', 'Xi0', 'R0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh']
 
 
-priors_types = {'Om0':'gauss' , 'R0': 'flatLog'} 
-priors_params = { 'Om0': {'mu': 0.3 , 'sigma':0.001} }
+priors_types = {'R0': 'flatLog'}  #Om0':'gauss' , 
+priors_params = None #{ 'Om0': {'mu': 0.3 , 'sigma':0.001} }
 
-nChains=25 #2*len(params_inference)
-max_n=300
+nChains=50 #2*len(params_inference)
+max_n=10000
 
 maxNtaus = 100
 checkTauStep = 100
@@ -36,7 +36,7 @@ perc_variation_init = 30
 marginalise_rate = False
 selection_integral_uncertainty = True
 
-nPools=4
+nPools=5
 
 mass_model='Farr' # Farr
 mass_normalization = 'integral'  # integral #pivot
@@ -46,11 +46,11 @@ pivot_val=64.4
 ###########
 # For testing
 
-nSamplesUse= 100
-nObsUse=10
-nInjUse=100
+nSamplesUse= None
+nObsUse=None
+nInjUse=None
 
-verbose_bias = False
+verbose_bias = True
 
 
 

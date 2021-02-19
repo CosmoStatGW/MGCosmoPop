@@ -289,13 +289,13 @@ else:
             if selection_integral_uncertainty:
                 logPosterior+=(3 * mymodels.Nobs + mymodels.Nobs ** 2) / (2 * NeffVals)
                 
-        if np.isfinite(logPosterior.max()):
-            mymax = logPosterior.max()
-        else:
-            keep = np.where( np.isfinite(logPosterior) )
-            logPosterior = logPosterior[keep]
-            grid = grid[keep]
-            logPosterior_noSel=logPosterior_noSel[keep]
+        
+        #if not np.isfinite(logPosterior.max()):
+        #    keep = np.where( np.isfinite(logPosterior) )
+        #    logPosterior = logPosterior[keep]
+        #    grid = grid[keep]
+        #   logPosterior_noSel=logPosterior_noSel[keep]
+        mymax = logPosterior.max()
             
         
         posterior = np.exp(logPosterior-mymax)
