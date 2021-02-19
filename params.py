@@ -110,7 +110,7 @@ class PriorLimits(object):
                            'w0':-0.1,
                            'Xi0':10, 
                            'n':10, 
-                           'R0': 1e-05,
+                           'R0': 1e05,
                            'lambdaRedshift':10,
                            'alpha':10,
                            'beta':10, 
@@ -205,7 +205,7 @@ class PriorLimits(object):
                     ptype=priors_types[key]
                     if ptype=='gauss':
                         self._set_prior(key, priorType=ptype,mu=priors_params[key]['mu'], sigma=priors_params[key]['sigma'] )
-                        self.prior_params[key] = priors_params
+                        self.prior_params[key] = priors_params[key]
                     elif ptype=='flat' or ptype=='flatLog':
                         self._set_prior(key, priorType=ptype)
                     else:

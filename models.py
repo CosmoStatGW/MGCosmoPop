@@ -135,7 +135,7 @@ def logLik(Lambda, m1, m2, z):
     return ll #allLogLiks.sum()
 
 
-def log_prior(Lambda_test, priorLimits, params_inference, func):
+def log_prior(Lambda_test, priorLimits, params_inference, pNames, pParams):
     
     #  = [ (priorLimits.limInf[param], priorLimits.limSup[param] ) for param in priorLimits.names ]
     
@@ -152,17 +152,25 @@ def log_prior(Lambda_test, priorLimits, params_inference, func):
             condition &= limInf < Lambda_test[i] < limSup
 
     if condition:
-        return func(Lambda_test, params_inference) #config.allMyPriors.get_logVals(Lambda_test, params_inference) # sum of log priors of all the variables
+        lp = 0
+        for i,param in enumerate(params_inference):
+            pname= pNames[param]
+            if pname=='flatLog':
+                lp-=np.log(Lambda_test[i])
+            elif pname=='gauss':
+                mu, sigma = pParams[param]['mu'], pParams[param]['sigma']
+                lp+= (-np.log(sigma)-(Lambda_test[i]-mu)**2/(2*sigma**2)) 
+        return lp#func(Lambda_test, params_inference) #config.allMyPriors.get_logVals(Lambda_test, params_inference) # sum of log priors of all the variables
     else: 
         return -np.inf
 
 
 
 
-def log_posterior(Lambda_test, Lambda_ntest,  priorLimits, params_inference, func):
+def log_posterior(Lambda_test, Lambda_ntest,  priorLimits, params_inference, pNames, pParams):
     
     
-    logPrior = log_prior(Lambda_test,  priorLimits, params_inference, func)
+    logPrior = log_prior(Lambda_test,  priorLimits, params_inference, pNames, pParams)
     if not np.isfinite(logPrior):
         return -np.inf
     

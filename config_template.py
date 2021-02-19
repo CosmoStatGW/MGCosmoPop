@@ -75,6 +75,8 @@ if mass_normalization=='pivot' and 'R0' in params_inference:
 allMyPriors = PriorLimits()
 allMyPriors.set_priors(priors_types=priors_types, priors_params=priors_params)
 myPriorLimits = allMyPriors.priorLimits(params_inference)
+#print(allMyPriors.pnames)
+#print(allMyPriors.prior_params)
 
 lines=[]
 lines.append('def get_Lambda(Lambda_test, Lambda_ntest):')
