@@ -162,7 +162,8 @@ else:
         logPrior=np.zeros(grid.shape[0] )
         for i,val in enumerate(grid):
              #Lambda = myLambda.get_Lambda(val, Lambda_ntest)
-             logPrior[i] = mymodels.log_prior(val, myPriorLims, param, allMyPriors.get_logVals )
+             #config.myPriorLimits, config.params_inference , config.allMyPriors.pnames, config.allMyPriors.prior_params
+             logPrior[i] = mymodels.log_prior(val, myPriorLims, params_inference, allMyPriors.pnames, allMyPriors.prior_params )
         print('log prior: %s ' %logPrior)
         
         
