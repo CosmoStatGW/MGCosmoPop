@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -a allGoalParams=(H0" "Om0" "w0" "Xi0" "n" "R0" "lambdaRedshift" "alpha" "beta" "ml" "sl" "mh" "sh" )
+declare -a allGoalParams=("H0" "Om0" "Xi0" "n" "R0" "lambdaRedshift" "alpha" "beta" "ml" "sl" "mh" "sh" )
 
 i=1 
 for par in ${allGoalParams[@]};do

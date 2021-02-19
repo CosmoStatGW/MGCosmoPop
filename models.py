@@ -24,6 +24,7 @@ import numpy as np
 
 print('Loading data...')
 theta, Nsamples = data.load_data(config.dataset_name)
+logNsamples = np.log(Nsamples)
 Nobs = theta[0].shape[0]
 logNobs = np.log(Nobs)
 m1z, m2z, dL = theta
@@ -126,7 +127,7 @@ def logLik(Lambda, m1, m2, z):
     logLik_ -= logOrMassPrior
     logLik_ -= logOrDistPrior
     #return np.log(lik.mean(axis=1)) .sum(axis=(-1))
-    allLogLiks = np.logaddexp.reduce(logLik_, axis=-1)-Nsamples
+    allLogLiks = np.logaddexp.reduce(logLik_, axis=-1)-logNsamples
     
     ll=allLogLiks.sum()
     if np.isnan(ll):
