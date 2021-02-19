@@ -177,7 +177,7 @@ def log_prior(Lambda_test, priorLimits, params_inference, pNames, pParams):
             elif pname=='gauss':
                 #x = Lambda_test[i]
                 mu, sigma = pParams[param]['mu'], pParams[param]['sigma']
-                if np.abs(x-mu)<7*sigma:
+                if np.abs(x-mu)>7*sigma:
                     return np.NINF
                 lp+= (-np.log(sigma)-(x-mu)**2/(2*sigma**2)) 
     return lp#func(Lambda_test, params_inference) #config.allMyPriors.get_logVals(Lambda_test, params_inference) # sum of log priors of all the variables

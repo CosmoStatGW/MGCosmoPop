@@ -169,7 +169,7 @@ def main():
     print(' Initial intervals for initialization of the walkers have an amplitude of +-%s percent around the expeced values of %s'%(config.perc_variation_init, str(exp_values)) )
     pos = Delta*np.random.rand(config.nChains,  ndim)+lowLims
     nwalkers = pos.shape[0]
-    print('Initial positions of the walkers: %s' %str(pos))
+    #print('Initial positions of the walkers: %s' %str(pos))
     
     #scriptname = __file__
     #filenameT = scriptname.replace("_", "\_")

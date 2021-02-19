@@ -191,6 +191,8 @@ class PriorLimits(object):
             elif priorType=='gauss':
                 print("Setting gaussian prior on %s with mu=%s, sigma=%s" %(param, mu, sigma))
                 self.logVals[param] = lambda x: -np.log(sigma)-(x-mu)**2/(2*sigma**2)
+                self.limInf[param] = mu-7*sigma
+                self.limSup[param] = mu+7*sigma
             else:
                 raise ValueError
             
