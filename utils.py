@@ -1,7 +1,13 @@
 import sys
 import requests
+import numpy as np
 
 
+def logdiffexp(x, y):
+    '''
+    computes log( e^x - e^y)
+    '''
+    return x + np.log1p(-np.exp(y-x))
 
 
 ######################

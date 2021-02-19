@@ -5,9 +5,10 @@ Created on Wed Jan 20 16:38:28 2021
 """
 
 #from Globals import *
+import Globals
 import config
 #from config import *
-#import utils
+import utils
 #from  cosmo import *
 import cosmo
 import data
@@ -15,9 +16,9 @@ import scipy.stats as ss
 from getLambda import get_Lambda
 from astropy.cosmology import  Planck15, z_at_value
 #from scipy.integrate import cumtrapz
-import astropy.units as u
+#import astropy.units as u
 import numpy as np
-from scipy.special import logsumexp
+#from scipy.special import logsumexp
 #####################################################
 #####################################################
 
@@ -29,75 +30,84 @@ m1z, m2z, dL = theta
 assert (m1z > 0).all()
 assert (m2z > 0).all()
 assert (dL > 0).all()
-Tobs = 2.5
+
 
 print('theta shape: %s' % str(theta.shape))
 print('We have %s observations' % Nobs)
 
-print('Loading injections...')
-theta_sel, weights_sel, N_gen = data.load_injections_data(config.dataset_name_injections)
+
+print('Loading injections from %s dataset...' %config.dataset_name_injections)
+theta_sel, weights_sel, N_gen, Tobs, ifars = data.load_injections_data(config.dataset_name_injections)
 log_weights_sel = np.log(weights_sel)
-m1z_sel, m2z_sel, dL_sel = theta_sel
+logTobs=np.log(Tobs)
+if config.dataset_name_injections=='mock':
+    m1z_sel, m2z_sel, dL_sel = theta_sel
+else:
+    #m1_sel, m2_sel, z_sel = theta_sel
+    m1z_sel, m2z_sel, dL_sel = theta_sel
+    gstlal_ifar, pycbc_ifar, pycbc_bbh_ifar = ifars
 logN_gen=np.log(N_gen)
 print('Number of total injections: %s' %N_gen)
-print('Number of injections with SNR>8: %s' %weights_sel.shape[0])
-zmax=z_at_value(Planck15.luminosity_distance, dL_sel.max()*u.Mpc)
+print('Number of detected injections: %s' %weights_sel.shape[0])
+#if config.dataset_name_injections=='mock':
+zmax=z_at_value(Planck15.luminosity_distance, dL_sel.max()*Globals.which_unit)
+#else:
+#zmax=z_sel.max()
 print('Max z of injections: %s' %zmax)
+print('Oberving time: %s years' %Tobs)
 
 
 
-OrMassPrior =  data.originalMassPrior(m1z, m2z)
-OrDistPrior  = data.originalDistPrior(dL)
-logOrMassPrior =  data.originalMassPrior(m1z, m2z)
-logOrDistPrior  = data.originalDistPrior(dL)
-
-
-
-#####################################################
-#####################################################
+#OrMassPrior =  data.originalMassPrior(m1z, m2z)
+#OrDistPrior  = data.originalDistPrior(dL)
+logOrMassPrior =  data.logOriginalMassPrior(m1z, m2z)
+logOrDistPrior  = data.logOriginalDistPrior(dL)
 
 
 
 #####################################################
+#####################################################
 
-def selectionBias(Lambda, m1, m2, z, get_neff=False, verbose=False):
+
+
+#####################################################
+
+
+
+
+def logSelectionBias(Lambda, m1, m2, z, get_neff=False, verbose=False,):
     
     #m1, m2, z = precomputed['m1'], precomputed['m2'], precomputed['z']
     #Lambda = get_Lambda(Lambda_test, Lambda_ntest)
     #H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
-    
-    xx = dN_dm1zdm2zddL(Lambda, m1, m2, z)/weights_sel
-        
-    mu = xx.sum()/N_gen
-    if not get_neff:
-        return mu, np.NaN #np.repeat(np.NaN, logMu.shape[0] )
+    if config.dataset_name_injections=='mock':
+        logxx = log_dN_dm1zdm2zddL(Lambda, m1, m2, z)    
     else:
-        muSq = mu*mu
-        SigmaSq = np.sum(xx*xx)/N_gen**2 - muSq/N_gen
-        Neff = muSq/SigmaSq
-        if Neff < 4 * Nobs and verbose:
-            print('NEED MORE SAMPLES FOR SELECTION EFFECTS! ') #Values of lambda_test: %s' %str(Lambda_test))
-        return mu, Neff
-
-
-
-def logSelectionBias(Lambda, m1, m2, z, get_neff=False, verbose=False):
+        condition =  (gstlal_ifar > config.ifar_th) | (pycbc_ifar > config.ifar_th) | (pycbc_bbh_ifar > config.ifar_th)
+        # LVC gives samples and weights in source frame quantities (m1, m2, z), so no Jacobian needed 
+        logxx = np.where( condition, log_dN_dm1zdm2zddL(Lambda, m1, m2, z)+np.log(0.25) ,  np.NINF) # add 1/2 for each spin dimension
     
-    #m1, m2, z = precomputed['m1'], precomputed['m2'], precomputed['z']
-    #Lambda = get_Lambda(Lambda_test, Lambda_ntest)
-    #H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
+    logxx -= log_weights_sel
+    logMu = np.logaddexp.reduce(logxx) - logN_gen
     
-    logxx = log_dN_dm1zdm2zddL(Lambda, m1, m2, z) - log_weights_sel   
-    logMu = logsumexp(logxx) - logN_gen
-    
+    if np.isnan(logMu):
+        raise ValueError('NaN value for logMu. Values of Lambda: %s%s' %(str(config.allMyPriors.allParams), str(Lambda) ) )
     if not get_neff:
         return logMu, np.NaN #np.repeat(np.NaN, logMu.shape[0] )
     else:
-        muSq = np.exp(2*logMu).astype('float128')
-        logs2 = (logsumexp(2*logxx) -2*logN_gen).astype('float128')
-        #logSigmaSq = -logN_gen-2*logMu+logsumexp(2*xx)
-        SigmaSq = np.exp(logs2) - muSq/N_gen
-        Neff = muSq/SigmaSq
+        #muSq = np.exp(2*logMu)#.astype('float128')
+        logs2 = ( np.logaddexp.reduce(2*logxx) -2*logN_gen)#.astype('float128')
+        
+        #np.logaddexp.reduce(2.0*log_dN - 2.0*log(p_draw)) - 2.0*log(Ndraw)
+        #log_sigma2 = logdiffexp(log_s2, 2.0*log_mu - log(Ndraw))
+        #Neff = exp(2.0*log_mu - log_sigma2)
+        
+        logSigmaSq = utils.logdiffexp( logs2, 2.0*logMu - logN_gen )#.astype('float128') #-logN_gen-2*logMu+logsumexp(2*xx)
+        #SigmaSq = np.exp(logs2) - muSq/N_gen
+        #Neff = muSq/SigmaSq
+        Neff = np.exp( 2.0*logMu - logSigmaSq)
+        #if np.isnan(Neff):
+        #    raise ValueError('NaN value for logMu. Values of Lambda: %s%s' %(str(config.allMyPriors.allParams), str(Lambda) ) )
         if Neff < 4 * Nobs and verbose:
             print('NEED MORE SAMPLES FOR SELECTION EFFECTS! ')#Values of lambda_test: %s' %str(Lambda_test))
         return logMu, Neff
@@ -116,50 +126,57 @@ def logLik(Lambda, m1, m2, z):
     logLik_ -= logOrMassPrior
     logLik_ -= logOrDistPrior
     #return np.log(lik.mean(axis=1)) .sum(axis=(-1))
-    allLogLiks = logsumexp(logLik_, axis=-1)-Nsamples
-    return allLogLiks.sum()
+    allLogLiks = np.logaddexp.reduce(logLik_, axis=-1)-Nsamples
+    
+    ll=allLogLiks.sum()
+    if np.isnan(ll):
+        raise ValueError('NaN value for logLik. Values of Lambda: %s%s' %(str(config.allMyPriors.allParams), str(Lambda) ) )
+
+    return ll #allLogLiks.sum()
 
 
-def log_prior(Lambda_test):
+def log_prior(Lambda_test, priorLimits, params_inference, func):
     
     #  = [ (priorLimits.limInf[param], priorLimits.limSup[param] ) for param in priorLimits.names ]
-    
     
     if np.isscalar(Lambda_test):
         #limInf = priorLimits.limInf[params_inference]
         #limSup = priorLimits.limSup[params_inference]#priorLimits[0]
-        limInf, limSup =  config.myPriorLimits[0]
+        limInf, limSup =  priorLimits[0] #config.myPriorLimits[0]
         condition = limInf < Lambda_test < limSup
     else:
         condition = True
-        for i,(limInf, limSup) in enumerate(config.myPriorLimits): #param in enumerate(params_inference): #(limInf, limSup) in enumerate(priorLimits):
+        for i,(limInf, limSup) in enumerate(priorLimits): #(config.myPriorLimits): #param in enumerate(params_inference): #(limInf, limSup) in enumerate(priorLimits):
             #limInf = priorLimits.limInf[param]
             #limSup = priorLimits.limSup[param]
             condition &= limInf < Lambda_test[i] < limSup
 
     if condition:
-        return config.allMyPriors.get_logVals(Lambda_test, config.params_inference)
+        return func(Lambda_test, params_inference) #config.allMyPriors.get_logVals(Lambda_test, params_inference) # sum of log priors of all the variables
     else: 
         return -np.inf
 
 
 
 
-def log_posterior(Lambda_test, Lambda_ntest):
+def log_posterior(Lambda_test, Lambda_ntest,  priorLimits, params_inference, func):
     
     
-    
-    lp = log_prior(Lambda_test)
-    if not np.isfinite(lp):
+    logPrior = log_prior(Lambda_test,  priorLimits, params_inference, func)
+    if not np.isfinite(logPrior):
         return -np.inf
     
     Lambda = get_Lambda(Lambda_test, Lambda_ntest)
     # Compute source frame masses and redshifts
     m1_obs, m2_obs, z_obs = get_mass_redshift(Lambda, which_data='obs')
-    logPost= logLik(Lambda, m1_obs, m2_obs, z_obs )+ lp
+    logPost= logLik(Lambda, m1_obs, m2_obs, z_obs )+logPrior
     
     ### Selection bias
+    #if config.with_jacobian_inj:
     m1_inj, m2_inj, z_inj = get_mass_redshift(Lambda, which_data='inj')
+    #else:
+    #    m1_inj, m2_inj, z_inj  = m1_sel, m2_sel, z_sel
+
     logMu, Neff = logSelectionBias(Lambda, m1_inj, m2_inj, z_inj, get_neff = config.selection_integral_uncertainty, verbose=config.verbose_bias )
     
     ## Effects of uncertainty on selection effect and/or marginalisation over total rate
@@ -178,9 +195,13 @@ def log_posterior(Lambda_test, Lambda_ntest):
         #R0 = np.exp(logR0)
         logPost -= R0*mu
         if config.selection_integral_uncertainty:
-            logPost+= (R0*mu)*(R0*mu)/ (2 * Neff)
+            logPost+= (R0*mu)*(R0*mu)/ (2 * Neff)-ss.norm(loc=mu, scale=mu**2/Neff).logsf(0)+ss.norm(loc=R0*mu**2/Neff-mu, scale=mu**2/Neff).logsf(0)
+            
     
+    if np.isnan(logPost):
+        raise ValueError('NaN value for logPost. Values of Lambda: %s%s' %(str(config.allMyPriors.allParams), str(Lambda) ) )
     return logPost
+
 
 
 
@@ -190,6 +211,7 @@ def get_mass_redshift(Lambda, which_data):
     '''
     Compute only once some quantities that go into selection effects and likelihood
     '''
+    #if Lambda is not None:
     H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     
     if which_data=='obs':      
@@ -197,10 +219,13 @@ def get_mass_redshift(Lambda, which_data):
         m1 = m1z / (1 + z)    
         m2 = m2z / (1 + z)
     elif which_data=='inj':
+        #if config.with_jacobian_inj:
         #print('Precomuting with inj data')
         z = get_redshift( dL_sel, H0, Om0, w0, Xi0, n)
         m1 = m1z_sel / (1 + z)    
         m2 = m2z_sel / (1 + z)
+        #else:
+        #    raise ValueError('No need to compute redshift and mass')
         
     return m1, m2, z
 
@@ -218,7 +243,151 @@ def get_redshift(r, H0, Om0, w0, Xi0, n):
         raise ValueError('negative redshift')
     return z
 
+
 #####################################################
+
+
+
+
+def log_dN_dm1dm2dz(Lambda, m1, m2, z):
+    """
+    - theta is an array (m1z, m2z, dL) where m1z, m2z, dL are arrays 
+    of the GW posterior samples
+     
+     Lambda = (H0, Xi0, n, lambdaRedshift, lambdaBBH ) 
+     lambdaBBH is the parameters of the BBH mass function 
+    """
+    H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
+    lambdaBBH = [alpha, beta, ml, sl, mh, sh]
+    mmin = ml-7*sl
+    mmax = mh+7*sh
+    where_compute = (m2 < m1) & (mmin < m2) & (m1 < mmax)
+    return np.where(where_compute, logTobs+cosmo.log_dV_dz(z, H0, Om0, w0)+log_dtobsdtdet(z) +log_dNdVdt(z, lambdaRedshift)+logMassPrior(m1, m2, lambdaBBH), np.NINF)
+
+
+def log_dtobsdtdet(z):
+    return -np.log1p(z)
+
+
+def log_dNdVdt(z, lambdaRedshift):
+    '''
+    Evolution of total rate with redshift: (1+z)**lambda
+    The overall normalization is added in log_posterior, in order to allow for analytic marginalisation on it
+    '''
+    return lambdaRedshift*np.log1p(z)
+    
+    
+
+def log_dN_dm1zdm2zddL(Lambda, m1, m2, z):
+    H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
+    #return dN_dm1dm2dz(Lambda, m1, m2) / ( MsourceToMdetJacobian(z) * ddL_dz(z, H0, Om0, w0, Xi0, n) )
+    #lambdaBBH = [alpha, beta, ml, sl, mh, sh]
+    mmin = ml-7*sl
+    mmax = mh+7*sh
+    where_compute = (m2 < m1) & (mmin < m2) & (m1 < mmax) 
+    return np.where(where_compute, log_dN_dm1dm2dz(Lambda, m1, m2, z)-log_dMsourcedMdet(z) - cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n), np.NINF)  
+
+
+def log_dMsourcedMdet(z):
+    return 2*np.log1p(z)
+
+
+
+
+
+#####################################################
+
+
+def logMassPrior(m1, m2, lambdaBBH):
+    alpha, beta, ml, sl, mh, sh = lambdaBBH
+    if config.mass_normalization=='integral' and config.mass_model=='Farr':
+        return np.log(m1)*(-alpha)+np.log(m2)*(beta)+logf_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh)+logf_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh)-np.log(CCfast(alpha, beta, ml, sl, mh, sh))
+    elif config.mass_normalization=='pivot' and config.mass_model=='Farr':
+        return np.log(m1)*(-alpha)+alpha*np.log(30) +np.log(m2)*(beta) -beta*np.log(30) +logf_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh)+logf_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh)-2*logf_smooth(30, ml=ml, sl=sl, mh=mh, sh=sh)-2*np.log(30)
+    elif config.mass_model=='LVC':
+        mmin = ml#-7*sl
+        mmax = mh#+7*sh
+        where_compute = (m2 < m1) & (mmin < m2) & (m1 < mmax)
+        return  np.where( where_compute,  (-alpha)*np.log(m1)  + beta*np.log(m2) -logC1(m1, beta, ml) -logC2(alpha, ml, mh),  np.NINF) # -beta*np.log(m1)
+    else:
+        raise ValueError
+
+
+def logC1(m, beta, ml):
+    if beta>-1:
+        return -np.log1p(beta)+utils.logdiffexp((1+beta)*np.log(m), (1+beta)*np.log(ml)) # -beta*np.log(m)
+    elif beta<-1:
+        return -np.log(-1-beta)+utils.logdiffexp( (1+beta)*np.log(ml), (1+beta)*np.log(m)) #-beta*np.log(m)
+    raise ValueError # 1 / m / np.log(m / ml)
+
+
+def logC2(alpha, ml, mh):
+    if (alpha < 1) & (alpha!=0):
+        return -np.log1p(-alpha)+utils.logdiffexp( (1-alpha)*np.log(mh), (1-alpha)*np.log(ml) ) #(1 - alpha) / (mh ** (1 - alpha) - ml ** (1 - alpha))
+    #return 1 / np.log(mh / ml)
+    elif (alpha > 1) :
+        return -np.log(alpha-1)+utils.logdiffexp(  (1-alpha)*np.log(ml), (1-alpha)*np.log(mh) )
+    raise ValueError
+
+def logf_smooth(m, ml=5, sl=0.1, mh=45, sh=0.1):
+    return np.log(ss.norm().cdf((np.log(m)-np.log(ml))/sl))+np.log((1-ss.norm().cdf((np.log(m)-np.log(mh))/sh)))
+
+
+def CCfast(alpha=0.75, beta=0, ml=5, sl=0.1, mh=45, sh=0.1):
+  
+    if (beta!=-1) & (alpha!=1) : 
+        return (( mh**(-alpha+beta+2)- ml**(-alpha+beta+2) )/(-alpha+beta+2) - ml**(beta+1) *(mh**(-alpha+1)-ml**(-alpha+1))/(-alpha+1) )/(beta+1)
+    else:
+        raise ValueError
+        
+        
+        
+#####################################################
+# Not used
+#####################################################
+
+
+def f_smooth(m, ml=5, sl=0.1, mh=45, sh=0.1):
+    return ss.norm().cdf((np.log(m) - np.log(ml)) / sl) * (1 - ss.norm().cdf((np.log(m) - np.log(mh)) / sh))
+
+
+def C1(m, beta, ml):
+    if beta != -1:
+        return (1 + beta) / m / (1 - (ml / m) ** (1 + beta))
+    return 1 / m / np.log(m / ml)
+
+
+def C2(alpha, ml, mh):
+    if alpha != 1:
+        return (1 - alpha) / (mh ** (1 - alpha) - ml ** (1 - alpha))
+    return 1 / np.log(mh / ml)
+
+
+def massPrior(m1, m2, lambdaBBH):
+    """
+    lambdaBBH is the array of parameters of the BBH mass function 
+    """
+    alpha, beta, ml, sl, mh, sh = lambdaBBH
+    if config.mass_normalization=='integral':
+        return (m1)**(-alpha)*(m2)**(beta)*f_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh)*f_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh)/CCfast(alpha, beta, ml, sl, mh, sh)
+        #return m1 ** (-alpha) * (m2 / m1) ** beta * f_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh) * f_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh) * C1(m1, beta, ml) * C2(alpha, ml, mh)
+    elif config.mass_normalization=='pivot':
+        return (m1/30)**(-alpha)*(m2/30)**(beta)*f_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh)*f_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh) /f_smooth(30, ml=ml, sl=sl, mh=mh, sh=sh)**2/(30**2)
+    else:
+        raise ValueError
+
+
+
+def rateDensityEvol(z, lambdaRedshift):
+    """
+    merger rate density evolution in redshift (un-normalized)
+    """
+    return (1 + z)**(lambdaRedshift)
+
+
+
+def MsourceToMdetJacobian(z):
+    return (1 + z)*(1 + z)
 
 
 def dN_dm1dm2dz(Lambda, m1, m2, z):
@@ -237,32 +406,38 @@ def dN_dm1dm2dz(Lambda, m1, m2, z):
 def dN_dm1zdm2zddL(Lambda, m1, m2, z):
     H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
     #return dN_dm1dm2dz(Lambda, m1, m2) / ( MsourceToMdetJacobian(z) * ddL_dz(z, H0, Om0, w0, Xi0, n) )
-    lambdaBBH = [alpha, beta, ml, sl, mh, sh]
-    return Tobs*cosmo.dV_dz(z, H0, Om0, w0)*(1 + z)**(lambdaRedshift-1)* massPrior(m1, m2, lambdaBBH)/  ((1 + z)*(1 + z)) / cosmo.ddL_dz(z, H0, Om0, w0, Xi0, n) 
-
-
-def log_dN_dm1zdm2zddL(Lambda, m1, m2, z):
-    H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
-    #return dN_dm1dm2dz(Lambda, m1, m2) / ( MsourceToMdetJacobian(z) * ddL_dz(z, H0, Om0, w0, Xi0, n) )
-    lambdaBBH = [alpha, beta, ml, sl, mh, sh]
-    return np.log(Tobs)+cosmo.log_dV_dz(z, H0, Om0, w0)+np.log(1 + z)*(lambdaRedshift-1)+ logMassPrior(m1, m2, lambdaBBH)-2*np.log(1 + z) - cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n) 
-
-
-def MsourceToMdetJacobian(z):
-    return (1 + z)*(1 + z)
-
-
-
-def rateDensityEvol(z, lambdaRedshift):
-    """
-    merger rate density evolution in redshift (un-normalized)
-    """
-    return (1 + z)**(lambdaRedshift)
+    #lambdaBBH = [alpha, beta, ml, sl, mh, sh]
+    return dN_dm1dm2dz(Lambda, m1, m2, z) /  MsourceToMdetJacobian(z) / cosmo.ddL_dz(z, H0, Om0, w0, Xi0, n) 
 
 
 
 
-#####################################################
+def selectionBias(Lambda, m1, m2, z, get_neff=False, verbose=False, ):
+    
+    #m1, m2, z = precomputed['m1'], precomputed['m2'], precomputed['z']
+    #Lambda = get_Lambda(Lambda_test, Lambda_ntest)
+    #H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
+    
+    #if config.dataset_name_injections=='mock':
+    xx = dN_dm1zdm2zddL(Lambda, m1, m2, z)/weights_sel
+    #else:
+    #    xx = dN_dm1dm2dz(Lambda, m1, m2, z)/weights_sel
+        
+    mu = xx.sum()/N_gen
+    if not get_neff:
+        return mu, np.NaN #np.repeat(np.NaN, logMu.shape[0] )
+    else:
+        muSq = mu*mu
+        SigmaSq = np.sum(xx*xx)/N_gen**2 - muSq/N_gen
+        Neff = muSq/SigmaSq
+        if Neff < 4 * Nobs and verbose:
+            print('NEED MORE SAMPLES FOR SELECTION EFFECTS! ') #Values of lambda_test: %s' %str(Lambda_test))
+        return mu, Neff
+
+
+
+
+
 
 def eval_fsmooth(m, ml=5, sl=0.1, mh=45, sh=0.1, nSigma=5):
     
@@ -360,43 +535,3 @@ def logMassPrior_1(m1, m2, lambdaBBH):
         
         
     return logpdf
-
-
-def logMassPrior(m1, m2, lambdaBBH):
-    alpha, beta, ml, sl, mh, sh = lambdaBBH
-    return np.log(m1)*(-alpha)+alpha*np.log(30) +np.log(m2)*(beta) -beta*np.log(30) +logf_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh)+logf_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh)-2*logf_smooth(30, ml=ml, sl=sl, mh=mh, sh=sh)-2*np.log(30)
-
-def massPrior(m1, m2, lambdaBBH):
-    """
-    lambdaBBH is the array of parameters of the BBH mass function 
-    """
-    alpha, beta, ml, sl, mh, sh = lambdaBBH
-    #return m1 ** (-alpha) * (m2 / m1) ** beta * f_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh) * f_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh) * C1(m1, beta, ml) * C2(alpha, ml, mh)
-    return (m1/30)**(-alpha)*(m2/30)**(beta)*f_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh)*f_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh) /f_smooth(30, ml=ml, sl=sl, mh=mh, sh=sh)**2/(30**2)
-    #return (m1)**(-alpha)*(m2)**(beta)*f_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh)*f_smooth(m2, ml=ml, sl=sl, mh=mh, sh=sh)/CCfast(alpha, beta, ml, sl, mh, sh)
-
-def C1(m, beta, ml):
-    if beta != -1:
-        return (1 + beta) / m / (1 - (ml / m) ** (1 + beta))
-    return 1 / m / np.log(m / ml)
-
-
-def C2(alpha, ml, mh):
-    if alpha != 1:
-        return (1 - alpha) / (mh ** (1 - alpha) - ml ** (1 - alpha))
-    return 1 / np.log(mh / ml)
-
-
-def f_smooth(m, ml=5, sl=0.1, mh=45, sh=0.1):
-    return ss.norm().cdf((np.log(m) - np.log(ml)) / sl) * (1 - ss.norm().cdf((np.log(m) - np.log(mh)) / sh))
-
-def logf_smooth(m, ml=5, sl=0.1, mh=45, sh=0.1):
-    return np.log(ss.norm().cdf((np.log(m)-np.log(ml))/sl))+np.log((1-ss.norm().cdf((np.log(m)-np.log(mh))/sh)))
-
-
-def CCfast(alpha=0.75, beta=0, ml=5, sl=0.1, mh=45, sh=0.1):
-  
-    if (beta!=-1) & (alpha!=1) : 
-        return (( mh**(-alpha+beta+2)- ml**(-alpha+beta+2) )/(-alpha+beta+2) - ml**(beta+1) *(mh**(-alpha+1)-ml**(-alpha+1))/(-alpha+1) )/(beta+1)
-    else:
-        raise ValueError

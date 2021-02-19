@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -a allGoalParams=("Om0" "R0" )  #("H0" "Om0" "Xi0" "n" "R0" "lambdaRedshift" "alpha" "beta" "ml" "sl" "mh" "sh" )
+declare -a allGoalParams=("H0" "R0" )  #("H0" "Om0" "Xi0" "n" "R0" "lambdaRedshift" "alpha" "beta" "ml" "sl" "mh" "sh" )
 
 i=1 
 for par in ${allGoalParams[@]};do
@@ -20,4 +20,5 @@ for par in ${allGoalParams[@]};do
     echo removing $par
     rm models$par.py 
     rm getLambda$par.py
+    rm config$par.py
 done

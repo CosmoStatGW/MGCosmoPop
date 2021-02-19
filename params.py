@@ -28,7 +28,7 @@ class Params(object):
                                'w0':-1.,
                            'Xi0':1.0, 
                            'n':1.91, 
-                           'R0': 64.4, #60 , # Gpc^-3 yr^-1
+                           'R0': 60, #60 , # Gpc^-3 yr^-1
                            'lambdaRedshift':3.0,
                            'alpha':0.75,
                            'beta':0.0, 
@@ -77,7 +77,13 @@ class Params(object):
         
         return  [self.names[param] for param in params]
         
-
+    def reset_fiducial(self, param, val):
+        print('Re-setting fiducial value  %s = %s' %(param, val))
+        self.trueValues[param] = val
+        
+    def reset_name(self, param, newname):
+        print('Re-setting name of %s to %s' %(param, newname))
+        self.names[param] = newname
 
 
 class PriorLimits(object):
@@ -91,7 +97,7 @@ class PriorLimits(object):
                            'Om0':0.05,
                            'w0':-2,
                            'n':0, 
-                           'R0': 0.1, # Gpc^-3 yr^-1
+                           'R0': 0.01, # Gpc^-3 yr^-1
                            'lambdaRedshift':-15,
                            'alpha':-5,
                            'beta':-5, 
@@ -129,7 +135,39 @@ class PriorLimits(object):
                            'R0': lambda x: 0,      
         }
         
+        self.pnames={'H0': 'flat', 
+                           'Xi0': 'flat' , 
+                           'Om0': 'flat',
+                           'w0':'flat',
+                           'n': 'flat', 
+                           'lambdaRedshift': 'flat',
+                           'alpha': 'flat',
+                           'beta':'flat', 
+                           'ml':'flat', 
+                           'sl':'flat', 
+                           'mh':'flat',
+                           'sh':'flat',
+                           'R0': 'flat',
+            
+            
+            }
         
+        self.prior_params={'H0': None, 
+                           'Xi0': None' , 
+                           'Om0': None,
+                           'w0':None,
+                           'n': None, 
+                           'lambdaRedshift': None,
+                           'alpha': None,
+                           'beta':None, 
+                           'ml':None, 
+                           'sl':None, 
+                           'mh':'flat',
+                           'sh':'flat',
+                           'R0': 'flat',
+            
+            
+            }
         
         
         if Globals.which_unit==u.Mpc:
@@ -153,7 +191,9 @@ class PriorLimits(object):
             elif priorType=='gauss':
                 print("Setting gaussian prior on %s with mu=%s, sigma=%s" %(param, mu, sigma))
                 self.logVals[param] = lambda x: -np.log(sigma)-(x-mu)**2/(2*sigma**2)
-            
+            else:
+                raise ValueError
+            self.pnames[param] = priorType
           
     def set_priors(self, priors_types=None, priors_params=None):
             
@@ -177,6 +217,7 @@ class PriorLimits(object):
          if not np.isscalar(Lambda_test):
              return np.array([ self.logVals[param](Lambda_test[i]) for i,param in enumerate(params_inference) ]).sum()
          else:
+             #if not params_inference
              return self.logVals[params_inference](Lambda_test)
              
              

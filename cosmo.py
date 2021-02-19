@@ -41,7 +41,7 @@ def E(z, Om, w0):
     E(z). Does not depend on H0
     '''
     if w0!=-1:
-        return FlatwCDM(H0=70, Om0=Om, Neff=0).efunc(z)
+        return FlatwCDM(H0=70, Om0=Om, w0=w0, Neff=0).efunc(z)
     else:
         return FlatLambdaCDM(H0=70, Om0=Om).efunc(z)
 

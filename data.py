@@ -4,16 +4,22 @@ import os
 from config import nObsUse, nSamplesUse, nInjUse
 import Globals
 import astropy.units as u
-
-
+from astropy.cosmology import Planck15
+import cosmo
 
 
 def originalMassPrior(m1z, m2z):
     return np.ones(m1z.shape)
 
-
 def originalDistPrior(dL):
     return np.ones(dL.shape)
+
+
+def logOriginalMassPrior(m1z, m2z):
+    return np.zeros(m1z.shape)
+
+def logOriginalDistPrior(dL):
+    return np.zeros(dL.shape)
 
 
 
@@ -40,7 +46,7 @@ def load_data(dataset_name):
 
 
 def load_mock_data():
-    with h5py.File(os.path.join(Globals.dataPath,'observations.h5'), 'r') as phi: #observations.h5 has to be in the same folder as this code
+    with h5py.File(os.path.join(Globals.dataPath,'mock','observations.h5'), 'r') as phi: #observations.h5 has to be in the same folder as this code
         
         if nObsUse is None and nSamplesUse is None:
             m1det_samples = np.array(phi['posteriors']['m1det'])
@@ -83,13 +89,43 @@ def load_injections_data(dataset_name_injections):
   
     
 def load_injections_data_LVC():
-    return None
+    with h5py.File(os.path.join(Globals.dataPath,'LVC_injections','o3a_bbhpop_inj_info.hdf'), 'r') as f:
+        
+        Tobs = f.attrs['analysis_time_s']/(365.25*24*3600) # years
+        Ndraw = f.attrs['total_generated']
+    
+        m1 = np.array(f['injections/mass1_source'])
+        m2 = np.array(f['injections/mass2_source'])
+        z = np.array(f['injections/redshift'])
+        #s1z = np.array(f['injections/spin1z'])
+        #s2z = np.array(f['injections/spin2z'])
+    
+        p_draw = np.array(f['injections/sampling_pdf'])
+    
+        gstlal_ifar = np.array(f['injections/ifar_gstlal'])
+        pycbc_ifar = np.array(f['injections/ifar_pycbc_full'])
+        pycbc_bbh_ifar = np.array(f['injections/ifar_pycbc_bbh'])
+        
+        m1z = m1*(1+z)
+        m2z = m2*(1+z)
+        #dL = Planck15.luminosity_distance(z).to(Globals.which_unit).value
+        dL = np.array(f['injections/distance']) #in Mpc for GWTC2 !
+        if Globals.which_unit==u.Gpc:
+            dL*=1e-03
+        
+        print('Re-weighting p_draw to go to detector frame quantities...')
+        p_draw/=(1+z)**2
+        p_draw/=cosmo.ddL_dz(z, Planck15.H0.value, Planck15.Om0, -1., 1., 0) #z, H0, Om, w0, Xi0, n
+
+        
+    return np.array([m1z, m2z, dL]), p_draw , Ndraw, Tobs, (gstlal_ifar, pycbc_ifar, pycbc_bbh_ifar)
+
     
 
 def load_injections_data_mock():   
     
-    
-    with h5py.File(os.path.join(Globals.dataPath,'selected.h5'), 'r') as f:
+    Tobs=2.5
+    with h5py.File(os.path.join(Globals.dataPath,'mock','selected.h5'), 'r') as f:
         
         if nInjUse is not None:
             m1_sel = np.array(f['m1det'])[:nInjUse]
@@ -105,7 +141,8 @@ def load_injections_data_mock():
         N_gen = f.attrs['N_gen']
     if Globals.which_unit==u.Mpc:
         dl_sel*=1e03
-    return np.array([m1_sel, m2_sel, dl_sel]), weights_sel , N_gen
+        
+    return np.array([m1_sel, m2_sel, dl_sel]), weights_sel , N_gen, Tobs, np.NaN
 
 
 
