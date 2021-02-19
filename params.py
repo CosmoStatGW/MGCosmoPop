@@ -153,7 +153,7 @@ class PriorLimits(object):
             }
         
         self.prior_params={'H0': None, 
-                           'Xi0': None' , 
+                           'Xi0': None , 
                            'Om0': None,
                            'w0':None,
                            'n': None, 
@@ -162,9 +162,9 @@ class PriorLimits(object):
                            'beta':None, 
                            'ml':None, 
                            'sl':None, 
-                           'mh':'flat',
-                           'sh':'flat',
-                           'R0': 'flat',
+                           'mh':None,
+                           'sh':None,
+                           'R0': None,
             
             
             }
@@ -193,7 +193,7 @@ class PriorLimits(object):
                 self.logVals[param] = lambda x: -np.log(sigma)-(x-mu)**2/(2*sigma**2)
             else:
                 raise ValueError
-            self.pnames[param] = priorType
+            
           
     def set_priors(self, priors_types=None, priors_params=None):
             
@@ -205,11 +205,12 @@ class PriorLimits(object):
                     ptype=priors_types[key]
                     if ptype=='gauss':
                         self._set_prior(key, priorType=ptype,mu=priors_params[key]['mu'], sigma=priors_params[key]['sigma'] )
+                        self.prior_params[key] = priors_params
                     elif ptype=='flat' or ptype=='flatLog':
                         self._set_prior(key, priorType=ptype)
                     else:
                         raise ValueError('Supported priors are : flat, flatLog, gauss')
-
+                    self.pnames[key] = ptype
     
     def get_logVals(self, Lambda_test, params_inference ):
         

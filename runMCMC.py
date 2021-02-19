@@ -200,9 +200,19 @@ def main():
     #else:
     #    logpost_function  = log_posterior_unmarg
     
+    functions = config.allMyPriors.logVals
+    def getPrior_pick(Lambda_test, params_inference ):
+        # H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda
+         if not np.isscalar(Lambda_test):
+             return np.array([ functions[param](Lambda_test[i]) for i,param in enumerate(params_inference) ]).sum()
+         else:
+             #if not params_inference
+             return functions[params_inference](Lambda_test)
+    
+    
     with Pool(config.nPools) as pool:
     	
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, models.log_posterior, backend=backend, args=(Lambda_ntest, ), pool=pool)
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, models.log_posterior, backend=backend, args=(Lambda_ntest,config.myPriorLimits[0], config.params_inference , config.allMyPriors.get_logVals), pool=pool)
         #sampler.run_mcmc( pos, max_n, progress=True)  
         
         
@@ -233,7 +243,8 @@ def main():
                 else:
                     print('Chain has not converged yet. ')
                     old_tau = tau
-        
+    
+    print('Plotting chains... ')
     fig, axes = plt.subplots(ndim, figsize=(10, 7), sharex=True)
     samples = sampler.get_chain()
     labels = labels_param
@@ -256,7 +267,7 @@ def main():
     #flat_samples = sampler.get_chain(discard=burnin, thin=thin, flat=True)
 
     
-
+    print('Plotting cornerplot... ')
     fig1 = corner.corner(
     samples, labels=labels, truths=trueValues,quantiles=[0.16, 0.84],show_titles=True, title_kwargs={"fontsize": 12}
     );
