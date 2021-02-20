@@ -227,7 +227,7 @@ def log_posterior(Lambda_test, Lambda_ntest,  priorLimits, params_inference, pNa
         #R0 = np.exp(logR0)
         logPost -= R0*mu
         if config.selection_integral_uncertainty:
-            logPost+= (R0*mu)*(R0*mu)/ (2 * Neff)-ss.norm(loc=mu, scale=mu/np.sqrt(Neff) ).logsf(0)+ss.norm(loc=R0*mu**2/Neff-mu, scale=mu/np.sqrt(Neff)).logsf(0)
+            logPost+= (R0*mu)*(R0*mu)/ (2 * Neff)#-ss.norm(loc=mu, scale=mu/np.sqrt(Neff) ).logsf(0)+ss.norm(loc=R0*mu**2/Neff-mu, scale=mu/np.sqrt(Neff)).logsf(0)
             
     
     if np.isnan(logPost):
