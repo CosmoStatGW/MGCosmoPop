@@ -28,13 +28,15 @@ marginalise_R0=False
 selection_integral_uncertainty=True
 skip=['n',  ]
 
+get_lik=False
+
 perc_variation=15
 npoints=5
 dataset_name='mock'
 
 
-priors_types = None#{R0': 'flatLog'} #, 'Om0':'gauss'}
-priors_params = None#{'Om0': {'mu':0.3, 'sigma':0.01} }
+priors_types = None #{R0': 'flatLog'} #, 'Om0':'gauss'}
+priors_params = None #{'Om0': {'mu':0.3, 'sigma':0.01} }
 
 in_time=time.time()
 
@@ -232,6 +234,7 @@ else:
         plt.axhline(5267, ls=':', color='k', lw=1.5);
         if param=='R0':
             plt.xscale('log')
+            plt.yscale('log')
         plt.legend(fontsize=16);
         plt.savefig( os.path.join(out_path, param+'_Ndet.pdf'))
         plt.close()
@@ -271,49 +274,58 @@ else:
         ##########################################################################
         ##########################################################################
         
-        print('Computing likelihood for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
-        logLik=np.zeros(grid.shape[0] )
-        for i,val in enumerate(grid):
-            Lambda = myLambda.get_Lambda(val, Lambda_ntest)
-            m1_obs, m2_obs, z_obs = mymodels.get_mass_redshift(Lambda, which_data='obs')
-            logLik[i] = mymodels.logLik( Lambda, m1_obs, m2_obs, z_obs)
-        #logLik = np.array( [mymodels.logLik(Lambda, precomputed['source_frame_mass1_observations'],precomputed['source_frame_mass2_observations'],precomputed['z_observations'] ) for val in grid ] )
-        print('\nLikelihood done for '+param+' in %.2fs' %(time.time() - t1))
-        print(logLik)
-        
-        #logPosterior = np.array( [mymodels.log_posterior(val, Lambda_ntest, priorLimits) for val in grid ] )
-        logPosterior_noSel = logLik  + logPrior
-        
-        
-        if not marginalise_R0:
-            logPosterior = logPosterior_noSel + mymodels.Nobs*logR0vals - R0Vals*muVals 
-            if selection_integral_uncertainty:
-                logPosterior+= (R0Vals*muVals*R0Vals*muVals)/2/NeffVals#-ss.norm(loc=muVals, scale=muVals**2/NeffVals).logsf(0)+ss.norm(loc=R0Vals*muVals**2/NeffVals-muVals, scale=muVals**2/NeffVals).logsf(0)
-        else:
-            logPosterior = logPosterior_noSel  - mymodels.Nobs*logMuVals 
-            if selection_integral_uncertainty:
-                logPosterior+=(3 * mymodels.Nobs + mymodels.Nobs ** 2) / (2 * NeffVals)
+        if get_lik:
+            print('Computing likelihood for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
+            logLik=np.zeros(grid.shape[0] )
+            #logPost=np.zeros(grid.shape[0] )
+            for i,val in enumerate(grid):
+                Lambda = myLambda.get_Lambda(val, Lambda_ntest)
+                m1_obs, m2_obs, z_obs = mymodels.get_mass_redshift(Lambda, which_data='obs')
+                logLik[i] = mymodels.logLik( Lambda, m1_obs, m2_obs, z_obs)
+                #logPost[i] = mymodels.log_posterior(val, Lambda_ntest,  myPriorLims, params_inference, allMyPriors.pnames, allMyPriors.prior_params )
+                #logLik = np.array( [mymodels.logLik(Lambda, precomputed['source_frame_mass1_observations'],precomputed['source_frame_mass2_observations'],precomputed['z_observations'] ) for val in grid ] )
+            print('\nLikelihood done for '+param+' in %.2fs' %(time.time() - t1))
+            print(logLik)
                 
-        np.savetxt( os.path.join(out_path, param+'_lik.txt') , np.stack([grid, logLik], axis=1) )
+                
+            logPosterior_noSel = logLik  + logPrior
+                
+        
+            if not marginalise_R0:
+                logPosterior = logPosterior_noSel + mymodels.Nobs*logR0vals - R0Vals*muVals 
+                if selection_integral_uncertainty:
+                    logPosterior+= (R0Vals*muVals*R0Vals*muVals)/2/NeffVals-ss.norm(loc=muVals, scale=muVals**2/NeffVals).logsf(0)+ss.norm(loc=R0Vals*muVals**2/NeffVals-muVals, scale=muVals**2/NeffVals).logsf(0)
+            else:
+                logPosterior = logPosterior_noSel  - mymodels.Nobs*logMuVals 
+                if selection_integral_uncertainty:
+                    logPosterior+=(3 * mymodels.Nobs + mymodels.Nobs ** 2) / (2 * NeffVals)
+                
+            np.savetxt( os.path.join(out_path, param+'_lik.txt') , np.stack([grid, logLik], axis=1) )
         #if not np.isfinite(logPosterior.max()):
         #    keep = np.where( np.isfinite(logPosterior) )
         #    logPosterior = logPosterior[keep]
         #    grid = grid[keep]
         #   logPosterior_noSel=logPosterior_noSel[keep]
+        else:
+            logPosterior = np.array( [ mymodels.log_posterior(val, Lambda_ntest,  myPriorLims, params_inference, allMyPriors.pnames, allMyPriors.prior_params ) for val in grid ] )
+        
+        
         mymax = logPosterior.max()
             
         
         posterior = np.exp(logPosterior-mymax)
         posterior /=np.trapz(posterior, grid)
         
-        posterior_noSel = np.exp(logPosterior_noSel-logPosterior_noSel.max())
-        posterior_noSel /=np.trapz(posterior_noSel, grid) 
+        if get_lik:
+            posterior_noSel = np.exp(logPosterior_noSel-logPosterior_noSel.max())
+            posterior_noSel /=np.trapz(posterior_noSel, grid) 
         print('Done.')
         np.savetxt( os.path.join(out_path, param+'_values.txt') , np.stack([grid, logPosterior, posterior], axis=1) )
         
         
         plt.plot(grid, logPosterior, label='With sel effects')
-        plt.plot(grid, logPosterior_noSel, label='No sel effects')
+        if get_lik:
+            plt.plot(grid, logPosterior_noSel, label='No sel effects')
         plt.xlabel(myParams.names[param]);
         plt.ylabel(r'$p$');
         plt.axvline(truth, ls='--', color='k', lw=2);
@@ -325,7 +337,8 @@ else:
         
         
         plt.plot(grid, posterior, label='With sel effects')
-        plt.plot(grid, posterior_noSel, label='No sel effects')
+        if get_lik:
+            plt.plot(grid, posterior_noSel, label='No sel effects')
         plt.xlabel(myParams.names[param]);
         plt.ylabel(r'$p$');
         plt.legend()
