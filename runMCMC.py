@@ -204,7 +204,7 @@ def main():
     
     with Pool(config.nPools) as pool:
     	
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, models.log_posterior, backend=backend, args=(Lambda_ntest, config.myPriorLimits, config.params_inference , config.allMyPriors.pnames, config.allMyPriors.prior_params ), pool=pool)
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, models.log_posterior, backend=backend, args=(Lambda_ntest, config.myPriorLimits, config.params_inference , config.allMyPriors.pnames, config.allMyPriors.prior_params , False), pool=pool)
         #sampler.run_mcmc( pos, max_n, progress=True)  
         
         

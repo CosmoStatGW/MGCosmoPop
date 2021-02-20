@@ -116,7 +116,7 @@ class PriorLimits(object):
                            'beta':10, 
                            'ml':20, 
                            'sl':1, 
-                           'mh':200,
+                           'mh':100,
                            'sh':1}
           
         

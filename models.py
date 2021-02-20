@@ -189,17 +189,19 @@ def log_prior(Lambda_test, priorLimits, params_inference, pNames, pParams):
 
 
 
-def log_posterior(Lambda_test, Lambda_ntest,  priorLimits, params_inference, pNames, pParams):
+def log_posterior(Lambda_test, Lambda_ntest,  priorLimits, params_inference, pNames, pParams, return_all):
     
     
-    logPrior = log_prior(Lambda_test,  priorLimits, params_inference, pNames, pParams)
-    if not np.isfinite(logPrior):
+    lp = log_prior(Lambda_test,  priorLimits, params_inference, pNames, pParams)
+    if not np.isfinite(lp):
         return -np.inf
     
     Lambda = get_Lambda(Lambda_test, Lambda_ntest)
     # Compute source frame masses and redshifts
     m1_obs, m2_obs, z_obs = get_mass_redshift(Lambda, which_data='obs')
-    logPost= logLik(Lambda, m1_obs, m2_obs, z_obs )+logPrior
+    ll = logLik(Lambda, m1_obs, m2_obs, z_obs )
+    
+    logPost= ll+lp
     
     ### Selection bias
     #if config.with_jacobian_inj:
@@ -221,16 +223,18 @@ def log_posterior(Lambda_test, Lambda_ntest,  priorLimits, params_inference, pNa
         H0, Om0, w0, Xi0, n, R0, lambdaRedshift, alpha, beta, ml, sl, mh, sh = Lambda 
         logR0 = np.log(R0)
         logPost += Nobs*logR0 #np.log(R0)
-        mu=np.exp(logMu)
+        mu = np.exp(logMu)
         #R0 = np.exp(logR0)
         logPost -= R0*mu
         if config.selection_integral_uncertainty:
-            logPost+= (R0*mu)*(R0*mu)/ (2 * Neff)-ss.norm(loc=mu, scale=mu**2/Neff).logsf(0)+ss.norm(loc=R0*mu**2/Neff-mu, scale=mu**2/Neff).logsf(0)
+            logPost+= (R0*mu)*(R0*mu)/ (2 * Neff)-ss.norm(loc=mu, scale=mu/np.sqrt(Neff) ).logsf(0)+ss.norm(loc=R0*mu**2/Neff-mu, scale=mu/np.sqrt(Neff)).logsf(0)
             
     
     if np.isnan(logPost):
         raise ValueError('NaN value for logPost. Values of Lambda: %s%s' %(str(config.allMyPriors.allParams), str(Lambda) ) )
-    return logPost
+    if not return_all:
+        return logPost
+    return logPost, ll, lp, logMu, Neff
 
 
 

@@ -22,7 +22,7 @@ import Globals
 from scipy.integrate import quad
 import scipy.stats as ss
 
-fout = 'test_fin'
+fout = 'test_fin2'
 
 marginalise_R0=False
 selection_integral_uncertainty=True
@@ -160,25 +160,41 @@ else:
         myLambda = importlib.import_module('getLambda'+param, package=None)
         #Lambda_func = globals()['getLambda'+param]
         print('Grid values: %s' %str(grid) )
-        print('Computing priorfor %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
-        logPrior=np.zeros(grid.shape[0] )
-        for i,val in enumerate(grid):
+        print('Computing posterior with log_posterior %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
+        
+        
+        logPosteriorAll = np.array( [ mymodels.log_posterior(val, Lambda_ntest,  myPriorLims, params_inference, allMyPriors.pnames, allMyPriors.prior_params, True ) for val in grid ] )
+        
+        logPosterior=logPosteriorAll[:,0]
+        logLik=logPosteriorAll[:,1]
+        logPrior=logPosteriorAll[:,2]
+        logMuVals=logPosteriorAll[:,3]
+        NeffVals=logPosteriorAll[:,4]
+        
+        muVals= np.exp(logMuVals)
+        
+        
+        print('lik:')
+        print(logLik)
+        
+        #logPrior=np.zeros(grid.shape[0] )
+        #for i,val in enumerate(grid):
              #Lambda = myLambda.get_Lambda(val, Lambda_ntest)
              #config.myPriorLimits, config.params_inference , config.allMyPriors.pnames, config.allMyPriors.prior_params
-             logPrior[i] = mymodels.log_prior(val, myPriorLims, params_inference, allMyPriors.pnames, allMyPriors.prior_params )
-        print('log prior: %s ' %logPrior)
+        #     logPrior[i] = mymodels.log_prior(val, myPriorLims, params_inference, allMyPriors.pnames, allMyPriors.prior_params )
+        #print('log prior: %s ' %logPrior)
         
         
         
-        print('Computing selection bias for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
+        #print('Computing selection bias for %s in range (%s, %s) on %s points... ' %(param, grid.min(), grid.max(), grid.shape[0] ) )
         
-        NdetRes=np.zeros( (grid.shape[0] , 2 ) )
+        #NdetRes=np.zeros( (grid.shape[0] , 2 ) )
         Vols=np.zeros( grid.shape[0]  )
         for i,val in enumerate(grid):
             Lambda = myLambda.get_Lambda(val, Lambda_ntest)
-            m1_inj, m2_inj, z_inj = mymodels.get_mass_redshift(Lambda, which_data='inj')
+        #    m1_inj, m2_inj, z_inj = mymodels.get_mass_redshift(Lambda, which_data='inj')
             #print(precomputed_inj['m1'].shape)
-            NdetRes[i] = mymodels.logSelectionBias(Lambda, m1_inj, m2_inj, z_inj, get_neff = selection_integral_uncertainty)
+        #    NdetRes[i] = mymodels.logSelectionBias(Lambda, m1_inj, m2_inj, z_inj, get_neff = selection_integral_uncertainty)
             
             H0val=myParams.trueValues['H0']
             Om0val=myParams.trueValues['Om0']
@@ -196,12 +212,12 @@ else:
        # NdetRes = np.array( [mymodels.selectionBias(val, precomputed['source_frame_mass1_injections'], precomputed['source_frame_mass2_injections'], precomputed['z_injections']) for val in grid  ] )
         
         
-        logMuVals=NdetRes[:, 0].astype('float128')
-        muVals= np.exp(logMuVals)#*1000
-        NeffVals=NdetRes[:, 1]
+        #logMuVals=NdetRes[:, 0].astype('float128')
+        #muVals= np.exp(logMuVals)#*1000
+        #NeffVals=NdetRes[:, 1]
         
-        t1=time.time()
-        print('\nSelection bias done for '+param+' in %.2fs' %(t1 - in_time))
+        #t1=time.time()
+        #print('\nSelection bias done for '+param+' in %.2fs' %(t1 - in_time))
         
         # This fixes the error I don't understand
         #if not marginalise_R0:
@@ -284,7 +300,7 @@ else:
                 logLik[i] = mymodels.logLik( Lambda, m1_obs, m2_obs, z_obs)
                 #logPost[i] = mymodels.log_posterior(val, Lambda_ntest,  myPriorLims, params_inference, allMyPriors.pnames, allMyPriors.prior_params )
                 #logLik = np.array( [mymodels.logLik(Lambda, precomputed['source_frame_mass1_observations'],precomputed['source_frame_mass2_observations'],precomputed['z_observations'] ) for val in grid ] )
-            print('\nLikelihood done for '+param+' in %.2fs' %(time.time() - t1))
+            print('\nLikelihood done for '+param+' in %.2fs' %(time.time() - in_time))
             print(logLik)
                 
                 
@@ -306,8 +322,8 @@ else:
         #    logPosterior = logPosterior[keep]
         #    grid = grid[keep]
         #   logPosterior_noSel=logPosterior_noSel[keep]
-        else:
-            logPosterior = np.array( [ mymodels.log_posterior(val, Lambda_ntest,  myPriorLims, params_inference, allMyPriors.pnames, allMyPriors.prior_params ) for val in grid ] )
+        #else:
+            
         
         
         mymax = logPosterior.max()
