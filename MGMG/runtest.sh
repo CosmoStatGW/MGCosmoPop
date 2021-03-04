@@ -1,39 +1,49 @@
 #!/bin/bash
 
-declare -a allGoalParams=("H0" "Om0" "Xi0" "n" "R0" "lambdaRedshift" "alpha" "beta" "ml" "sl" "mh" "sh" )
+declare -a allGoalParams=("H0" "Om" "Xi0" "n" "R0" "lambdaRedshift" "alpha" "beta" "ml" "sl" "mh" "sh" )
 
-baseName="testAll"
+#"Xi0" "n" "R0" "lambdaRedshift" "alpha" "beta" "ml" "sl" "mh" "sh" 
+
+baseName="testAllNew"
+basedir="../results/$baseName"
+echo $basedir
+mkdir $basedir
 
 i=1 
 for par in ${allGoalParams[@]};do
     echo $par
-    OUT = configTest$par
+    OUTbase=configTest$par
+    OUT=$OUTbase.py
     
     cat <<EOF >$OUT
+param='$par'
+fout='$baseName$par'
+nObsUse=None
+nSamplesUse=None
+nInjUse=None
+npoints=5
+EOF
     
-    param='$par'
-    fout=$baseName$par
-    nObsUse=None
-    nSamplesUse=None
-    nInjUse=None
-    npoints=5
- 
-    EOF
-    
-    echo $baseName$par
+    #echo $baseName$par
+    #mkdir ../results/$baseName$par
     
     pids[${i}]=$!
     i=$((i+1))
-    python testAllparams.py --config=$OUT &
+    python testAllparams.py --config=$OUTbase &
 done    
+
 
 for pid in ${pids[*]}; do
         wait $pid
 done
-    
-
 
 for par in ${allGoalParams[@]};do
-    echo removing $par
-    rm $OUT
+   OUTbase=configTest$par
+   OUT=$OUTbase.py
+   rm $OUT
+   echo removed $OUT
+done
+ 
+for par in ${allGoalParams[@]};do
+   mv ../results/$baseName$par $basedir
 done

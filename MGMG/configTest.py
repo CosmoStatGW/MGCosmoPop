@@ -7,7 +7,7 @@ Created on Thu Mar  4 17:27:44 2021
 """
 
 param='H0'
-fout='test'+param
+fout='test2'+param
 nObsUse=None
 nSamplesUse=None
 nInjUse=None

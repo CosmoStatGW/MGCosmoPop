@@ -33,7 +33,7 @@ class Cosmo(object):
             self.baseValues=baseValues
         
         self.names = {'H0':r'$H_0$', 
-                          'Om0':r'$\Omega_{\rm {m,}0 }$',
+                          'Om':r'$\Omega_{\rm {m,}0 }$',
                           'w0':r'$w_{0}$',
                            'Xi0':r'$\Xi_0$', 
                            'n':r'$n$', }
