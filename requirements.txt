@@ -1,0 +1,11 @@
+scipy
+numpy
+astropy
+abc
+copy
+matplotlib
+shutil
+json
+emcee
+corner
+schwimmbad
