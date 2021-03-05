@@ -45,6 +45,12 @@ class Cosmo(object):
         self.clight=const.c.value*1e-03 # c in km/s
         
         
+    def set_param(self, paramValues):
+        for param in paramValues.keys():
+            self.baseValues[param] = paramValues[param]
+            print('Set %s to %s' %(param, paramValues[param]))
+        
+    
     def _get_all_values(self, Lambda):
         H0, Om, w0, Xi0, n = Lambda
         return H0, Om, w0, Xi0, n
