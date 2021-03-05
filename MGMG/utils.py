@@ -47,10 +47,10 @@ class Logger(object):
 ####################################
 
 
-def telegram_bot_sendtext(bot_message):
+def telegram_bot_sendtext(bot_message, bot_chatID, bot_token ):
     
-    bot_token = '1656874236:AAE_oNQLTEYxCcj0352LU1gikG0CNdpjnUg'
-    bot_chatID = '463660975'
+    #bot_token = '1656874236:AAE_oNQLTEYxCcj0352LU1gikG0CNdpjnUg'
+    #bot_chatID = '463660975'
     send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatID + '&parse_mode=Markdown&text=' + bot_message
 
     response = requests.get(send_text)

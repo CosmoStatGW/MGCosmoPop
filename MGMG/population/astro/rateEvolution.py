@@ -13,7 +13,7 @@ import astropy.units as u
 
 class PowerLawRateEvolution(RateEvolution):
     
-    def __init__(self):
+    def __init__(self, unit=u.Gpc):
         RateEvolution.__init__(self)
         
         self.params = ['R0', 'lambdaRedshift']
@@ -24,13 +24,14 @@ class PowerLawRateEvolution(RateEvolution):
         self.names = { 'R0':r'$R_0$', 
                            'lambdaRedshift':r'$\lambda$',}
         
-
+        self._set_rate_units(unit)
     
-    def set_rate_units(self, unit):
+    def _set_rate_units(self, unit):
         if unit==u.Mpc:
             self.baseValues['R0']*=1e-09
             print('New fiducial value for R0 using yr^-1 Mpc^-3: %s' %self.baseValues['R0'])
-        
+        elif unit==u.Gpc:
+            print('Rate R0 is in yr^-1 Gpc^-3')
     
     def log_dNdVdt(self, theta_rate, lambdaBBHrate):
         '''

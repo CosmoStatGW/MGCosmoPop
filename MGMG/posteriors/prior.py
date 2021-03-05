@@ -60,6 +60,7 @@ class Prior(object):
             return np.NINF
         return (-np.log(sigma)-(x-mu)**2/(2*sigma**2))
     
+    
     def _flatLog(self, x):
         '''
         1/x prior

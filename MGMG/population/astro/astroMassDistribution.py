@@ -26,6 +26,7 @@ class AstroSmoothPowerLawMass(BBHDistFunction):
         BBHDistFunction.__init__(self)
         
         self.normalization=normalization
+        print('Normalization of the mass function: %s' %normalization)
         self.params = ['alpha', 'beta', 'ml', 'sl', 'mh', 'sh' ]
         
         self.baseValues = {

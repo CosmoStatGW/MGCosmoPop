@@ -5,9 +5,16 @@ Created on Thu Mar  4 16:42:13 2021
 
 @author: Michi
 """
-import argparse   
 import sys
 import os
+
+
+PACKAGE_PARENT = '..'
+SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
+sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
+
+
+import argparse   
 import importlib
 import time
 
@@ -16,24 +23,18 @@ import matplotlib.pyplot as plt
 plt.rcParams["font.family"] = 'serif'
 plt.rcParams["mathtext.fontset"] = "cm"
 
+from sample.models import build_model, load_data
 
-from population.astro.astroMassDistribution import AstroSmoothPowerLawMass
-from population.astro.astroSpinDistribution import DummySpinDist
-from population.astro.rateEvolution import PowerLawRateEvolution
-from population.astro.astroPopulation import AstroPopulation
-from cosmology.cosmo import Cosmo
-from population.allPopulations import AllPopulations
 
-from dataStructures.mockData import GWMockData, GWMockInjectionsData
 import astropy.units as u
 
 from posteriors.prior import Prior
 from posteriors.likelihood import HyperLikelihood
-
 from posteriors.selectionBias import SelectionBiasInjections
-
 from posteriors.posterior import Posterior
 
+import Globals
+import utils
 
 
 perc_variation = 15
@@ -54,10 +55,6 @@ AllpriorLimits =      {   'H0': {    'H0': (20, 140)},
                            'mh':{'mh':( 20, 100)},
                           'sh' :{'sh':(0.01, 1 )} }
                
-
-
-import Globals
-import utils
 
 
 def main():
@@ -91,38 +88,23 @@ def main():
         ##############################################################
         # POPULATION MODELS
         
-        
-        # Create mass dist
-        astroSmoothPop = AstroSmoothPowerLawMass()
+        myPopulations = { 'astro' : { 'mass_function': 'smooth_pow_law',
+                                     'spin_distribution': 'skip',
+                                     'rate': 'simple_pow_law'
     
+    
+                            }
+    
+                         }
         
-        # Create spin dist  
-        noSpin = DummySpinDist()
-        
-        # Create rate
-        simpleRate = PowerLawRateEvolution()
-        
-        # Create population
-        pop1 = AstroPopulation(simpleRate, astroSmoothPop, noSpin)
-        
-        # Create cosmology
-        myCosmo = Cosmo()
-        
-        # Put together all populations
-        allPops = AllPopulations(myCosmo)
-        allPops.add_pop(pop1)
-        
+        allPops = build_model(myPopulations, rate_args={'unit':config.dist_unit} )
         
         ############################################################
         # DATA
         
-        fname = os.path.join(Globals.dataPath, 'mock', 'observations.h5')
-        mockData = GWMockData(fname,  nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, dist_unit=u.Gpc)
+        mockData, injData = load_data('mock', nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, nInjUse=config.nInjUse, dist_unit=u.Gpc)
         
-        fnameInj = os.path.join(Globals.dataPath, 'mock', 'selected.h5')
-        injData = GWMockInjectionsData(fnameInj,  nInjUse=config.nInjUse, dist_unit=u.Gpc)
-        
-        
+         
         ############################################################
         # MODEL
         
@@ -182,7 +164,7 @@ def main():
         plt.xlabel(config.param );
         plt.ylabel(r'$N_{det}$');
         plt.axvline(truth, ls='--', color='k', lw=2);
-        #plt.axhline(5267, ls=':', color='k', lw=1.5);
+        plt.axhline(5267, ls=':', color='k', lw=1.5);
         if config.param=='R0':
             plt.xscale('log')
             plt.yscale('log')

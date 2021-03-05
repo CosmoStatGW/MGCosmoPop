@@ -203,6 +203,15 @@ class AllPopulations(object):
                     allVals.append(self.names[param])
         return allVals   
      
+    
+    def get_fixed_values(self, params_inference):
+        allVals={}
+        for i,param in enumerate(self.params):
+            if param not in params_inference:
+                allVals[param]=self.baseValues[param]
+        return allVals
+        
+    
     def get_Lambda(self, Lambda_test, params_inference ):
         allVals=[]
         for i,param in enumerate(self.params):

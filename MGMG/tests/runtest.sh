@@ -1,11 +1,11 @@
 #!/bin/bash
 
-declare -a allGoalParams=("H0" "Om" "Xi0" "n" "R0" "lambdaRedshift" "alpha" "beta" "ml" "sl" "mh" "sh" )
+declare -a allGoalParams=("H0" "Om" )
 
-#"Xi0" "n" "R0" "lambdaRedshift" "alpha" "beta" "ml" "sl" "mh" "sh" 
+#"Om" "Xi0" "n" "R0" "lambdaRedshift" "alpha" "beta" "ml" "sl" "mh" "sh" 
 
-baseName="testAllNew"
-basedir="../results/$baseName"
+baseName="testFolder5"
+basedir="../../results/$baseName"
 echo $basedir
 mkdir $basedir
 
@@ -18,9 +18,9 @@ for par in ${allGoalParams[@]};do
     cat <<EOF >$OUT
 param='$par'
 fout='$baseName$par'
-nObsUse=None
-nSamplesUse=None
-nInjUse=None
+nObsUse=10
+nSamplesUse=100
+nInjUse=100
 npoints=5
 EOF
     
@@ -29,12 +29,12 @@ EOF
     
     pids[${i}]=$!
     i=$((i+1))
-    python testAllparams.py --config=$OUTbase &
+    python testAllparams1.py --config=$OUTbase &
 done    
 
 
 for pid in ${pids[*]}; do
-        wait $pid
+    wait $pid
 done
 
 for par in ${allGoalParams[@]};do
@@ -45,5 +45,5 @@ for par in ${allGoalParams[@]};do
 done
  
 for par in ${allGoalParams[@]};do
-   mv ../results/$baseName$par $basedir
+   mv ../../results/$baseName$par $basedir
 done
