@@ -1,11 +1,10 @@
 scipy
 numpy
 astropy
-abc
 copy
 matplotlib
-shutil
-json
 emcee
 corner
 schwimmbad
+requests
+h5py
