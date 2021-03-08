@@ -8,6 +8,8 @@ Created on Fri Mar  5 08:55:07 2021
 
 import sys
 import os
+os.environ["OMP_NUM_THREADS"] = "1"
+
 
 PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
@@ -26,8 +28,7 @@ from posteriors.posterior import Posterior
 
 import emcee
 import corner
-from multiprocessing import Pool, cpu_count
-from schwimmbad import MPIPool
+
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -60,6 +61,29 @@ def notify_start(telegram_id, bot_token, filenameT, fname, nwalkers, ndim, param
         
     utils.telegram_bot_sendtext( "\n".join(text), telegram_id, bot_token)
  
+
+def find_duplicates(a):
+    seen = {}
+    dupes = []
+
+    for x in a:
+        if x not in seen:
+            seen[x] = 1
+        else:
+            if seen[x] == 1:
+                dupes.append(x)
+                seen[x] += 1
+    return dupes
+
+
+def check_params(params_inference, params_fixed, params_all):
+    
+    allparams = params_inference+list(params_fixed.keys())
+    dupes =  find_duplicates(allparams)
+    if dupes:
+        raise ValueError('The following parameters are included both in params_inference and parametes_fixed. Check your choices! \n%s' %str(dupes))
+    
+
 
 
 def main():
@@ -99,11 +123,22 @@ def main():
     
     ndim = len(config.params_inference)
     
-    #with Pool(config.nPools) as pool:
-    with MPIPool() as pool:
-        if not pool.is_master():
-            pool.wait()
-            sys.exit(0)
+    if config.parallelization == 'mpi':
+        from schwimmbad import MPIPool
+        myPool=MPIPool()
+    elif config.parallelization == 'pool':
+        from multiprocessing import Pool, cpu_count
+        ncpu = cpu_count()
+        print('Number of availabel cores:  %s ' %ncpu)
+        npools = min(config.nPools,ncpu )
+        print('Parallelizing on %s CPUs ' %npools)
+        myPool=Pool(npools)
+    
+    with myPool as pool:
+        if config.parallelization == 'mpi':
+            if not pool.is_master():
+                pool.wait()
+                sys.exit(0)
     
     
         ##############################################################
@@ -114,9 +149,21 @@ def main():
         rate_args=config.rate_args
         rate_args['unit'] = units[config.dist_unit]
     
-        allPops = build_model(config.populations, mass_args=config.mass_args, spin_args=config.spin_args, rate_args=rate_args)
+        allPops = build_model( config.populations, 
+                              mass_args=config.mass_args, 
+                              spin_args=config.spin_args, 
+                              rate_args=rate_args)
         
-        #assert any(config.params_inference == allPops.params[i:i+ndim] for i in range(len(allPops.params) - ndim)) 
+        # Check that params inference and not inference are correctly specified
+        # (No duplicates)
+        check_params(config.params_inference, config.params_fixed, allPops.params )
+        
+        # Fix values of the parameters not included in the MCMC
+        allPops.set_values( config.params_fixed)
+        
+        # Check that the order of arguments for MCMC in the config match the order
+        # of arguments in population
+        allPops.check_params_order(config.params_inference)
         
         ############################################################
         # DATA
@@ -129,6 +176,8 @@ def main():
         # STATISTICAL MODEL
         
         print('\nSetting up inference for %s ' %config.params_inference)
+        
+        
         print('Fixed parameters and their values: ')
         print(allPops.get_fixed_values(config.params_inference))
         
@@ -149,7 +198,7 @@ def main():
         pos = setup_chain(config.nwalkers, exp_values, config.priorNames, config.priorLimits, config.priorParams, config.params_inference, perc_variation_init=config.perc_variation_init, seed=config.seed)
         print('nwalkers=%s, ndim=%s' %(pos.shape[0], pos.shape[1]))
         #if (ndim<5) & (config.nwalkers<5):
-        print('Initial positions of the walkers: %s' %str(pos))
+        #print('Initial positions of the walkers: %s' %str(pos))
         
     
         # Set up the backend
@@ -184,7 +233,8 @@ def main():
             if sampler.iteration % 100:
                 continue
             else:
-                tau = sampler.get_autocorr_time(tol=0)
+                tau = sampler.get_autocorr_time(tol=0) # tol=0 is in irder to continue the chain
+                burnin = int(2 * np.max(tau))
                 autocorr[index] = np.mean(tau)
                 index +=1
                 print('Step n %s. Check autocorrelation: ' %(index*100))
@@ -196,7 +246,8 @@ def main():
                 converged &= np.all(np.abs(old_tau - tau) / tau < config.convergence_percVariation)
                 
                 if config.telegram_notifications:
-                    utils.telegram_bot_sendtext( "%s: step No.  %s, converged=%s" %(filenameT, sampler.iteration, converged), config.telegram_id, config.telegram_bot_token)
+                    N=len(sampler.get_chain())
+                    utils.telegram_bot_sendtext( "%s: step No.  %s, converged=%s, N/%s=%s, burnin=%s" %(filenameT, sampler.iteration, converged, config.convergence_ntaus, N/config.convergence_ntaus, burnin ), config.telegram_id, config.telegram_bot_token)
                 
                 if converged:
                     print('Chain has converged. Stopping. ')
@@ -204,8 +255,7 @@ def main():
                 else:
                     print('Chain has not converged yet. ')
                     old_tau = tau
-    
-    
+              
     ############################################################
     # SUMMARY PLOTS           
     
@@ -237,21 +287,22 @@ def main():
         trueValues = allPops.get_base_values(config.params_inference)
     
     fig1 = corner.corner(
-    samples, labels=labels, truths=trueValues,quantiles=[0.16, 0.84],show_titles=True, title_kwargs={"fontsize": 12}
+    samples, labels=labels, truths=trueValues, quantiles=[0.16, 0.84],show_titles=True, title_kwargs={"fontsize": 12}
     );
 
     fig1.savefig(os.path.join(out_path, 'corner.pdf'))
     plt.close()
     
     print('Plotting autocorrelation... ')
-    n = config.convergence_ntaus * np.arange(1, index + 1)
+    n = 100 * np.arange(1, index + 1)
     y = autocorr[:index]
-    plt.plot(n, n / config.convergence_ntaus, "--k")
+    plt.plot(n, n / config.convergence_ntaus, "--k", label='N/%s'%config.convergence_ntaus )
     plt.plot(n, y)
     plt.xlim(n.min(), n.max())
     plt.ylim(0, y.max() + 0.1 * (y.max() - y.min()))
     plt.xlabel("number of steps")
     plt.ylabel(r"mean $\hat{\tau}$");
+    plt.legend();
     plt.savefig(os.path.join(out_path,'autocorr.pdf'))
     
     ############################################################

@@ -66,6 +66,11 @@ fnames_inj  = { 'mock': 'selected.h5'
     }
 
 
+fnames_SNRs = { 'mock': 'optimal_snr.h5'
+    
+    
+    }
+
 
 def setup_chain(nwalkers, exp_values, priorNames, priorLimits, priorParams, params_inference, perc_variation_init=10, seed=1312):
     '''
