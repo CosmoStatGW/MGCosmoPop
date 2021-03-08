@@ -8,7 +8,7 @@ Created on Fri Mar  5 09:20:27 2021
 
 
 
-fout='testMCMCgaussMPI6'
+fout='runXi01perc_n05TEST'
 
 
 # This is to receive notifications on the progress of the mcmc via telegram
@@ -55,7 +55,16 @@ dist_unit = 'Gpc'
 ### The parameters have to be in the same order as they are listed in 
 ### the population object in the code !!! 
 
-params_inference = ['H0', 'Om', 'Xi0', 'R0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh']
+params_inference = ['H0', 'Om', 'Xi0', 'R0', 'lambdaRedshift', 'alpha', 'beta', 'ml', 'sl', 'mh', 'sh'] #'Xi0',
+
+
+# Specify parameters that are kept fixed and their values 
+params_fixed = {   'w0': -1. , 
+                        #'Xi0': 1. , 
+                        'n' : 0.5,                                         
+    }
+
+
 
 priorLimits = { 'H0': (20, 140),  
                'Xi0': (0.1, 10) ,
@@ -72,7 +81,7 @@ priorLimits = { 'H0': (20, 140),
                }
 
 
-priorNames = {'H0' : 'flat',
+priorNames = {'H0' : 'gauss',
               'Xi0': 'flat',
               'Om': 'gauss',
                'w0': 'flat',
@@ -86,19 +95,32 @@ priorNames = {'H0' : 'flat',
                'sh':'flat'}
 
 
-priorParams = { 'Om' : {'mu': 0.301, 'sigma': 0.002} }
+priorParams = { 'H0' : {'mu': 67.74, 'sigma': 0.6774},
+                'Om' : {'mu': 0.3075, 'sigma': 0.003075}}
+
+
 
 include_sel_uncertainty = True
 
 seed=1312
-nwalkers = 22
+nwalkers = 50
 perc_variation_init=10
-max_steps=300
+max_steps=10000
 
-nPools = 4
 
 convergence_ntaus = 50
 convergence_percVariation = 0.01
+
+
+# How to handle parallelization: if 'mpi', the script should be launched with mpiexec
+# (suitable for clusters)
+# If 'pool' , it uses python multipricessing module, and we can specify the number of pools
+
+parallelization='mpi'  # pool
+
+# only needed if parallelization='pool'
+nPools = nwalkers 
+
 
 ###############################################################################
 # For testing
