@@ -8,3 +8,4 @@ corner
 schwimmbad
 requests
 h5py
+tqdm
