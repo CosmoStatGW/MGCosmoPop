@@ -9,6 +9,7 @@ Created on Tue Mar  2 16:19:57 2021
 #import numpy as np
 #import scipy.stats as ss
 from ..ABSpopulation import Population
+from copy import deepcopy
 
 ########################################################################
 ########################################################################
@@ -41,11 +42,11 @@ class AstroPopulation(Population):
         self.params = self.rateEvol.params+ self.massDist.params+self.spinDist.params
         
     
-        self.baseValues = self.rateEvol.baseValues
+        self.baseValues = deepcopy(self.rateEvol.baseValues)
         self.baseValues.update(self.massDist.baseValues)
         self.baseValues.update(self.spinDist.baseValues)
         
-        self.names = self.rateEvol.names
+        self.names = deepcopy(self.rateEvol.names)
         self.names.update(self.massDist.names)
         self.names.update(self.spinDist.names)
         
@@ -107,4 +108,15 @@ class AstroPopulation(Population):
         return allVals
             
      
+    def _set_values(self, values_dict):
+            #print('astro basevalues: %s' %str(self.baseValues))
+            for obj in (self.rateEvol,  self.massDist, self.spinDist):
+                 obj._set_values(values_dict)
+            
+            # update value also in this object
+            for key, value in values_dict.items():
+                if key in self.baseValues:
+                    self.baseValues[key] = value
+                    print('Setting value of %s to %s in %s' %(key, value, self.__class__.__name__))
+
   

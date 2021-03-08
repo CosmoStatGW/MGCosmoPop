@@ -34,7 +34,14 @@ class Population(ABC):
         '''
         pass
     
-     
+    @abstractmethod
+    def _set_values(self, params_values):
+        # How to set the values of the population parameters
+        # Must change them also in other objects that enter the population !
+        pass
+
+
+
 class RateEvolution(ABC):
     
     def __init__(self, ):
@@ -47,6 +54,18 @@ class RateEvolution(ABC):
     @abstractmethod
     def log_dNdVdt(self, theta, LambdaPop):
         pass
+    
+    
+    def _set_values(self, values_dict):
+    # update value also in this object
+            #print('rate basevalues: %s' %str(self.baseValues))
+            for key, value in values_dict.items():
+                if key in self.baseValues:
+                    self.baseValues[key] = value
+                    print('Setting value of %s to %s in %s' %(key, value, self.__class__.__name__))
+
+    
+
 
 
 
@@ -98,6 +117,12 @@ class BBHDistFunction(ABC):
         return np.interp(probTilUpper*np.random.uniform(size=nSamples), cdf, x)
     
 
-    
+    def _set_values(self, values_dict):
+            #print('BBhpop basevalues: %s' %str(self.baseValues))
+            for key, value in values_dict.items():
+                if key in self.baseValues:
+                    self.baseValues[key] = value
+                    print('Setting value of %s to %s in %s' %(key, value, self.__class__.__name__))
+                
 
 

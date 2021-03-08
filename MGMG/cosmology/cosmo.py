@@ -32,7 +32,7 @@ class Cosmo(object):
         else:
             self.baseValues=baseValues
         
-        self.names = {'H0':r'$H_0$', 
+        self.names = {    'H0':r'$H_0$', 
                           'Om':r'$\Omega_{\rm {m,}0 }$',
                           'w0':r'$w_{0}$',
                            'Xi0':r'$\Xi_0$', 
@@ -44,11 +44,20 @@ class Cosmo(object):
 
         self.clight=const.c.value*1e-03 # c in km/s
         
-        
-    def set_param(self, paramValues):
-        for param in paramValues.keys():
-            self.baseValues[param] = paramValues[param]
-            print('Set %s to %s' %(param, paramValues[param]))
+    
+    
+    def _set_values(self, values_dict):
+            print('cosmo basevalues: %s' %str(self.baseValues))
+            for key, value in values_dict.items():
+                if key in self.baseValues:
+                    self.baseValues[key] = value
+                    print('Setting value of %s to %s in %s' %(key, value, self.__class__.__name__))
+                 
+    
+    #def set_param(self, paramValues):
+    #    for param in paramValues.keys():
+    #        self.baseValues[param] = paramValues[param]
+    #        print('Set %s to %s' %(param, paramValues[param]))
         
     
     def _get_all_values(self, Lambda):

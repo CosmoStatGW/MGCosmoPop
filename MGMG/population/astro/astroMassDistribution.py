@@ -110,6 +110,8 @@ class AstroSmoothPowerLawMass(BBHDistFunction):
     
     
 
+
+
 class AstroGaussMass(BBHDistFunction):
     
     '''
