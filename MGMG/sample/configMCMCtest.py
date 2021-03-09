@@ -8,7 +8,7 @@ Created on Fri Mar  5 09:20:27 2021
 
 
 
-fout='runXi01perc_n05_TEST'
+#fout='runXi01perc_n05_TEST'
 
 
 # This is to receive notifications on the progress of the mcmc via telegram

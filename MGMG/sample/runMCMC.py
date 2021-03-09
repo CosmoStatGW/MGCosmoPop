@@ -91,14 +91,17 @@ def main():
     in_time=time.time()
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", default='', type=str, required=True) # config time
+    parser.add_argument("--config", default='', type=str, required=True) # config file
+    parser.add_argument("--fout", default='', type=str, required=True) # output folder 
     FLAGS = parser.parse_args()
     
     config = importlib.import_module(FLAGS.config, package=None)
     
-    out_path=os.path.join(Globals.dirName, 'results', config.fout)
+    fout = FLAGS.fout
     
-    out_path=os.path.join(Globals.dirName, 'results', config.fout)
+    out_path=os.path.join(Globals.dirName, 'results', fout)
+    
+    out_path=os.path.join(Globals.dirName, 'results', fout)
     #if not os.path.exists(out_path):
     try:
         print('Creating directory %s' %out_path)
@@ -117,7 +120,7 @@ def main():
     if config.telegram_notifications:
         scriptname = __file__
         filenameT = scriptname.replace("_", "\_")
-        filenameT = scriptname+'(run %s)'%config.fout
+        filenameT = scriptname+'(run %s)'%fout
     
     #ncpu = cpu_count()
     #print('Parallelizing on %s CPUs ' %config.nPools)
@@ -198,7 +201,7 @@ def main():
         autocorr_fname = os.path.join(out_path, "autocorr.txt")
     
         if config.telegram_notifications:
-            notify_start(config.telegram_id, config.telegram_bot_token, filenameT, config.fout, config.nwalkers, ndim, config.params_inference, config.max_steps)
+            notify_start(config.telegram_id, config.telegram_bot_token, filenameT, fout, config.nwalkers, ndim, config.params_inference, config.max_steps)
     
     
     
