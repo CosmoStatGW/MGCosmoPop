@@ -99,11 +99,13 @@ def main():
     out_path=os.path.join(Globals.dirName, 'results', config.fout)
     
     out_path=os.path.join(Globals.dirName, 'results', config.fout)
-    if not os.path.exists(out_path):
-            print('Creating directory %s' %out_path)
-            os.makedirs(out_path)
-    else:
-            print('Using directory %s for output' %out_path)
+    #if not os.path.exists(out_path):
+    try:
+        print('Creating directory %s' %out_path)
+        os.makedirs(out_path)
+    #else:
+    except FileExistsError:
+        print('Using directory %s for output' %out_path)
     
     shutil.copy(FLAGS.config+'.py', os.path.join(out_path, 'config_original.py'))
     
@@ -123,24 +125,10 @@ def main():
     
     ndim = len(config.params_inference)
     
-    if config.parallelization == 'mpi':
-        from schwimmbad import MPIPool
-        myPool=MPIPool()
-    elif config.parallelization == 'pool':
-        from multiprocessing import Pool, cpu_count
-        ncpu = cpu_count()
-        print('Number of availabel cores:  %s ' %ncpu)
-        npools = min(config.nPools,ncpu )
-        print('Parallelizing on %s CPUs ' %npools)
-        myPool=Pool(npools)
+   ############################################################## 
+   ##############################################################
     
-    with myPool as pool:
-        if config.parallelization == 'mpi':
-            if not pool.is_master():
-                pool.wait()
-                sys.exit(0)
-    
-    
+    def run():
         ##############################################################
         # POPULATION MODELS
         print('\nCreating populations...')
@@ -255,7 +243,35 @@ def main():
                 else:
                     print('Chain has not converged yet. ')
                     old_tau = tau
+        return allPops, sampler, index, autocorr
+    
+    ##############################################################
+    ##############################################################
+    
+    if config.parallelization == 'mpi':
+        from schwimmbad import MPIPool
+        myPool=MPIPool()
+    elif config.parallelization == 'pool':
+        from multiprocessing import Pool, cpu_count
+        ncpu = cpu_count()
+        print('Number of availabel cores:  %s ' %ncpu)
+        npools = min(config.nPools,ncpu )
+        print('Parallelizing on %s CPUs ' %npools)
+        myPool=Pool(npools)
+    
+    with myPool as pool:
+        if config.parallelization == 'mpi':
+            if not pool.is_master():
+                pool.wait()
+                sys.exit(0)
+            allPops, sampler, index, autocorr  = run()
+        else:
+            allPops, sampler,  index, autocorr = run()
+    
               
+    
+    
+    
     ############################################################
     # SUMMARY PLOTS           
     
@@ -316,6 +332,10 @@ def main():
     sys.stdout = sys.__stdout__
     sys.stderr = sys.__stderr__
     myLog.close() 
+    
+    if config.parallelization == 'mpi':
+        pool.close()
+        sys.exit(0)
     
     
     

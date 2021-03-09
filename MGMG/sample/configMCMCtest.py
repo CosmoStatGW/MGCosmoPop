@@ -8,13 +8,13 @@ Created on Fri Mar  5 09:20:27 2021
 
 
 
-fout='runXi01perc_n05TEST'
+fout='runXi01perc_n05_TEST'
 
 
 # This is to receive notifications on the progress of the mcmc via telegram
 # One has to set up a telegram bot as in https://medium.com/@ManHay_Hong/how-to-create-a-telegram-bot-and-send-messages-with-python-4cf314d9fa3e
 # Then enter the id and bot token here
-telegram_notifications = False
+telegram_notifications = True
 telegram_id='158370570'
 telegram_bot_token='1580787370:AAGyCFRjxRTt4Dsg8S4XaKwNkBDjwoYuZIQ'
 
@@ -105,7 +105,7 @@ include_sel_uncertainty = True
 seed=1312
 nwalkers = 50
 perc_variation_init=10
-max_steps=10000
+max_steps=300
 
 
 convergence_ntaus = 50
