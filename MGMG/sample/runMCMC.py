@@ -294,8 +294,12 @@ def main():
     plt.savefig(os.path.join(out_path,'chains.pdf'))  
 
     tau = sampler.get_autocorr_time(quiet=True)
-    burnin = int(2 * np.max(tau))
-    thin = int(0.5 * np.min(tau))
+    if np.any(np.isnan(tau)):
+        burnin=0
+        thin=1
+    else:
+        burnin = int(2 * np.max(tau))
+        thin = int(0.5 * np.min(tau))
     samples = sampler.get_chain(discard=burnin, flat=True, thin=thin)
     plt.close()
 
@@ -312,17 +316,18 @@ def main():
     fig1.savefig(os.path.join(out_path, 'corner.pdf'))
     plt.close()
     
-    print('Plotting autocorrelation... ')
-    n = 100 * np.arange(1, index + 1)
-    y = autocorr[:index]
-    plt.plot(n, n / config.convergence_ntaus, "--k", label='N/%s'%config.convergence_ntaus )
-    plt.plot(n, y)
-    plt.xlim(n.min(), n.max())
-    plt.ylim(0, y.max() + 0.1 * (y.max() - y.min()))
-    plt.xlabel("number of steps")
-    plt.ylabel(r"mean $\hat{\tau}$");
-    plt.legend();
-    plt.savefig(os.path.join(out_path,'autocorr.pdf'))
+    if index>2:
+        print('Plotting autocorrelation... ')
+        n = 100 * np.arange(1, index + 1)
+        y = autocorr[:index]
+        plt.plot(n, n / config.convergence_ntaus, "--k", label='N/%s'%config.convergence_ntaus )
+        plt.plot(n, y)
+        plt.xlim(n.min(), n.max())
+        plt.ylim(0, y.max() + 0.1 * (y.max() - y.min()))
+        plt.xlabel("number of steps")
+        plt.ylabel(r"mean $\hat{\tau}$");
+        plt.legend();
+        plt.savefig(os.path.join(out_path,'autocorr.pdf'))
     
     ############################################################
     # END

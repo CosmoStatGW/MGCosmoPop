@@ -97,7 +97,7 @@ def main():
     
                          }
         
-        allPops = build_model(myPopulations, rate_args={'unit':config.dist_unit} )
+        allPops = build_model(myPopulations, rate_args={'unit':u.Gpc} )
         
         ############################################################
         # DATA

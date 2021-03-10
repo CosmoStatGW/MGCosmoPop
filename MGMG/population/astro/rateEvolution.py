@@ -32,6 +32,8 @@ class PowerLawRateEvolution(RateEvolution):
             print('New fiducial value for R0 using yr^-1 Mpc^-3: %s' %self.baseValues['R0'])
         elif unit==u.Gpc:
             print('Rate R0 is in yr^-1 Gpc^-3')
+        else:
+            raisese ValueError
     
     def log_dNdVdt(self, theta_rate, lambdaBBHrate):
         '''

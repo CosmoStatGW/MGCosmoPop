@@ -94,18 +94,18 @@ class AstroSmoothPowerLawMass(BBHDistFunction):
        
     def _logf_smooth(self, m, ml=5, sl=0.1, mh=45, sh=0.1):
         
-        mmin = ml-20*sl
-        mmax = mh + 20*sh
+        #mmin = ml-20*sl
+        #mmax = mh + 20*sh
         
-        maskL = m <= mmin #+ eps
-        maskU = m >= mmax #- eps
-        s = np.empty_like(m)
-        s[maskL] = np.NINF
-        s[maskU] = 0
-        maskM = ~(maskL | maskU)
-        s[maskM] = np.log(ss.norm().cdf((np.log(m[maskM])-np.log(ml))/sl))+np.log((1-ss.norm().cdf((np.log(m[maskM])-np.log(mh))/sh)))
+        #maskL = m <= mmin #+ eps
+        #maskU = m >= mmax #- eps
+        #s = np.empty_like(m)
+        #s[maskL] = np.NINF
+        #s[maskU] = 0
+        #maskM = ~(maskL | maskU)
+        #s[maskM] = np.log(ss.norm().cdf((np.log(m[maskM])-np.log(ml))/sl))+np.log((1-ss.norm().cdf((np.log(m[maskM])-np.log(mh))/sh)))
         
-        return s #np.log(ss.norm().cdf((np.log(m)-np.log(ml))/sl))+np.log((1-ss.norm().cdf((np.log(m)-np.log(mh))/sh)))
+        return np.log(ss.norm().cdf((np.log(m)-np.log(ml))/sl))+np.log((1-ss.norm().cdf((np.log(m)-np.log(mh))/sh)))
        
     
     def _get_normalization(self, lambdaBBHmass):

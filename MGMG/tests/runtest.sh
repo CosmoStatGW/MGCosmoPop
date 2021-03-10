@@ -2,7 +2,7 @@
 
 declare -a allGoalParams=("H0" "Om" "Xi0" "n" "R0" "lambdaRedshift" "alpha" "beta" "ml" "sl" "mh" "sh" )
 
-baseName="testAllfsmooth1"
+baseName="testAll1short4/"
 basedir="../../results/$baseName"
 echo $basedir
 mkdir $basedir
