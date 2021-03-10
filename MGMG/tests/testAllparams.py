@@ -124,7 +124,7 @@ def main():
         ############################################################
         # COMPUTE ALL QUANTITIES
         
-        truth=allPops.get_baseValue(config.param)
+        truth=allPops.get_base_values(config.param)
         print('True value: %s' %truth)
         eps=truth
         if truth==0:

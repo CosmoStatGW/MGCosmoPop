@@ -1,10 +1,8 @@
 #!/bin/bash
 
-declare -a allGoalParams=("H0" "Om" )
+declare -a allGoalParams=("H0" "Om" "Xi0" "n" "R0" "lambdaRedshift" "alpha" "beta" "ml" "sl" "mh" "sh" 
 
-#"Om" "Xi0" "n" "R0" "lambdaRedshift" "alpha" "beta" "ml" "sl" "mh" "sh" 
-
-baseName="testFolder5"
+baseName="testAllfsmooth"
 basedir="../../results/$baseName"
 echo $basedir
 mkdir $basedir
@@ -16,6 +14,7 @@ for par in ${allGoalParams[@]};do
     OUT=$OUTbase.py
     
     cat <<EOF >$OUT
+dist_unit = 'Gpc'
 param='$par'
 fout='$baseName$par'
 nObsUse=10
