@@ -1,8 +1,8 @@
 #!/bin/bash
 
-declare -a allGoalParams=("H0" "Om" "Xi0" "n" "R0" "lambdaRedshift" "alpha" "beta" "ml" "sl" "mh" "sh" 
+declare -a allGoalParams=("H0" "Om" "Xi0" "n" "R0" "lambdaRedshift" "alpha" "beta" "ml" "sl" "mh" "sh" )
 
-baseName="testAllfsmooth"
+baseName="testAllfsmooth1"
 basedir="../../results/$baseName"
 echo $basedir
 mkdir $basedir
@@ -28,7 +28,7 @@ EOF
     
     pids[${i}]=$!
     i=$((i+1))
-    python testAllparams1.py --config=$OUTbase &
+    python testAllparams.py --config=$OUTbase &
 done    
 
 
