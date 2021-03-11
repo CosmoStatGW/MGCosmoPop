@@ -29,7 +29,6 @@ from posteriors.posterior import Posterior
 import emcee
 import corner
 
-
 import numpy as np
 import matplotlib.pyplot as plt
 plt.rcParams["font.family"] = 'serif'
