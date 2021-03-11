@@ -33,7 +33,7 @@ class PowerLawRateEvolution(RateEvolution):
         elif unit==u.Gpc:
             print('Rate R0 is in yr^-1 Gpc^-3')
         else:
-            raisese ValueError
+            raise ValueError
     
     def log_dNdVdt(self, theta_rate, lambdaBBHrate):
         '''

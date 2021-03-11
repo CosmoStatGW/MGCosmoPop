@@ -9,6 +9,7 @@ Created on Wed Mar  3 09:54:39 2021
 from ..ABSpopulation import BBHDistFunction
 import numpy as np
 import scipy.stats as ss
+from scipy.integrate import cumtrapz
 
 import sys
 import os
@@ -119,20 +120,20 @@ class AstroSmoothPowerLawMass(BBHDistFunction):
     
     
     def sample(self, nSamples, lambdaBBHmass):
-        #alpha, beta, ml, sl, mh, sh = lambdaBBHmass
-        #mMin = 3
-        #mMax = 100
+        alpha, beta, ml, sl, mh, sh = lambdaBBHmass
+        mMin = 3
+        mMax = 100
         
-        #pm1 = lambda x: np.exp(self._logpdfm1(x, alpha, ml, sl, mh, sh ))
-        #pm2 = lambda x: np.exp(self._logpdfm2(x, beta, ml, sl, mh, sh ))
+        pm1 = lambda x: np.exp(self._logpdfm1(x, alpha, ml, sl, mh, sh ))
+        pm2 = lambda x: np.exp(self._logpdfm2(x, beta, ml, sl, mh, sh ))
         
-        #m1 = self._sample_pdf(nSamples, pm1, mMin, mMax)
+        m1 = self._sample_pdf(nSamples, pm1, mMin, mMax)
         #m2 = self._sample_pdf(nSamples, pm2, mMin, mMax)
-        #m2 = self._sample_vector_upper(pm2, mMin, m1)
+        m2 = self._sample_vector_upper(pm2, mMin, m1)
         
             
-        #return m1, m2
-        raise NotImplementedError()
+        return m1, m2
+        #raise NotImplementedError()
     
 
 
@@ -278,8 +279,10 @@ class BrokenPowerLawMass(BBHDistFunction):
          
         self.n_params = len(self.params)
     
+    
     def _get_Mbreak(self, mMin, mMax, b):
         return  mMin + b*(mMax - mMin)
+    
     
     def _logS(self, m, deltam, ml):
         maskL = m <= ml #+ eps
@@ -288,7 +291,7 @@ class BrokenPowerLawMass(BBHDistFunction):
         s[maskL] = np.NINF
         s[maskU] = 0
         maskM = ~(maskL | maskU)
-        s[maskM] = -utils.logdiffexp(deltam/(m[maskM]-ml) + deltam/(m[maskM]-ml - deltam), 0) #1/(np.exp(deltam/(m[maskM]-ml) + deltam/(m[maskM]-ml - deltam))+1)
+        s[maskM] = -np.logaddexp( 0, (deltam/(m[maskM]-ml) + deltam/(m[maskM]-ml - deltam) ) ) #1/(np.exp(deltam/(m[maskM]-ml) + deltam/(m[maskM]-ml - deltam))+1)
         return s
     
     
@@ -298,15 +301,15 @@ class BrokenPowerLawMass(BBHDistFunction):
         '''
         where_compute = (m < mh) & (m > ml)
         mBreak = self._get_Mbreak( ml, mh, b)
-        return np.where(where_compute, np.where(m < mBreak, np.log(m)*(-alpha1)+self._logS(m, deltam, ml), np.log(mBreak)*(-alpha1+alpha2)+np.log(m)*(-alpha2)+self._logS(m, deltam, ml)  ), 0)
+        return np.where(where_compute, np.where(m < mBreak, np.log(m)*(-alpha1)+self._logS(m, deltam, ml), np.log(mBreak)*(-alpha1+alpha2)+np.log(m)*(-alpha2) ), np.NINF)
     
     
-    def _logpdfm2(self, m1, m2, beta, deltam, ml):
+    def _logpdfm2(self, m2, beta, deltam, ml):
         '''
         Conditional distribution p(m2 | m1)
         '''
-        where_compute = m2 > ml
-        return np.where(where_compute, np.log(m2)*(-beta)+self._logS(m2, deltam, ml), 0)+self._logC(m1, beta, ml)
+        where_compute = (ml< m2) #m2 > ml
+        return np.where( where_compute, np.log(m2)*(beta)+self._logS(m2, deltam, ml) , np.NINF)
     
     
     def logpdf(self, theta, lambdaBBHmass):
@@ -318,44 +321,96 @@ class BrokenPowerLawMass(BBHDistFunction):
         
         where_compute = (m2 < m1) & (ml< m2) & (m1 < mh )
      
-        return np.where( where_compute,   self._logpdfm1(m1,  alpha1, alpha2, deltam, ml, mh, b ) + self._logpdfm2(m1, m2, beta, deltam, ml) -  self._logNorm( alpha1, alpha2, deltam, ml, mh, b) ,  np.NINF)
+        return np.where( where_compute,   self._logpdfm1(m1,  alpha1, alpha2, deltam, ml, mh, b ) + self._logpdfm2(m2, beta, deltam, ml) + self._logC(m1, beta, deltam,  ml)-  self._logNorm( alpha1, alpha2, deltam, ml, mh, b) ,  np.NINF)
         
     
     
-    def _logC(self, m, beta, ml):
+    def _logC(self, m, beta, deltam, ml, res = 2000):
         '''
         Gives inverse log integral of  p(m1, m2) dm2 (i.e. log C(m1) in the LVC notation )
         Approximate to the case where deltam is small 
         '''
+        xlow=np.linspace(ml, ml+deltam+deltam/10, 100)
+        xup=np.linspace(ml+deltam+deltam/10+1e-01, m.max(), res)
+        xx=np.sort(np.concatenate([xlow,xup], ))
+  
+        p2 = np.exp(self._logpdfm2( xx , beta, deltam, ml))
+        cdf = cumtrapz(p2, xx)
+        return -np.log( np.interp(m, xx[1:], cdf) ) 
+        
         if beta>-1:
             return np.log1p(beta)-utils.logdiffexp((1+beta)*np.log(m), (1+beta)*np.log(ml)) # -beta*np.log(m)
         elif beta<-1:
             return +np.log(-1-beta)-utils.logdiffexp( (1+beta)*np.log(ml), (1+beta)*np.log(m)) #-beta*np.log(m)
         raise ValueError # 1 / m / np.log(m / ml)
+        
+        #x = np.linspace(ml, m, res)
+        #cdf = np.cumsum(np.exp(self._logpdfm2(x, beta, deltam, ml)))
+        #res= cdf[-1]*(x[1]-x[0])
+        #return -np.log(res)
 
-
-    
     def _logNorm(self, alpha1, alpha2, deltam, ml, mh, b ):
         '''
         Gives log integral of  p(m1, m2) dm1 dm2 (i.e. total normalization of mass function )
 
         '''
-        #if (alpha < 1) & (alpha!=0):
-        #    return -np.log1p(-alpha)+utils.logdiffexp( (1-alpha)*np.log(mh), (1-alpha)*np.log(ml) ) #(1 - alpha) / (mh ** (1 - alpha) - ml ** (1 - alpha))
+        
+        ms = np.exp(np.linspace(np.log(ml+1e-02), np.log(mh+1e-01), 100))
+        p1 = np.exp(self._logpdfm1( ms ,alpha1, alpha2, deltam, ml, mh, b ))
+        return np.log(np.trapz(p1,ms))
+        
+        
+        #mbr = self._get_Mbreak( ml, mh, b)
+        
+        #x1 = ( mbr**(1-alpha1) - ml**(1-alpha1))/(1-alpha1)
+        #x2 = mbr**(alpha2-alpha1)*(mh**(1-alpha2) - mbr**(1-alpha2))/(1-alpha2)
+        #return np.log(x1+x2)
+    
+    
+    def _logNorm1(self, alpha1, alpha2, deltam, ml, mh, b ):
+        '''
+        Gives log integral of  p(m1, m2) dm1 dm2 (i.e. total normalization of mass function )
+
+        '''
+        mbr = self._get_Mbreak( ml, mh, b)
+        x3 = +np.log( mbr**(1-alpha1)*(alpha2-alpha1)-ml**(1-alpha1)*(1-alpha2) +mh**(1-alpha2)*mbr**(alpha2-alpha1)*(1-alpha1) )
+        if np.isnan(x3):
+            raise ValueError
+        
+        if (alpha1 < 1) & (alpha2<1) & (alpha1 != 0) & (alpha2!= 0) :
+            x1 = -np.log1p(-alpha1)
+            x2 = -np.log1p(-alpha2)
+            #return -np.log1p(-alpha1)-np.log1p(-alpha2)+np.log( mbr**(1-alpha1)*(alpha2-alpha1)-ml**(1-alpha1)*(1-alpha2) +mh**(1-alpha2)*mbr**(alpha2-alpha1)*(1-alpha1) )
+        elif (alpha1 > 1) & (alpha2<1) :
+            x1 = -np.log(alpha1-1)
+            x2 = -np.log1p(-alpha2)
+            #return -np.log(alpha1-1)-np.log1p(-alpha2)+np.log( mbr**(1-alpha1)*(alpha2-alpha1)-ml**(1-alpha1)*(1-alpha2) +mh**(1-alpha2)*mbr**(alpha2-alpha1)*(1-alpha1) )
+        elif  (alpha1 < 1) & (alpha2>1) :   
+            #return -np.log(alpha1-1)-np.log(alpha2-1)+np.log( mbr**(1-alpha1)*(alpha2-alpha1)-ml**(1-alpha1)*(1-alpha2) +mh**(1-alpha2)*mbr**(alpha2-alpha1)*(1-alpha1) )
+            x1 = -np.log1p(-alpha1)
+            x2 = -np.log(alpha2-1)
+        elif (alpha1 > 1) & (alpha2>1):
+            x1 = -np.log(alpha1-1)
+            x2 = -np.log(alpha2-1)
+        else:
+            raise ValueError
+        
+        return x1+x2+x3
+        
+        #-np.log1p(-alpha1)+utils.logdiffexp( (1-alpha1)*np.log(mbr), (1-alpha1)*np.log(ml) ) 
         #return 1 / np.log(mh / ml)
         #elif (alpha > 1) :
         #    return -np.log(alpha-1)+utils.logdiffexp(  (1-alpha)*np.log(ml), (1-alpha)*np.log(mh) )
         #raise ValueError
-        return 1
+        #return 1
     
     
-    def sample(self, nSamples, lambdaBBHmass):
-        alpha, beta, ml, sl, mh, sh = lambdaBBHmass
-        mMin = 3
-        mMax = 100
+    def sample(self, nSamples, lambdaBBHmass, mMin=5, mMax=100):
+        alpha1, alpha2, beta, deltam, ml, mh, b = lambdaBBHmass
         
-        pm1 = lambda x: np.exp(self._logpdfm1(x, alpha, ml, sl, mh, sh ))
-        pm2 = lambda x: np.exp(self._logpdfm2(x, beta, ml, sl, mh, sh ))
+        
+        pm1 = lambda x: np.exp(self._logpdfm1(x, alpha1, alpha2, deltam, ml, mh, b ))
+        pm2 = lambda x: np.exp(self._logpdfm2(x,  beta, deltam, ml ))
         
         m1 = self._sample_pdf(nSamples, pm1, mMin, mMax)
         #m2 = self._sample_pdf(nSamples, pm2, mMin, mMax)
