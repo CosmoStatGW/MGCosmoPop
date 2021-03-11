@@ -39,6 +39,7 @@ class GWMockData(Data):
     
     def _load_data(self, fname, nObsUse, nSamplesUse,):
         print('Loading data...')
+        
         with h5py.File(fname, 'r') as phi: #observations.h5 has to be in the same folder as this code
         
             if nObsUse is None and nSamplesUse is None:
@@ -53,16 +54,18 @@ class GWMockData(Data):
                 dl_samples = np.array(phi['posteriors']['dl'])[:nObsUse, :] 
             
             elif nObsUse is  None and nSamplesUse is not None:
-            
-                m1det_samples = np.array(phi['posteriors']['m1det'])[:, :nSamplesUse]# m1
-                m2det_samples = np.array(phi['posteriors']['m2det'])[:, :nSamplesUse] # m2
-                dl_samples = np.array(phi['posteriors']['dl'])[:, :nSamplesUse]
+                
+                which_samples = np.random.randint(0, high=4000 , size=nSamplesUse )
+                m1det_samples = np.array(phi['posteriors']['m1det'])[:, which_samples]# m1
+                m2det_samples = np.array(phi['posteriors']['m2det'])[:, which_samples] # m2
+                dl_samples = np.array(phi['posteriors']['dl'])[:, which_samples]
             
             elif nObsUse is not None and nSamplesUse is not None:
-            
-                m1det_samples = np.array(phi['posteriors']['m1det'])[:nObsUse, :nSamplesUse]# m1
-                m2det_samples = np.array(phi['posteriors']['m2det'])[:nObsUse, :nSamplesUse] # m2
-                dl_samples = np.array(phi['posteriors']['dl'])[:nObsUse, :nSamplesUse] 
+                
+                which_samples = np.random.randint(0, high=4000 , size=nSamplesUse )
+                m1det_samples = np.array(phi['posteriors']['m1det'])[:nObsUse, which_samples]# m1
+                m2det_samples = np.array(phi['posteriors']['m2det'])[:nObsUse, which_samples] # m2
+                dl_samples = np.array(phi['posteriors']['dl'])[:nObsUse, which_samples] 
     
         if self.dist_unit==u.Mpc:
             print('Using distances in Mpc')
