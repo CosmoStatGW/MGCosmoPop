@@ -26,13 +26,14 @@ from cosmology.cosmo import Cosmo
 from population.allPopulations import AllPopulations
 
 from dataStructures.mockData import GWMockData, GWMockInjectionsData
-import astropy.units as u
+from dataStructures.O3adata import O3aData, O3InjectionsData
+#import astropy.units as u
 
-from posteriors.prior import Prior
-from posteriors.likelihood import HyperLikelihood
+#from posteriors.prior import Prior
+#from posteriors.likelihood import HyperLikelihood
 
-from posteriors.selectionBias import SelectionBiasInjections
-from posteriors.posterior import Posterior
+#from posteriors.selectionBias import SelectionBiasInjections
+#from posteriors.posterior import Posterior
 
 
 
@@ -54,13 +55,15 @@ rate_functions = { # 'gauss': AstroSmoothPowerLawMass(),
 
 
 
-fnames_data  = { 'mock': 'observations.h5'
+fnames_data  = { 'mock': 'observations.h5',
+                'O3a': ''
     
     
     }
 
 
-fnames_inj  = { 'mock': 'selected.h5'
+fnames_inj  = { 'mock': 'selected.h5',
+                'O3a': 'o3a_bbhpop_inj_info.hdf'
     
     
     }
@@ -165,9 +168,15 @@ def load_data(dataset_name, nObsUse=None, nSamplesUse=None, nInjUse=None, dist_u
         # DATA
         
         fname = os.path.join(Globals.dataPath, dataset_name, fnames_data[dataset_name])
-        mockData = GWMockData(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, dist_unit=dist_unit)
-        
         fnameInj = os.path.join(Globals.dataPath, dataset_name, fnames_inj[dataset_name] )
-        injData = GWMockInjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit)
         
-        return mockData, injData
+        if dataset_name=='mock':
+            Data = GWMockData(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, dist_unit=dist_unit)
+            injData = GWMockInjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit)
+        elif dataset_name=='O3a':
+            Data = O3aData(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, dist_unit=dist_unit)
+            injData = O3InjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit)
+        
+        
+        
+        return Data, injData
