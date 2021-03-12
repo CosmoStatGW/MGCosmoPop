@@ -18,7 +18,7 @@ import Globals
 
 import astropy.units as u
 
-from population.astro.astroMassDistribution import AstroSmoothPowerLawMass
+from population.astro.astroMassDistribution import AstroSmoothPowerLawMass, BrokenPowerLawMass
 from population.astro.astroSpinDistribution import DummySpinDist
 from population.astro.rateEvolution import PowerLawRateEvolution
 from population.astro.astroPopulation import AstroPopulation
@@ -39,6 +39,7 @@ from dataStructures.O3adata import O3aData, O3InjectionsData
 
 
 mass_functions = {  'smooth_pow_law': AstroSmoothPowerLawMass,
+                      'broken_pow_law': BrokenPowerLawMass,
     
      }
 
