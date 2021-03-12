@@ -28,6 +28,7 @@ nObsUse=None
 nSamplesUse=1000
 nInjUse=None
 npoints=5
+massf='smooth_pow_law'
 EOF
     
     #echo $baseName$par

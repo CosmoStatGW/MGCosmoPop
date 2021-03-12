@@ -162,7 +162,7 @@ def build_model( populations, mass_args={}, spin_args={}, rate_args={} ):
 
 
 
-def load_data(dataset_name, nObsUse=None, nSamplesUse=None, nInjUse=None, dist_unit=u.Gpc):
+def load_data(dataset_name, nObsUse=None, nSamplesUse=None, nInjUse=None, dist_unit=u.Gpc, **kwargs):
         
         
         ############################################################
@@ -175,7 +175,7 @@ def load_data(dataset_name, nObsUse=None, nSamplesUse=None, nInjUse=None, dist_u
             Data = GWMockData(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, dist_unit=dist_unit)
             injData = GWMockInjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit)
         elif dataset_name=='O3a':
-            Data = O3aData(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, dist_unit=dist_unit)
+            Data = O3aData(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, dist_unit=dist_unit, **kwargs)
             injData = O3InjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit)
         
         

@@ -159,7 +159,7 @@ def main():
         # DATA
         
         print('\nLoading data from %s catalogue...' %config.dataset_name) 
-        mockData, injData = load_data(config.dataset_name, nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, nInjUse=config.nInjUse, dist_unit=units[config.dist_unit])
+        Data, injData = load_data(config.dataset_name, nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, nInjUse=config.nInjUse, dist_unit=units[config.dist_unit])
         
         
         ############################################################
@@ -173,7 +173,7 @@ def main():
         
         myPrior = Prior(config.priorLimits, config.params_inference, config.priorNames, config.priorParams)
         
-        myLik = HyperLikelihood(allPops, mockData, config.params_inference )
+        myLik = HyperLikelihood(allPops, Data, config.params_inference )
         
         selBias = SelectionBiasInjections( allPops, injData, config.params_inference, get_uncertainty=config.include_sel_uncertainty )
         

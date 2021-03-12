@@ -56,15 +56,17 @@ class GWMockData(Data):
             print('Using distances in Mpc')
             dl_samples*=1e03
         #theta =   np.array([m1det_samples, m2det_samples, dl_samples])
-        if nSamplesUse is not None:
-            m1z=np.empty((m1det_samples.shape[0],nSamplesUse) )
-            m2z=np.empty((m1det_samples.shape[0],nSamplesUse))
-            dL=np.empty((m1det_samples.shape[0],nSamplesUse))
-            #print(m1z.shape)
-            for i in range(m1det_samples.shape[0]):
-                vb= (i==0)
-                m1z[i], m2z[i], dL[i] = self.downsample([m1det_samples[i], m2det_samples[i], dl_samples[i]], nSamplesUse, verbose=vb)
         
+        if nSamplesUse is None:
+            nSamplesUse=dl_samples.shape[1]
+        m1z=np.empty((m1det_samples.shape[0],nSamplesUse) )
+        m2z=np.empty((m1det_samples.shape[0],nSamplesUse))
+        dL=np.empty((m1det_samples.shape[0],nSamplesUse))
+        #print(m1z.shape)
+        for i in range(m1det_samples.shape[0]):
+            vb= (i==0)
+            m1z[i], m2z[i], dL[i] = self.downsample([m1det_samples[i], m2det_samples[i], dl_samples[i]], nSamplesUse, verbose=vb)
+            
         #m1det_samples, m2det_samples, dl_samples = self.downsample([m1det_samples, m2det_samples, dl_samples], nSamplesUse)
         return m1z, m2z, dL, np.count_nonzero(m1z, axis=-1)
       

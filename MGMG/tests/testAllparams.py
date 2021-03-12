@@ -84,6 +84,17 @@ params_O3 = {   'R0': 24 ,  # Gpc^-3 yr^-1
 
 
 
+
+
+O3_use = {'use': ['GW190521', 'GW190521_074359'],
+          'not_use': None
+          
+          }
+
+
+
+
+
 def main():
     
     in_time=time.time()
@@ -132,7 +143,7 @@ def main():
         ############################################################
         # DATA
         
-        mockData, injData = load_data(config.data, nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, nInjUse=config.nInjUse, dist_unit=u.Gpc)
+        mockData, injData = load_data(config.data, nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, nInjUse=config.nInjUse, dist_unit=u.Gpc, O3_use=O3_use, )
         
          
         ############################################################
