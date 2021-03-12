@@ -158,8 +158,13 @@ def main():
         ############################################################
         # DATA
         
+        if config.dataset_name=='O3a':
+            O3_use=config.O3_use
+        elif config.dataset_name=='mock':
+            O3_use=None
+        
         print('\nLoading data from %s catalogue...' %config.dataset_name) 
-        Data, injData = load_data(config.dataset_name, nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, nInjUse=config.nInjUse, dist_unit=units[config.dist_unit])
+        Data, injData = load_data(config.dataset_name, nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, nInjUse=config.nInjUse, dist_unit=units[config.dist_unit], events_use=O3_use, )
         
         
         ############################################################

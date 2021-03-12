@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -a allGoalParams=("H0" "Om" "Xi0" "R0" "lambdaRedshift" "alpha" "beta" "ml" "sl" "mh" "sh" )
+declare -a allGoalParams=("H0" "Om" "Xi0" "R0" "lambdaRedshift" )
 
 # "H0" "Om" "Xi0" "n"
 # "R0" "lambdaRedshift"
@@ -8,7 +8,7 @@ declare -a allGoalParams=("H0" "Om" "Xi0" "R0" "lambdaRedshift" "alpha" "beta" "
 #  "alpha1" "alpha2" "beta" "deltam" "ml"  "mh" "b" 
 
 
-baseName="testDownSample1/"
+baseName="testAllO3a_1/"
 basedir="../../results/$baseName"
 echo $basedir
 mkdir $basedir
@@ -25,10 +25,13 @@ dist_unit = 'Gpc'
 param='$par'
 fout='$baseName$par'
 nObsUse=None
-nSamplesUse=1000
+nSamplesUse=10000
 nInjUse=None
-npoints=5
+npoints=10
 massf='smooth_pow_law'
+O3_use = {'use': None,
+          'not_use': None 
+          }
 EOF
     
     #echo $baseName$par
@@ -36,7 +39,7 @@ EOF
     
     pids[${i}]=$!
     i=$((i+1))
-    python testAllparams.py --config=$OUTbase &
+    #python testAllparams.py --config=$OUTbase &
 done    
 
 

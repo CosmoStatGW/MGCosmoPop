@@ -14,6 +14,7 @@ import h5py
 import os
 import sys
 from pesummary.io import read
+import glob
    
 
 PACKAGE_PARENT = '..'
@@ -30,11 +31,16 @@ O3BHNS = ('GW190426_152155', 'GW190426' )
      
 class O3aData(Data):
     
-    def __init__(self, fname, nObsUse=None, nSamplesUse=None, dist_unit=u.Gpc ):
+    def __init__(self, fname, nObsUse=None, nSamplesUse=None, dist_unit=u.Gpc, events_use=None ):
+        
+        
+        self.events_use=events_use
+        
+        if events_use['use'] is not None:
+            nObsUse=len(events_use['use'])
         
         self.dist_unit = dist_unit
-        
-        self.events = self._get_events_names(fname)
+        self.events = self._get_events(fname, events_use)
         
         self.m1z, self.m2z, self.dL, self.chiEff, self.Nsamples = self._load_data(fname, nObsUse, nSamplesUse, )  
         self.Nobs=self.m1z.shape[0]
@@ -54,11 +60,37 @@ class O3aData(Data):
         self.Nobs=self.m1z.shape[0]
         
     
-    def _get_events_names(self, fname):
+    def _get_events(self, fname, events_use):
         
-        dirlist = [ item for item in os.listdir(fname) if os.path.isdir(os.path.join(fname, item)) ]
-        dirlist_BBH = [x for x in dirlist if x not in O3BNS+O3BHNS]
-        return dirlist_BBH
+        #dirlist = [ item for item in os.listdir(fname) if os.path.isdir(os.path.join(fname, item)) ]        
+        #print(fname)
+        #print(os.listdir(fname))
+        #print(os.path.join(fname, '*.h5' ))
+        allFiles = [f for f in os.listdir(fname) if f.endswith('.h5')] #glob.glob(os.path.join(fname, '*.h5' ))
+        #print(allFiles)
+        #print([len(f.split('.')[0].split('_')) for f in allFiles])
+        #print([f.split('_')[0][:2] for f in allFiles])
+        elist = [f.split('.')[0] for f in allFiles if ( ( 'prior' not in f.split('.')[0] ) & ('comoving' not in f.split('.')[0]) & (f.split('_')[0][:2]=='GW') ) ]
+        
+        
+        list_BBH = [x for x in elist if x not in O3BNS+O3BHNS]
+        print('In the O3a data we have the following BBH events, total %s (excluding %s):' %(len(list_BBH) ,str(O3BNS+O3BHNS)) )
+        print(list_BBH)
+        if events_use['use'] is not None and events_use['not_use'] is not None:
+            raise ValueError('You passed options to both use and not_use. Please only provide the list of events that you want to use, or the list of events that you want to exclude. ')
+        elif events_use['use'] is not None:
+            # Use only events given in use
+            print('Using only BBH events : ')
+            print(events_use['use'])
+            list_BBH_final = [x for x in list_BBH if x in events_use['use']]
+        elif events_use['not_use'] is not None:
+            print('Excluding BBH events : ')
+            print(events_use['not_use'])
+            list_BBH_final = [x for x in list_BBH if x not in events_use['not_use']]
+        else:
+            print('Using all BBH events')
+            list_BBH_final=list_BBH
+        return list_BBH_final
         
     
     def get_theta(self):
@@ -120,7 +152,7 @@ class O3aData(Data):
     
     def _load_data_event(self, fname, event, nSamplesUse):
         
-        data = read(os.path.join(fname, event, event+'.h5'))
+        data = read(os.path.join(fname,  event+'.h5'))
 
         samples_dict = data.samples_dict
         posterior_samples = samples_dict['PublicationSamples']

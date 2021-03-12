@@ -37,33 +37,34 @@ import Globals
 import utils
 
 
-perc_variation = 15
+perc_variation = 10
 
 skip=['n',  ]
 
-AllpriorLimits =      {   'H0': {    'H0': (20, 140)}, 
-                        'Xi0':{   'Xi0': (0.1, 10) }, 
+AllpriorLimits =      {   'H0': {    'H0': (20., 140.)}, 
+                        'Xi0':{   'Xi0': (0.1, 10.) }, 
                          'Om': { 'Om': (0.05, 1)},
                           'w0': {'w0': (-2, -0.5)},
                           'n': {'n': (0., 10) }, 
                           
                           'R0': {'R0': (1e-01 , 1e03)}, # Gpc^-3 yr^-1
-                         'lambdaRedshift': { 'lambdaRedshift': (-15, 10) },
+                         'lambdaRedshift': { 'lambdaRedshift': (-15., 10.) },
                           
                          'alpha': {'alpha': (-5, 10 )},
                           'beta': {'beta': (-4, 12 ) }, 
-                          'ml': {'ml': (2, 10)}, 
+                          'ml': {'ml': (2., 10.)}, 
                           'sl' :{'sl':( 0.01 , 1)}, 
-                           'mh':{'mh':( 30, 100)},
-                          'sh' :{'sh':(0.01, 1 )}, 
+                           'mh':{'mh':( 30., 150.)},
                           
-                         'alpha1': {'alpha1': (-4, 12)},                          
-                         'alpha2': {'alpha2': (-4, 12)}, 
+                            'sh' :{'sh':(0.01, 1 )}, 
+                          
+                         'alpha1': {'alpha1': (-4., 12.)},                          
+                         'alpha2': {'alpha2': (-4., 12.)}, 
                          #'beta': {}, 
-                         'deltam': {'deltam': (0, 10)},
+                         'deltam': {'deltam': (0., 10.)},
                          #'ml': {}, 
                          #'mh': {}, 
-                         'b': {'b': (0, 1)} 
+                         'b': {'b': (0., 1.)} 
                           
                           
                           
@@ -73,23 +74,17 @@ AllpriorLimits =      {   'H0': {    'H0': (20, 140)},
 
 
 
-params_O3 = {   'R0': 24 ,  # Gpc^-3 yr^-1 
+params_O3 = {   'R0': 24. ,  # Gpc^-3 yr^-1 
                         #'Xi0': 1. , 
                         #'n' : 0.5,  
                 'lambdaRedshift':2.7,
-                'mh':87,
-                'ml':2, 
+                'mh':87.,
+                'ml':2., 
                 'beta'  :1.4                                    
     }
 
 
 
-
-
-O3_use = {'use': ['GW190521', 'GW190521_074359'],
-          'not_use': None
-          
-          }
 
 
 
@@ -143,7 +138,12 @@ def main():
         ############################################################
         # DATA
         
-        mockData, injData = load_data(config.data, nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, nInjUse=config.nInjUse, dist_unit=u.Gpc, O3_use=O3_use, )
+        if config.data=='O3a':
+            O3_use=config.O3_use
+        elif config.data=='mock':
+            O3_use=None
+        
+        mockData, injData = load_data(config.data, nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, nInjUse=config.nInjUse, dist_unit=u.Gpc, events_use=O3_use, )
         
          
         ############################################################
@@ -180,14 +180,16 @@ def main():
         print('Computing posterior with log_posterior %s in range (%s, %s) on %s points... ' %(config.param, grid.min(), grid.max(), grid.shape[0] ) )
     
    
-        logPosteriorAll = np.array( [ myPost.logPosterior(val, return_all=True) for val in grid ] )
-        # logPost, lp, ll, mu, err
+        print( myPost.logPosterior(truth, return_all=True) )
         
+        logPosteriorAll = np.array( [ myPost.logPosterior(val, return_all=True) for val in grid ])
+        # logPost, lp, ll, mu, err
+        #print(logPosteriorAll)
         logPosterior=logPosteriorAll[:,0]
-        logLik=logPosteriorAll[:,2]
         logPrior=logPosteriorAll[:,1]
+        logLik=logPosteriorAll[:,2]
         MuVals=logPosteriorAll[:,3]
-        ErrVals=logPosteriorAll[:,4]
+        #ErrVals=logPosteriorAll[:,4]
                 
         
         print('logLik:')
