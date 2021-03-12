@@ -7,8 +7,10 @@ Created on Thu Mar  4 17:27:44 2021
 """
 
 param='H0'
-fout='test2'+param
-nObsUse=None
-nSamplesUse=None
-nInjUse=None
+fout='testDownS'
+nObsUse=2
+nSamplesUse=100
+nInjUse=100
 npoints=5
+data='mock'
+massf= 'smooth_pow_law' #'broken_pow_law' #'smooth_pow_law'

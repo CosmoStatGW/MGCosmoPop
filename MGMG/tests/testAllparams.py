@@ -46,15 +46,42 @@ AllpriorLimits =      {   'H0': {    'H0': (20, 140)},
                          'Om': { 'Om': (0.05, 1)},
                           'w0': {'w0': (-2, -0.5)},
                           'n': {'n': (0., 10) }, 
+                          
                           'R0': {'R0': (1e-01 , 1e03)}, # Gpc^-3 yr^-1
                          'lambdaRedshift': { 'lambdaRedshift': (-15, 10) },
-                          'alpha': {'alpha': (-5, 10 )},
-                          'beta': {'beta': (-5, 10 ) }, 
-                          'ml': {'ml': (2, 20)}, 
+                          
+                         'alpha': {'alpha': (-5, 10 )},
+                          'beta': {'beta': (-4, 12 ) }, 
+                          'ml': {'ml': (2, 10)}, 
                           'sl' :{'sl':( 0.01 , 1)}, 
-                           'mh':{'mh':( 20, 100)},
-                          'sh' :{'sh':(0.01, 1 )} }
+                           'mh':{'mh':( 30, 100)},
+                          'sh' :{'sh':(0.01, 1 )}, 
+                          
+                         'alpha1': {'alpha1': (-4, 12)},                          
+                         'alpha2': {'alpha2': (-4, 12)}, 
+                         #'beta': {}, 
+                         'deltam': {'deltam': (0, 10)},
+                         #'ml': {}, 
+                         #'mh': {}, 
+                         'b': {'b': (0, 1)} 
+                          
+                          
+                          
+                          
+                          }
                
+
+
+
+params_O3 = {   'R0': 24 ,  # Gpc^-3 yr^-1 
+                        #'Xi0': 1. , 
+                        #'n' : 0.5,  
+                'lambdaRedshift':2.7,
+                'mh':87,
+                'ml':2, 
+                'beta'  :1.4                                    
+    }
+
 
 
 def main():
@@ -88,7 +115,7 @@ def main():
         ##############################################################
         # POPULATION MODELS
         
-        myPopulations = { 'astro' : { 'mass_function': 'smooth_pow_law',
+        myPopulations = { 'astro' : { 'mass_function': config.massf,
                                      'spin_distribution': 'skip',
                                      'rate': 'simple_pow_law'
     
@@ -99,10 +126,13 @@ def main():
         
         allPops = build_model(myPopulations, rate_args={'unit':u.Gpc} )
         
+        if config.data=='O3a':
+            allPops.set_values( params_O3)
+        
         ############################################################
         # DATA
         
-        mockData, injData = load_data('mock', nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, nInjUse=config.nInjUse, dist_unit=u.Gpc)
+        mockData, injData = load_data(config.data, nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, nInjUse=config.nInjUse, dist_unit=u.Gpc)
         
          
         ############################################################
@@ -149,7 +179,7 @@ def main():
         ErrVals=logPosteriorAll[:,4]
                 
         
-        print('lik:')
+        print('logLik:')
         print(logLik)
         
         ############################################################
@@ -157,14 +187,15 @@ def main():
         
         idx_truth = np.argwhere(grid==truth)
         ndet_t = MuVals[idx_truth]
-        print('N_det at true value of %s: %s '%(truth, ndet_t ) )
+        print('N_det at true value of %s: %s '%(truth, ndet_t[0][0] ) )
         
-        lab = r'$N_{\rm det}$'+'('+config.param +')'+'\n'+r'$N_{\rm det}$ (%s)=%s' %(truth, np.round(ndet_t, 1))   
+        lab = r'$N_{\rm det}$'+'('+config.param +')'+'\n'+r'$N_{\rm det}$ (%s)=%s' %(truth, np.round(ndet_t, 1)[0][0] )   
         plt.plot(grid, MuVals, label=lab)
         plt.xlabel(config.param );
         plt.ylabel(r'$N_{det}$');
         plt.axvline(truth, ls='--', color='k', lw=2);
-        plt.axhline(5267, ls=':', color='k', lw=1.5);
+        if config.nObsUse is None:
+            plt.axhline(mockData.Nobs, ls=':', color='k', lw=1.5);
         if config.param=='R0':
             plt.xscale('log')
             plt.yscale('log')

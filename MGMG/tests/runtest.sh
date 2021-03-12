@@ -1,8 +1,14 @@
 #!/bin/bash
 
-declare -a allGoalParams=("H0" "Om" "Xi0" "n" "R0" "lambdaRedshift" "alpha" "beta" "ml" "sl" "mh" "sh" )
+declare -a allGoalParams=("H0" "Om" "Xi0" "R0" "lambdaRedshift" "alpha" "beta" "ml" "sl" "mh" "sh" )
 
-baseName="testAll1short4/"
+# "H0" "Om" "Xi0" "n"
+# "R0" "lambdaRedshift"
+# "alpha" "beta" "ml" "sl" "mh" "sh" 
+#  "alpha1" "alpha2" "beta" "deltam" "ml"  "mh" "b" 
+
+
+baseName="testDownSample1/"
 basedir="../../results/$baseName"
 echo $basedir
 mkdir $basedir
@@ -14,12 +20,13 @@ for par in ${allGoalParams[@]};do
     OUT=$OUTbase.py
     
     cat <<EOF >$OUT
+data='mock'
 dist_unit = 'Gpc'
 param='$par'
 fout='$baseName$par'
-nObsUse=10
-nSamplesUse=100
-nInjUse=100
+nObsUse=None
+nSamplesUse=1000
+nInjUse=None
 npoints=5
 EOF
     
