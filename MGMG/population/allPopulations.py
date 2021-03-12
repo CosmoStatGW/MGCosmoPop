@@ -64,13 +64,13 @@ class AllPopulations(object):
             LambdaPop = LambdaAllPop[prev:prev+self._allNParams[i]]
             logN += pop.log_dR_dm1dm2(m1, m2, z, chiEff, LambdaPop)
             prev=self._allNParams[i]
-        return logN
+        return np.where( ~np.isnan(m1), logN, np.NINF)
     
     
     def log_dN_dm1zdm2zddL(self, m1, m2, z, chiEff, Tobs, Lambda):
         LambdaCosmo, LambdaAllPop = self._split_params(Lambda)
         H0, Om0, w0, Xi0, n = self.cosmo._get_values(LambdaCosmo, ['H0', 'Om', 'w0', 'Xi0', 'n'])
-        return self.log_dN_dm1dm2dz(m1, m2, z, chiEff, Tobs, Lambda)-self._log_dMsourcedMdet(z) - self.cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n )
+        return np.where( ~np.isnan(m1), self.log_dN_dm1dm2dz(m1, m2, z, chiEff, Tobs, Lambda)-self._log_dMsourcedMdet(z) - self.cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n ) , np.NINF)
     
     
     #########################################################################

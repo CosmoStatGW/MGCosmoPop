@@ -319,30 +319,32 @@ class BrokenPowerLawMass(BBHDistFunction):
         m1, m2 = theta
         alpha1, alpha2, beta, deltam, ml, mh, b = lambdaBBHmass
         
-        where_compute = (m2 < m1) & (ml< m2) & (m1 < mh )
+        #where_compute = (m2 < m1) & (ml< m2) & (m1 < mh )
      
-        return np.where( where_compute,   self._logpdfm1(m1,  alpha1, alpha2, deltam, ml, mh, b ) + self._logpdfm2(m2, beta, deltam, ml) + self._logC(m1, beta, deltam,  ml)-  self._logNorm( alpha1, alpha2, deltam, ml, mh, b) ,  np.NINF)
+        return np.where( ~np.isnan(m1), np.where( (m2 < m1) & (ml< m2) & (m1 < mh ),   self._logpdfm1(m1,  alpha1, alpha2, deltam, ml, mh, b ) + self._logpdfm2(m2, beta, deltam, ml) + self._logC(m1, beta, deltam,  ml)-  self._logNorm( alpha1, alpha2, deltam, ml, mh, b) ,  np.NINF),  np.NINF)
         
     
     
-    def _logC(self, m, beta, deltam, ml, res = 2000):
+    def _logC(self, m, beta, deltam, ml, res = 200):
         '''
         Gives inverse log integral of  p(m1, m2) dm2 (i.e. log C(m1) in the LVC notation )
         Approximate to the case where deltam is small 
         '''
         xlow=np.linspace(ml, ml+deltam+deltam/10, 100)
-        xup=np.linspace(ml+deltam+deltam/10+1e-01, m.max(), res)
+        xup=np.linspace(ml+deltam+deltam/10+1e-01, m[~np.isnan(m)].max(), res)
         xx=np.sort(np.concatenate([xlow,xup], ))
   
         p2 = np.exp(self._logpdfm2( xx , beta, deltam, ml))
         cdf = cumtrapz(p2, xx)
-        return -np.log( np.interp(m, xx[1:], cdf) ) 
+        return np.where( ~np.isnan(m), -np.log( np.interp(m, xx[1:], cdf) ) , np.NINF)
         
-        if beta>-1:
-            return np.log1p(beta)-utils.logdiffexp((1+beta)*np.log(m), (1+beta)*np.log(ml)) # -beta*np.log(m)
-        elif beta<-1:
-            return +np.log(-1-beta)-utils.logdiffexp( (1+beta)*np.log(ml), (1+beta)*np.log(m)) #-beta*np.log(m)
-        raise ValueError # 1 / m / np.log(m / ml)
+        
+        
+        #if beta>-1:
+        #    return np.log1p(beta)-utils.logdiffexp((1+beta)*np.log(m), (1+beta)*np.log(ml)) # -beta*np.log(m)
+        #elif beta<-1:
+        #    return +np.log(-1-beta)-utils.logdiffexp( (1+beta)*np.log(ml), (1+beta)*np.log(m)) #-beta*np.log(m)
+        #raise ValueError # 1 / m / np.log(m / ml)
         
         #x = np.linspace(ml, m, res)
         #cdf = np.cumsum(np.exp(self._logpdfm2(x, beta, deltam, ml)))
