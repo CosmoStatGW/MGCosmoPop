@@ -45,6 +45,14 @@ from sample.models import build_model, load_data, setup_chain
 units = {'Mpc': u.Mpc, 'Gpc': u.Gpc}
 
 
+params_O3 = {   'R0': 24. ,  # Gpc^-3 yr^-1 
+                        #'Xi0': 1. , 
+                        #'n' : 0.5,  
+                'lambdaRedshift':2.7,
+                'mh':87.,
+                'ml':2., 
+                'beta'  :1.4                                    
+    }
 
 
 
@@ -148,8 +156,18 @@ def main():
         # (No duplicates)
         check_params(config.params_inference, config.params_fixed, allPops.params )
         
+        
+        # If using O3 data, set base values to expected ones from LVC
+        if config.dataset_name=='O3a':
+            allPops.set_values( params_O3)
+        
         # Fix values of the parameters not included in the MCMC
         allPops.set_values( config.params_fixed)
+        
+        # Fix values of the parameters not included in the MCMC
+        allPops.set_values( config.params_fixed)
+        
+        
         
         # Check that the order of arguments for MCMC in the config match the order
         # of arguments in population
@@ -229,16 +247,22 @@ def main():
                 continue
             else:
                 tau = sampler.get_autocorr_time(tol=0) # tol=0 is in irder to continue the chain
-                burnin = int(2 * np.max(tau))
+                if np.any(np.isnan(tau)):
+                    burnin=0
+                    converged=False
+                else:
+                    burnin = int(2 * np.max(tau))
+                    # Check convergence
+                    converged = np.all(tau * config.convergence_ntaus < sampler.iteration)
+                    converged &= np.all(np.abs(old_tau - tau) / tau < config.convergence_percVariation)
+                    
                 autocorr[index] = np.mean(tau)
                 index +=1
                 print('Step n %s. Check autocorrelation: ' %(index*100))
                 print(tau)
                 np.savetxt(autocorr_fname, autocorr[:index])
         
-                # Check convergence
-                converged = np.all(tau * config.convergence_ntaus < sampler.iteration)
-                converged &= np.all(np.abs(old_tau - tau) / tau < config.convergence_percVariation)
+                
                 
                 if config.telegram_notifications:
                     N=len(sampler.get_chain())
@@ -249,7 +273,10 @@ def main():
                     break
                 else:
                     print('Chain has not converged yet. ')
-                    old_tau = tau
+                    if np.any(np.isnan(tau)):
+                        old_tau = np.inf
+                    else:
+                        old_tau = tau
         return allPops, sampler, index, autocorr
     
     ##############################################################

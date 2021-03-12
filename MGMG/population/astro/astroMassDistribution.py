@@ -270,7 +270,7 @@ class BrokenPowerLawMass(BBHDistFunction):
         self.names = { 'alpha1': r'$\alpha_1$',
                            'alpha2':  r'$\alpha_2$' , 
                            'beta':  r'$\beta_q$',
-                           'deltam': r'$\delta_{rm m}$',
+                           'deltam': r'$\delta_{\rm m}$',
                            'ml': r'$m_{\rm min}$',
                            'mh':r'$m_{\rm max}$',
                            'b': r'$b$',
@@ -278,6 +278,8 @@ class BrokenPowerLawMass(BBHDistFunction):
                            }
          
         self.n_params = len(self.params)
+        
+        print('Mass function base values: %s' %self.baseValues)
     
     
     def _get_Mbreak(self, mMin, mMax, b):
