@@ -299,17 +299,17 @@ class BrokenPowerLawMass(BBHDistFunction):
         '''
         Marginal distribution p(m1)
         '''
-        where_compute = (m < mh) & (m > ml)
+        #where_compute = (m < mh) & (m > ml)
         mBreak = self._get_Mbreak( ml, mh, b)
-        return np.where(where_compute, np.where(m < mBreak, np.log(m)*(-alpha1)+self._logS(m, deltam, ml), np.log(mBreak)*(-alpha1+alpha2)+np.log(m)*(-alpha2) ), np.NINF)
+        return np.where( ~np.isnan(m), np.where((m < mh) & (m > ml), np.where(m < mBreak, np.log(m)*(-alpha1)+self._logS(m, deltam, ml), np.log(mBreak)*(-alpha1+alpha2)+np.log(m)*(-alpha2) ), np.NINF), np.NINF)
     
     
     def _logpdfm2(self, m2, beta, deltam, ml):
         '''
         Conditional distribution p(m2 | m1)
         '''
-        where_compute = (ml< m2) #m2 > ml
-        return np.where( where_compute, np.log(m2)*(beta)+self._logS(m2, deltam, ml) , np.NINF)
+        #where_compute = (ml< m2) #m2 > ml
+        return np.where( ~np.isnan(m2), np.where( ml< m2, np.log(m2)*(beta)+self._logS(m2, deltam, ml) , np.NINF),  np.NINF)
     
     
     def logpdf(self, theta, lambdaBBHmass):
