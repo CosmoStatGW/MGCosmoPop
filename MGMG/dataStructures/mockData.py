@@ -34,44 +34,39 @@ class GWMockData(Data):
         self.chiEff = np.zeros(self.m1z.shape)
         print('Obs time: %s' %self.Tobs )
         
+        self.Nobs=self.m1z.shape[0]
+        
+        
     def get_theta(self):
         return np.array( [self.m1z, self.m2z, self.dL  ] )  
     
+    
     def _load_data(self, fname, nObsUse, nSamplesUse,):
         print('Loading data...')
-        
+        if nObsUse is None:
+            nObsUse=-1
         with h5py.File(fname, 'r') as phi: #observations.h5 has to be in the same folder as this code
-        
-            if nObsUse is None and nSamplesUse is None:
-                m1det_samples = np.array(phi['posteriors']['m1det'])
-                m2det_samples = np.array(phi['posteriors']['m2det'])
-                dl_samples = np.array(phi['posteriors']['dl']) # dLm distance is given in Gpc in the .h5
-
-            elif nObsUse is not None and nSamplesUse is None:
-            
+               
                 m1det_samples = np.array(phi['posteriors']['m1det'])[:nObsUse, :]# m1
                 m2det_samples = np.array(phi['posteriors']['m2det'])[:nObsUse, :] # m2
-                dl_samples = np.array(phi['posteriors']['dl'])[:nObsUse, :] 
-            
-            elif nObsUse is  None and nSamplesUse is not None:
-                
-                which_samples = np.random.randint(0, high=4000 , size=nSamplesUse )
-                m1det_samples = np.array(phi['posteriors']['m1det'])[:, which_samples]# m1
-                m2det_samples = np.array(phi['posteriors']['m2det'])[:, which_samples] # m2
-                dl_samples = np.array(phi['posteriors']['dl'])[:, which_samples]
-            
-            elif nObsUse is not None and nSamplesUse is not None:
-                
-                which_samples = np.random.randint(0, high=4000 , size=nSamplesUse )
-                m1det_samples = np.array(phi['posteriors']['m1det'])[:nObsUse, which_samples]# m1
-                m2det_samples = np.array(phi['posteriors']['m2det'])[:nObsUse, which_samples] # m2
-                dl_samples = np.array(phi['posteriors']['dl'])[:nObsUse, which_samples] 
-    
+                dl_samples = np.array(phi['posteriors']['dl'])[:nObsUse, :]
+                #print(dl_samples.shape)
+        
         if self.dist_unit==u.Mpc:
             print('Using distances in Mpc')
             dl_samples*=1e03
         #theta =   np.array([m1det_samples, m2det_samples, dl_samples])
-        return m1det_samples, m2det_samples,dl_samples, np.count_nonzero(m1det_samples, axis=-1)
+        if nSamplesUse is not None:
+            m1z=np.empty((m1det_samples.shape[0],nSamplesUse) )
+            m2z=np.empty((m1det_samples.shape[0],nSamplesUse))
+            dL=np.empty((m1det_samples.shape[0],nSamplesUse))
+            #print(m1z.shape)
+            for i in range(m1det_samples.shape[0]):
+                vb= (i==0)
+                m1z[i], m2z[i], dL[i] = self.downsample([m1det_samples[i], m2det_samples[i], dl_samples[i]], nSamplesUse, verbose=vb)
+        
+        #m1det_samples, m2det_samples, dl_samples = self.downsample([m1det_samples, m2det_samples, dl_samples], nSamplesUse)
+        return m1z, m2z, dL, np.count_nonzero(m1z, axis=-1)
       
     
     def logOrMassPrior(self):
@@ -100,6 +95,8 @@ class GWMockInjectionsData(Data):
         self.Tobs=2.5
         self.chiEff = np.zeros(self.m1z.shape)
         print('Obs time: %s' %self.Tobs )
+        
+        
         
         
     def get_theta(self):

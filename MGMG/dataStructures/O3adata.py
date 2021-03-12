@@ -39,7 +39,7 @@ class O3aData(Data):
         self.m1z, self.m2z, self.dL, self.chiEff, self.Nsamples = self._load_data(fname, nObsUse, nSamplesUse, )  
         self.Nobs=self.m1z.shape[0]
         #print('We have %s observations' %self.Nobs)
-        print('Number of samples: %s' %self.Nsamples )
+        print('Number of samples used: %s' %self.Nsamples )
         
         self.logNsamples = np.log(self.Nsamples)
         #assert (self.m1z >= 0).all()
@@ -50,6 +50,8 @@ class O3aData(Data):
         self.Tobs= 0.5 #O3a data is taken between 1 April 2019 15:00 UTC and 1 October 2019 15:00 UTC.
         #self.chiEff = np.zeros(self.m1z.shape)
         print('Obs time (yrs): %s' %self.Tobs )
+        
+        self.Nobs=self.m1z.shape[0]
         
     
     def _get_events_names(self, fname):
@@ -70,14 +72,16 @@ class O3aData(Data):
         #events = self._get_events_names(fname)
         if nObsUse is None:
             nObsUse=len(self.events)
-
+            
+        
         #print('We have the following events: %s' %str(events))
         m1s, m2s, dLs, chiEffs = [], [], [], []
         allNsamples=[]
         for event in self.events[:nObsUse]:
                 print('Reading data from %s' %event)
             #with h5py.File(fname, 'r') as phi:
-                m1z_, m2z_, dL_, chiEff_  = self._load_data_event(fname, event)
+                m1z_, m2z_, dL_, chiEff_  = self._load_data_event(fname, event, nSamplesUse)
+                print('NUmber of samples in LVC data: %s' %m1z_.shape[0])
                 m1s.append(m1z_)
                 m2s.append(m2z_)
                 dLs.append(dL_)
@@ -86,41 +90,35 @@ class O3aData(Data):
                 assert len(m2z_)==len(dL_)
                 assert len(chiEff_)==len(dL_)
                 nSamples = len(m1z_)
-                print('NUmber of samples: %s' %nSamples)
+                
                 allNsamples.append(nSamples)
             #print('ciao')
-        print('We have %s events.'%len(self.events))
+        print('We have %s events.'%len(allNsamples))
         max_nsamples = max(allNsamples) 
         
-        fin_shape=(len(self.events),max_nsamples)
+        fin_shape=(nObsUse,max_nsamples)
         
         m1det_samples= np.full(fin_shape, np.NaN)  #np.zeros((len(self.events),max_nsamples))
         m2det_samples=np.full(fin_shape, np.NaN)
         dl_samples= np.full(fin_shape, np.NaN)
         chiEff_samples= np.full(fin_shape, np.NaN)
         
-        for i in range(len(self.events)):
+        for i in range(nObsUse):
+            
             m1det_samples[i, :allNsamples[i]] = m1s[i]
             m2det_samples[i, :allNsamples[i]] = m2s[i]
             dl_samples[i, :allNsamples[i]] = dLs[i]
             chiEff_samples[i, :allNsamples[i]] = chiEffs[i]
         
-
-        if nSamplesUse is not None:
-                #if nSamplesUse<min(allNsamples):
-                #    print('You are using a number of samples which is smaller than the min number of samples across all events: %s' %min(allNsamples))
-                which_samples = np.random.randint(0, high=max_nsamples , size=nSamplesUse )
-                m1det_samples=m1det_samples[:, which_samples]
-                m2det_samples=m2det_samples[:, which_samples]
-                dl_samples = dl_samples[:, which_samples]
-                chiEff_samples = chiEff_samples[:, which_samples]
-                 
-
+        if self.dist_unit==u.Gpc:
+            print('Using distances in Gpc')   
+            dl_samples*=1e-03
         
         return m1det_samples, m2det_samples, dl_samples, chiEff_samples, allNsamples
       
     
-    def _load_data_event(self, fname, event):
+    
+    def _load_data_event(self, fname, event, nSamplesUse):
         
         data = read(os.path.join(fname, event, event+'.h5'))
 
@@ -129,8 +127,10 @@ class O3aData(Data):
 
         #parameters = sorted(list(posterior_samples.keys()))
 
-        m1z, m2z, dL, chieff = posterior_samples['mass_1'],posterior_samples['mass_2'], posterior_samples['luminosity_distance'],  posterior_samples['chi_eff'] 
-    
+        m1z, m2z, dL, chieff = posterior_samples['mass_1'], posterior_samples['mass_2'], posterior_samples['luminosity_distance'],  posterior_samples['chi_eff'] 
+        
+        m1z, m2z, dL, chieff = self.downsample( [m1z, m2z, dL, chieff], nSamplesUse)
+        
         return m1z, m2z, dL, chieff
             
         
@@ -171,6 +171,7 @@ class O3InjectionsData(Data):
         
     def get_theta(self):
         return np.array( [self.m1z, self.m2z, self.dL  ] )  
+    
     
     def _load_data(self, fname, nInjUse,):
         
