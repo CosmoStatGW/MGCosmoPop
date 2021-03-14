@@ -286,9 +286,9 @@ class BrokenPowerLawMass(BBHDistFunction):
         return  mMin + b*(mMax - mMin)
     
     
-    def _logS(self, m, deltam, ml):
-        maskL = m <= ml #+ eps
-        maskU = m >= (ml + deltam) #- eps
+    def _logS(self, m, deltam, ml, eps=0.1):
+        maskL = m <= ml - eps
+        maskU = m >= (ml + deltam) + eps
         s = np.empty_like(m)
         s[maskL] = np.NINF
         s[maskU] = 0
@@ -303,7 +303,7 @@ class BrokenPowerLawMass(BBHDistFunction):
         '''
         #where_compute = (m < mh) & (m > ml)
         mBreak = self._get_Mbreak( ml, mh, b)
-        return np.where( ~np.isnan(m), np.where((m < mh) & (m > ml), np.where(m < mBreak, np.log(m)*(-alpha1)+self._logS(m, deltam, ml), np.log(mBreak)*(-alpha1+alpha2)+np.log(m)*(-alpha2) ), np.NINF), np.NINF)
+        return np.where( ~np.isnan(m), np.where((m < mh) & (m > ml), np.where(m < mBreak, np.log(m)*(-alpha1)+self._logS(m, deltam, ml), np.log(mBreak)*(-alpha1+alpha2)+np.log(m)*(-alpha2)+self._logS(m, deltam, ml) ), np.NINF), np.NINF)
     
     
     def _logpdfm2(self, m2, beta, deltam, ml):
@@ -359,7 +359,7 @@ class BrokenPowerLawMass(BBHDistFunction):
 
         '''
         
-        ms = np.exp(np.linspace(np.log(ml+1e-02), np.log(mh+1e-01), 100))
+        ms = np.exp(np.linspace(np.log(ml+1e-02), np.log(mh+1e-01), 200))
         p1 = np.exp(self._logpdfm1( ms ,alpha1, alpha2, deltam, ml, mh, b ))
         return np.log(np.trapz(p1,ms))
         

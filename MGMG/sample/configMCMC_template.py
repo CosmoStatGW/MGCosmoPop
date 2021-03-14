@@ -48,7 +48,7 @@ dist_unit = 'Gpc'
 
 # O3 events to include (or not)
 O3_use = {'use': None, #['GW190521', 'GW190521_074359'],
-          'not_use': None
+          'not_use': ['GW190814', 'GW190425']
           
           }
 
@@ -60,7 +60,7 @@ O3_use = {'use': None, #['GW190521', 'GW190521_074359'],
 ### The parameters have to be in the same order as they are listed in 
 ### the population object in the code !!! 
 
-params_inference = ['H0', 'Om', 'Xi0', 'R0', 'lambdaRedshift', "alpha1", "alpha2", "beta", "deltam", "ml",  "mh", "b"]
+params_inference = ["R0", "alpha1", "alpha2", "beta", "deltam", "ml",  "mh", "b"]
 
 # "H0" "Om" "Xi0" "n"
 # "R0" "lambdaRedshift"
@@ -71,8 +71,9 @@ params_inference = ['H0', 'Om', 'Xi0', 'R0', 'lambdaRedshift', "alpha1", "alpha2
 
 # Specify parameters that are kept fixed and their values 
 params_fixed = {   'w0': -1. , 
-                        #'Xi0': 1. , 
-                        'n' : 1.91,                                         
+                        'Xi0': 1. , 
+                        'n' : 0.,   
+                        'lambdaRedshift ':0. ,                                     
     }
 
 
@@ -127,17 +128,20 @@ priorNames = {'H0' : 'gauss',
                }
 
 
-priorParams = { 'H0' : {'mu': 67.74, 'sigma': 0.6774},
-                'Om' : {'mu': 0.3075, 'sigma': 0.003075}}
+#priorParams = { 'H0' : {'mu': 67.74, 'sigma': 0.6774},
+#                'Om' : {'mu': 0.3075, 'sigma': 0.003075}}
+
+priorParams = { 'H0' : {'mu': 67.66, 'sigma': 0.42},
+                'Om' : {'mu': 0.311, 'sigma': 0.056}}
 
 
 
 include_sel_uncertainty = True
 
 seed=1312
-nwalkers = 20
-perc_variation_init=20
-max_steps=10000
+nwalkers = 36
+perc_variation_init=50
+max_steps=50000
 
 
 convergence_ntaus = 50
@@ -159,5 +163,5 @@ nPools = nwalkers
 ###############################################################################
 
 nObsUse=None
-nSamplesUse=10000
+nSamplesUse=None
 nInjUse=None
