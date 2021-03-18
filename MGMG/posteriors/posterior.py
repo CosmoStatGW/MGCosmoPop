@@ -33,7 +33,7 @@ class Posterior(object):
         logPost= ll+lp
         
         # Compute selection bias
-        mu, err = self.selectionBias.logNdet(Lambda_test)
+        mu, err = self.selectionBias.Ndet(Lambda_test)
         logPost -= mu
         
         if err!=np.NAN:
@@ -43,3 +43,6 @@ class Posterior(object):
             return logPost
         else:
             return logPost, lp, ll, mu, err
+        
+        
+        

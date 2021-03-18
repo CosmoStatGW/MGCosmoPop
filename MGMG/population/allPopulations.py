@@ -50,7 +50,7 @@ class AllPopulations(object):
     #########################################################################
     # Differential Rate
     
-    def log_dN_dm1dm2dz(self, m1, m2, z, chiEff, Tobs, Lambda):
+    def log_dN_dm1dm2dz(self, m1, m2, z, spins, Tobs, Lambda):
         
         LambdaCosmo, LambdaAllPop = self._split_params(Lambda)
         
@@ -62,15 +62,15 @@ class AllPopulations(object):
         prev=0
         for i,pop in enumerate(self._pops):
             LambdaPop = LambdaAllPop[prev:prev+self._allNParams[i]]
-            logN += pop.log_dR_dm1dm2(m1, m2, z, chiEff, LambdaPop)
+            logN += pop.log_dR_dm1dm2(m1, m2, z, spins, LambdaPop)
             prev=self._allNParams[i]
         return np.where( ~np.isnan(m1), logN, np.NINF)
     
     
-    def log_dN_dm1zdm2zddL(self, m1, m2, z, chiEff, Tobs, Lambda):
+    def log_dN_dm1zdm2zddL(self, m1, m2, z, spins, Tobs, Lambda):
         LambdaCosmo, LambdaAllPop = self._split_params(Lambda)
         H0, Om0, w0, Xi0, n = self.cosmo._get_values(LambdaCosmo, ['H0', 'Om', 'w0', 'Xi0', 'n'])
-        return np.where( ~np.isnan(m1), self.log_dN_dm1dm2dz(m1, m2, z, chiEff, Tobs, Lambda)-self._log_dMsourcedMdet(z) - self.cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n ) , np.NINF)
+        return np.where( ~np.isnan(m1), self.log_dN_dm1dm2dz(m1, m2, z, spins, Tobs, Lambda)-self._log_dMsourcedMdet(z) - self.cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n ) , np.NINF)
     
     
     #########################################################################
@@ -191,16 +191,16 @@ class AllPopulations(object):
         return LambdaCosmo, LambdaAllPop
     
     
-    def _split_thetas(self, theta):
-        if self.spinDist.__class__.__name__ =='DummySpinDist':
-            m1, m2, z = theta
-            theta_spin = None
-        else:
-            m1, m2, z, chi = theta
-            theta_spin = chi
-        theta_rate = z
-        theta_mass = m1, m2
-        return  theta_rate, theta_mass, theta_spin
+    #def _split_thetas(self, theta):
+    #    if self.spinDist.__class__.__name__ =='DummySpinDist':
+    #        m1, m2, z = theta
+    #        theta_spin = None
+    #    else:
+    #        m1, m2, z, chi = theta
+    #        theta_spin = chi
+    #   theta_rate = z
+    #    theta_mass = m1, m2
+    #    return  theta_rate, theta_mass, theta_spin
     
     
     def get_base_values(self, params):

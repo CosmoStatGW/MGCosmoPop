@@ -31,7 +31,7 @@ class SelectionBias(ABC):
 
 
     @abstractmethod
-    def logNdet(Lambda, **kwargs):
+    def Ndet(Lambda, **kwargs):
         pass
 
 
@@ -77,22 +77,22 @@ class SelectionBiasInjections(SelectionBias):
     
     
     def _getSpins(self, ):
-        return self.injData.chiEff
+        return self.injData.spins
     
     def _getTobs(self):
         return self.injData.Tobs
     
     
-    def logNdet(self, Lambda_test, verbose=False, Nobs = None):
+    def Ndet(self, Lambda_test, verbose=False, Nobs = None):
         
         Lambda = self.population.get_Lambda(Lambda_test, self.params_inference )
         
         m1, m2, z = self._get_mass_redshift(Lambda)
-        chiEff = self._getSpins()
+        spins = self._getSpins()
         Tobs = self._getTobs()
     
         
-        logdN =  np.where( self.injData.condition, self.population.log_dN_dm1zdm2zddL(m1, m2, z, chiEff, Tobs, Lambda),  np.NINF) 
+        logdN =  np.where( self.injData.condition, self.population.log_dN_dm1zdm2zddL(m1, m2, z, spins, Tobs, Lambda),  np.NINF) 
         logdN -= self.injData.log_weights_sel
         
         logMu = np.logaddexp.reduce(logdN) - self.injData.logN_gen

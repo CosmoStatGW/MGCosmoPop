@@ -12,6 +12,7 @@ import numpy as np
 import astropy.units as u
 import h5py
 #import os
+from astropy.cosmology import Planck15, z_at_value
 
         
 class GWMockData(Data):
@@ -122,6 +123,10 @@ class GWMockInjectionsData(Data):
             N_gen = f.attrs['N_gen']
         if self.dist_unit==u.Mpc:
             dl_sel*=1e03
+            
+        #self.max_z = np.max(z)
+        self.max_z=z_at_value(Planck15.luminosity_distance, dl_sel.max()*self.dist_unit)
+        print('Max redshift of injections: %s' %self.max_z)
         print('Number of total injections: %s' %N_gen)
         print('Number of detected injections: %s' %weights_sel.shape[0])
         return m1_sel, m2_sel, dl_sel, weights_sel , N_gen

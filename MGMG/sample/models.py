@@ -19,7 +19,7 @@ import Globals
 import astropy.units as u
 
 from population.astro.astroMassDistribution import AstroSmoothPowerLawMass, BrokenPowerLawMass
-from population.astro.astroSpinDistribution import DummySpinDist
+from population.astro.astroSpinDistribution import DummySpinDist, GaussSpinDist
 from population.astro.rateEvolution import PowerLawRateEvolution
 from population.astro.astroPopulation import AstroPopulation
 from cosmology.cosmo import Cosmo
@@ -27,6 +27,7 @@ from population.allPopulations import AllPopulations
 
 from dataStructures.mockData import GWMockData, GWMockInjectionsData
 from dataStructures.O3adata import O3aData, O3InjectionsData
+from dataStructures.O1O2data import O1O2Data, O1O2InjectionsData
 #import astropy.units as u
 
 #from posteriors.prior import Prior
@@ -43,8 +44,7 @@ mass_functions = {  'smooth_pow_law': AstroSmoothPowerLawMass,
     
      }
 
-spin_functions = { # 'gauss': AstroSmoothPowerLawMass(),
-                  
+spin_functions = {  'gauss': GaussSpinDist,
                       'skip': DummySpinDist
      }
 
@@ -57,15 +57,16 @@ rate_functions = { # 'gauss': AstroSmoothPowerLawMass(),
 
 
 fnames_data  = { 'mock': 'observations.h5',
-                'O3a': ''
+                'O3a': '',
+                'O1O2': ''
     
     
     }
 
 
 fnames_inj  = { 'mock': 'selected.h5',
-                'O3a': 'o3a_bbhpop_inj_info.hdf'
-    
+                'O3a': 'o3a_bbhpop_inj_info.hdf',
+                'O1O2':'injections_O1O2an_spin.h5'
     
     }
 
@@ -162,7 +163,7 @@ def build_model( populations, mass_args={}, spin_args={}, rate_args={} ):
 
 
 
-def load_data(dataset_name, nObsUse=None, nSamplesUse=None, nInjUse=None, dist_unit=u.Gpc, **kwargs):
+def load_data(dataset_name, nObsUse=None, nSamplesUse=None, nInjUse=None, dist_unit=u.Gpc, data_args ={}, inj_args ={}):
         
         
         ############################################################
@@ -175,9 +176,11 @@ def load_data(dataset_name, nObsUse=None, nSamplesUse=None, nInjUse=None, dist_u
             Data = GWMockData(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, dist_unit=dist_unit)
             injData = GWMockInjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit)
         elif dataset_name=='O3a':
-            Data = O3aData(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, dist_unit=dist_unit, **kwargs)
-            injData = O3InjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit)
-        
+            Data = O3aData(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, dist_unit=dist_unit, **data_args)
+            injData = O3InjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit, **inj_args)
+        elif dataset_name=='O1O2':
+            Data = O1O2Data(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, dist_unit=dist_unit, **data_args)
+            injData = O1O2InjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit, **inj_args)
         
         
         return Data, injData

@@ -279,7 +279,7 @@ class BrokenPowerLawMass(BBHDistFunction):
          
         self.n_params = len(self.params)
         
-        print('Mass function base values: %s' %self.baseValues)
+        print('Broken power law mass function base values: %s' %self.baseValues)
     
     
     def _get_Mbreak(self, mMin, mMax, b):

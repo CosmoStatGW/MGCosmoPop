@@ -64,9 +64,13 @@ AllpriorLimits =      {   'H0': {    'H0': (20., 140.)},
                          'deltam': {'deltam': (0., 10.)},
                          #'ml': {}, 
                          #'mh': {}, 
-                         'b': {'b': (0., 1.)} 
+                         'b': {'b': (0., 1.)} ,
+                         
                           
-                          
+                          'muEff': {'muEff': (-1, 1)},
+                          'muP': {'muP': (0.01, 1)},
+                          'sigmaEff': {'sigmaEff': (0.01, 1)},
+                          'sigmaP': {'sigmaP': (0.01, 1)},
                           
                           
                           }
@@ -79,13 +83,17 @@ params_O3 = {   'R0': 24. ,  # Gpc^-3 yr^-1
                         #'n' : 0.5,  
                 'lambdaRedshift':2.7,
                 'mh':87.,
-                'ml':2., 
+                'ml':4., 
                 'beta'  :1.4                                    
     }
 
 
 
 
+which_spins={ 'gauss':'chiEff',
+             'skip':'skip'
+    
+    }
 
 
 
@@ -122,7 +130,7 @@ def main():
         # POPULATION MODELS
         
         myPopulations = { 'astro' : { 'mass_function': config.massf,
-                                     'spin_distribution': 'skip',
+                                     'spin_distribution': config.spindist,
                                      'rate': 'simple_pow_law'
     
     
@@ -132,18 +140,19 @@ def main():
         
         allPops = build_model(myPopulations, rate_args={'unit':u.Gpc} )
         
-        if config.data=='O3a':
+        if config.data=='O3a' or config.data=='O1O2':
             allPops.set_values( params_O3)
         
         ############################################################
         # DATA
         
-        if config.data=='O3a':
-            O3_use=config.O3_use
+        if config.data=='O3a' or config.data=='O1O2':
+            events_use=config.events_use
         elif config.data=='mock':
-            O3_use=None
+            events_use=None
         
-        mockData, injData = load_data(config.data, nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, nInjUse=config.nInjUse, dist_unit=u.Gpc, events_use=O3_use, )
+        
+        mockData, injData = load_data(config.data, nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, nInjUse=config.nInjUse, dist_unit=u.Gpc, data_args={'events_use':events_use, 'which_spins':which_spins[config.spindist]}, inj_args={'which_spins':which_spins[config.spindist] })
         
          
         ############################################################

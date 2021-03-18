@@ -43,7 +43,7 @@ class HyperLikelihood(object):
         return m1, m2, z
     
     def _getSpins(self, ):
-        return self.data.chiEff
+        return self.data.spins
     
     def _getTobs(self):
         return self.data.Tobs
@@ -54,22 +54,26 @@ class HyperLikelihood(object):
         """
         Lambda = self.population.get_Lambda(Lambda_test, self.params_inference )
         m1, m2, z = self._get_mass_redshift(Lambda)
-        chiEff = self._getSpins()
+        spins = self._getSpins()
         Tobs = self._getTobs()
         
         # If different events have different number of samples, 
         # This is taken into account by filling the likelihood with -infty
         # where the array of samples has been filled with nan
         
-        logLik_ = np.where( ~np.isnan(m1), self.population.log_dN_dm1zdm2zddL(m1, m2, z, chiEff, Tobs, Lambda), np.NINF) #m1, m2, z, chiEff, Tobs, Lambda
+        logLik_ = np.where( ~np.isnan(m1), self.population.log_dN_dm1zdm2zddL(m1, m2, z, spins, Tobs, Lambda), np.NINF) #m1, m2, z, spins, Tobs, Lambda
+        
+        # Remove original prior from posterior samples to get the likelihood
+        
         logLik_ -= self.data.logOrMassPrior()
         logLik_ -= self.data.logOrDistPrior()
         
         
+        # mean over posterior samples ~ marginalise over GW parameters for every observation
+        allLogLiks = np.logaddexp.reduce(logLik_, axis=-1)-self.data.logNsamples 
         
-        allLogLiks = np.logaddexp.reduce(logLik_, axis=-1)-self.data.logNsamples # mean over posterior samples ~ marginalise over GW parameters for every observation
-    
-        ll = allLogLiks.sum() # add log likelihoods for all observations
+        # add log likelihoods for all observations
+        ll = allLogLiks.sum() 
    
         if np.isnan(ll):
             raise ValueError('NaN value for logLik. Values of Lambda: %s' %(str(Lambda) ) )
