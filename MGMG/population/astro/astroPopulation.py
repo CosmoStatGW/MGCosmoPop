@@ -54,24 +54,27 @@ class AstroPopulation(Population):
         self.n_params = len(self.params)
     
     
-    def log_dR_dm1dm2(self, m1, m2, z, chiEff, lambdaBBH):
+    def log_dR_dm1dm2(self, m1, m2, z, spins, lambdaBBH):
         '''log dR/(dm1dm2), correctly normalized  '''
         lambdaBBHrate, lambdaBBHmass, lambdaBBHspin = self._split_lambdas(lambdaBBH)
-        theta_rate, theta_mass, theta_spin = self._get_thetas( m1, m2, z, chiEff)
+        theta_rate, theta_mass, theta_spin = self._get_thetas( m1, m2, z, spins)
         logdR =  self.rateEvol.log_dNdVdt(theta_rate, lambdaBBHrate)+self.massDist.logpdf(theta_mass, lambdaBBHmass)
         if self.spinDist.__class__.__name__ =='DummySpinDist':
             return logdR
+        #print(theta_spin[:2])
+        #print(lambdaBBHspin)
+        #print(self.spinDist.logpdf(theta_spin, lambdaBBHspin))
         return logdR+self.spinDist.logpdf(theta_spin, lambdaBBHspin)
         
     
-    def _get_thetas(self, m1, m2, z, chiEff):
+    def _get_thetas(self, m1, m2, z, spins):
         '''
         Put here the logic to relate the argument of the distributions to
         m1? m2, z, chi1, chi2
         '''
         theta_rate = z
         theta_mass = m1, m2
-        theta_spin= chiEff
+        theta_spin = spins
         return theta_rate, theta_mass, theta_spin
     
     
@@ -81,9 +84,13 @@ class AstroPopulation(Population):
         split parameters between R0, Lambda and parameters of the mass function.
         R0, lambda should be the first two parameters in lambdaBBH
         '''
+        #print(lambdaBBH)
         lambdaBBHrate = lambdaBBH[:self.rateEvol.n_params]
         lambdaBBHmass = lambdaBBH[self.rateEvol.n_params:self.rateEvol.n_params+self.massDist.n_params]
-        lambdaBBHspin = lambdaBBH[self.massDist.n_params+self.massDist.n_params:]
+        lambdaBBHspin = lambdaBBH[self.rateEvol.n_params+self.massDist.n_params:]
+        #print(lambdaBBHrate)
+        #print(lambdaBBHmass)
+        #print(lambdaBBHspin)
         assert len(lambdaBBHspin)==self.spinDist.n_params
         return lambdaBBHrate, lambdaBBHmass, lambdaBBHspin
     

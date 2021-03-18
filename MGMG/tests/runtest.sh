@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -a allGoalParams=("H0" "Om" "Xi0" "R0" "lambdaRedshift" "muEff")
+declare -a allGoalParams=("H0" "Om" "Xi0" "R0" "alpha1" "muEff")
 
 # "H0" "Om" "Xi0" "n"
 # "R0" "lambdaRedshift"
@@ -28,7 +28,7 @@ nObsUse=None
 nSamplesUse=None
 nInjUse=None
 npoints=10
-massf='smooth_pow_law'
+massf='broken_pow_law'
 events_use = {'use': None,
           'not_use': ['GW170817', 'GW190814', 'GW190425', 'GW190426', 'GW190719', 'GW190909', 'GW190426_152155', 'GW190719_215514', 'GW190909_114149'] 
           }
