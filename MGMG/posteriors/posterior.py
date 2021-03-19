@@ -49,7 +49,7 @@ class Posterior(object):
         
         #logNdet = logdiffexp(logMu, logErr )
         logPosts = np.zeros(len(lls))
-        for i in range(lls):
+        for i in range(len(lls)):
             logPosts[i] = lls[i]-mus[i] #-np.exp(logNdet.astype('float128')) 
             # Add uncertainty on MC estimation of the selection effects. err is =zero if we required to ignore it.
             logPosts[i] += errs[i]

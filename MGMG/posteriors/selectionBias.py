@@ -113,7 +113,7 @@ class SelectionBiasInjections(SelectionBias):
         if np.isnan(logMu):
             raise ValueError('NaN value for logMu. Values of Lambda: %s' %( str(Lambda) ) )
         
-        mu = np.exp(logMu).astype('float128')
+        mu = np.exp(logMu)#.astype('float128')
         
         if not self.get_uncertainty:
             return mu, 0
@@ -122,7 +122,7 @@ class SelectionBiasInjections(SelectionBias):
         logSigmaSq = logdiffexp( logs2, 2.0*logMu - injData.logN_gen )
         
         muSq = np.exp(2*logMu)
-        SigmaSq = np.exp(logSigmaSq.astype('float128')).astype('float128')
+        SigmaSq = np.exp(logSigmaSq)#.astype('float128')
         
         if Nobs is not None and verbose:
             #muSq = np.exp(2*logMu)
@@ -151,8 +151,10 @@ class SelectionBiasInjections(SelectionBias):
         mus=[]
         errs=[]
         for i, injData_ in enumerate(self.injData):
-            
-            mu_, err_ = self._Ndet(Lambda_test, injData_, verbose=verbose, Nobs = allNobs[i])
+            if allNobs is None:
+                Nobs=None
+            else: Nobs=allNobs[i]
+            mu_, err_ = self._Ndet(Lambda_test, injData_, verbose=verbose, Nobs = Nobs)
             mus.append(mu_)
             errs.append(err_)
         return mus, errs

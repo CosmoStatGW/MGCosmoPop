@@ -224,13 +224,14 @@ def main():
         ############################################################
         # PLOT N_det
         idx_truth = np.argwhere(grid==truth)
-        mutot=np.zeros(MuVals[0].shape)
+        mutot=np.zeros(grid.shape)
         ndet_tot=0
         NobsTot=0
         for i in range(len(allData)):
             
             data=allData[i]
-            mu=MuVals[i]
+            
+            mu= np.array([ m[i] for m in MuVals ])
             
             ndet_t = mu[idx_truth][0][0]
             print('N_det for %s at true value of %s: %s '%(config.data[i], truth, ndet_t ) )
@@ -266,15 +267,20 @@ def main():
    
         ############################################################
         # PLOT posterior
-        mymax = logPosterior.max().astype('float128')
+        mymax = logPosterior.max()#.astype('float128')
         print('max of log posterior:')
         print(mymax)
-        posterior = np.exp(logPosterior-mymax)
+        posterior = np.exp(np.array(logPosterior, dtype='float64')-mymax)
         posterior /=np.trapz(posterior, grid)
         print('normalized posterior:')
         print(posterior)
-        logPosterior_noSel = logLik  + logPrior
-        posterior_noSel = np.exp(logPosterior_noSel-logPosterior_noSel.max())
+        
+        logLikSum = np.zeros(grid.shape)
+        for i in range(len(allData)):
+            logLik_ = np.array([ll[i] for ll in logLik ])
+            logLikSum += logLik_
+        logPosterior_noSel = logLikSum + logPrior
+        posterior_noSel = np.exp(np.array(logPosterior_noSel, dtype='float64')-logPosterior_noSel.max())
         posterior_noSel /=np.trapz(posterior_noSel, grid) 
         
         np.savetxt( os.path.join(out_path, config.param+'_values.txt') , np.stack([grid, logPosterior, posterior], axis=1) )
