@@ -109,7 +109,8 @@ class SelectionBiasInjections(SelectionBias):
         if np.isnan(logMu):
             raise ValueError('NaN value for logMu. Values of Lambda: %s' %( str(Lambda) ) )
         
-        mu = np.exp(logMu.astype('float128'))
+        mu = np.exp(logMu).astype('float128')
+        
         if not self.get_uncertainty:
             return mu, 0
         
@@ -126,7 +127,7 @@ class SelectionBiasInjections(SelectionBias):
             if Neff < 4 * Nobs:
                 print('NEED MORE SAMPLES FOR SELECTION EFFECTS! Values of Lambda: %s' %str(Lambda))
         
-        mu = np.exp(logMu.astype('float128'))
+        #mu = np.exp(logMu.astype('float128'))
         Sigma = np.sqrt(SigmaSq)
         
         ## Effects of uncertainty on selection effect and/or marginalisation over total rate

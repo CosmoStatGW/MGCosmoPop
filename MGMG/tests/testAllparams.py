@@ -227,9 +227,13 @@ def main():
    
         ############################################################
         # PLOT posterior
-        mymax = logPosterior.max()
+        mymax = logPosterior.max().astype('float128')
+        print('max of log posterior:')
+        print(mymax)
         posterior = np.exp(logPosterior-mymax)
         posterior /=np.trapz(posterior, grid)
+        print('normalized posterior:')
+        print(posterior)
         logPosterior_noSel = logLik  + logPrior
         posterior_noSel = np.exp(logPosterior_noSel-logPosterior_noSel.max())
         posterior_noSel /=np.trapz(posterior_noSel, grid) 
