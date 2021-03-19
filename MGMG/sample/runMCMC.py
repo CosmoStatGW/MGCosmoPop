@@ -353,8 +353,8 @@ def main():
     
     print('Plotting cornerplot... ')
     trueValues=None
-    if config.dataset_name=='mock':
-        trueValues = allPops.get_base_values(config.params_inference)
+    #if 'mock' in config.dataset_names:
+    trueValues = allPops.get_base_values(config.params_inference)
     
     fig1 = corner.corner(
     samples, labels=labels, truths=trueValues, quantiles=[0.16, 0.84],show_titles=True, title_kwargs={"fontsize": 12}

@@ -25,7 +25,7 @@ class HyperLikelihood(object):
         ----------
         population : TYPE object of type AllPopulations
 
-        data : TYPE object Data
+        data : TYPE list of objects Data
 
         '''
         self.population=population
