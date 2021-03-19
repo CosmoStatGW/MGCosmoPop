@@ -118,7 +118,7 @@ class O3InjectionsData(Data):
         
         #self.Tobs=0.5
         #self.chiEff = np.zeros(self.m1z.shape)
-        print('Obs time: %s' %self.Tobs )
+        print('Obs time: %s yrs' %self.Tobs )
         
         self.ifar_th=ifar_th
         gstlal_ifar, pycbc_ifar, pycbc_bbh_ifar = conditions_arr
@@ -165,10 +165,11 @@ class O3InjectionsData(Data):
             #dL = Planck15.luminosity_distance(z).to(Globals.which_unit).value
             dL = np.array(f['injections/distance']) #in Mpc for GWTC2 !
             if self.dist_unit==u.Gpc:
+                print('Converting original distance in Mpc to Gpc ...')
                 dL*=1e-03
         
             print('Re-weighting p_draw to go to detector frame quantities...')
-            myCosmo = Cosmo()
+            myCosmo = Cosmo(dist_unit=self.dist_unit)
             p_draw/=(1+z)**2
             p_draw/=myCosmo.ddL_dz(z, Planck15.H0.value, Planck15.Om0, -1., 1., 0) #z, H0, Om, w0, Xi0, n
 

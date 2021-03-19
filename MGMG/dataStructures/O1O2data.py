@@ -131,11 +131,11 @@ class O1O2InjectionsData(Data):
         
         #self.Tobs=0.5
         self.chiEff = np.zeros(self.m1z.shape)
-        print('Obs time: %s' %self.Tobs )
+        print('Obs time: %s yrs' %self.Tobs )
         
         self.ifar_th=ifar_th
         #gstlal_ifar, pycbc_ifar, pycbc_bbh_ifar = conditions_arr
-        self.condition = True #(gstlal_ifar > ifar_th) | (pycbc_ifar > ifar_th) | (pycbc_bbh_ifar > ifar_th)
+        self.condition = np.full(self.m1z.shape, True) #(gstlal_ifar > ifar_th) | (pycbc_ifar > ifar_th) | (pycbc_bbh_ifar > ifar_th)
         
         
     def get_theta(self):
@@ -184,7 +184,7 @@ class O1O2InjectionsData(Data):
             #    dL*=1e-03
         
             print('Re-weighting p_draw to go to detector frame quantities...')
-            myCosmo = Cosmo()
+            myCosmo = Cosmo(dist_unit=self.dist_unit)
             p_draw/=(1+z)**2
             p_draw/=myCosmo.ddL_dz(z, Planck15.H0.value, Planck15.Om0, -1., 1., 0) #z, H0, Om, w0, Xi0, n
 
