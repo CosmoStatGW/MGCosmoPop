@@ -41,7 +41,7 @@ class Posterior(object):
         # Compute likelihood
         ll = self.hyperLikelihood.logLik(Lambda_test)
         
-        logll = np.log(ll)
+        #logll = np.log(ll)
         
         # Compute selection bias
         # Includes uncertainty on MC estimation of the selection effects if required. err is =zero if we required to ignore it.
@@ -50,7 +50,7 @@ class Posterior(object):
         logNdet = logdiffexp(logMu, logErr )
         
         
-        logPost = np.exp(logdiffexp(logll, logNdet))
+        logPost = ll-np.exp(logNdet.astype('float128')) 
         #logPost -= mu
         
         # Add uncertainty on MC estimation of the selection effects. err is =zero if we required to ignore it.

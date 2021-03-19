@@ -39,7 +39,7 @@ class SelectionBias(ABC):
 
 
     @abstractmethod
-    def Ndet(Lambda, **kwargs):
+    def logNdet(Lambda, **kwargs):
         pass
 
 
@@ -103,9 +103,6 @@ class SelectionBiasInjections(SelectionBias):
         logdN =  np.where( self.injData.condition, self.population.log_dN_dm1zdm2zddL(m1, m2, z, spins, Tobs, Lambda),  np.NINF) 
         logdN -= self.injData.log_weights_sel
         
-        print(np.logaddexp.reduce(logdN)[:10])
-        print(self.injData.logN_gen[:10])
-        
         
         logMu = np.logaddexp.reduce(logdN) - self.injData.logN_gen
         
@@ -119,26 +116,27 @@ class SelectionBiasInjections(SelectionBias):
         logs2 = ( np.logaddexp.reduce(2*logdN) -2*self.injData.logN_gen)#.astype('float128')
         logSigmaSq = logdiffexp( logs2, 2.0*logMu - self.injData.logN_gen )
         
-        #muSq = np.exp(2*logMu)
-        #SigmaSq = np.exp(logSigmaSq.astype('float128')).astype('float128')
+        muSq = np.exp(2*logMu)
+        SigmaSq = np.exp(logSigmaSq.astype('float128')).astype('float128')
         
         if Nobs is not None and verbose:
-            muSq = np.exp(2*logMu)
-            SigmaSq = np.exp(logSigmaSq)
+            #muSq = np.exp(2*logMu)
+            #SigmaSq = np.exp(logSigmaSq)
             Neff = muSq/SigmaSq #np.exp( 2.0*logMu - logSigmaSq)
             if Neff < 4 * Nobs:
                 print('NEED MORE SAMPLES FOR SELECTION EFFECTS! Values of Lambda: %s' %str(Lambda))
         
-        #Sigma = np.sqrt(SigmaSq)
+        mu = np.exp(logMu.astype('float128'))
+        Sigma = np.sqrt(SigmaSq)
         
         ## Effects of uncertainty on selection effect and/or marginalisation over total rate
         ## Adapted from 1904.10879
         
-        #num = ss.norm(loc=mu-SigmaSq, scale=Sigma).logsf(0)
-        #den=ss.norm(loc=mu, scale=Sigma ).logsf(0)
+        num = ss.norm(loc=mu-SigmaSq, scale=Sigma).logsf(0)
+        den = ss.norm(loc=mu, scale=Sigma ).logsf(0)
         #error = SigmaSq/2-den+num
         
-        logError = logSigmaSq-np.log(2) 
+        logError = logSigmaSq-np.log(2) +np.log(num-den)
         
         return logMu, logError
     

@@ -118,7 +118,7 @@ def setup_chain(nwalkers, exp_values, priorNames, priorLimits, priorParams, para
 
 
 
-def build_model( populations, mass_args={}, spin_args={}, rate_args={} ):
+def build_model( populations, cosmo_args={}, mass_args={}, spin_args={}, rate_args={} ):
     '''
     
 
@@ -134,7 +134,7 @@ def build_model( populations, mass_args={}, spin_args={}, rate_args={} ):
     '''
     
     # Create cosmology
-    myCosmo = Cosmo()
+    myCosmo = Cosmo(**cosmo_args)
         
     # Collector of all populations
     allPops = AllPopulations(myCosmo)
