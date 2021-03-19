@@ -209,7 +209,7 @@ def main():
         logPrior=logPosteriorAll[:,1]
         logLik=logPosteriorAll[:,2]
         MuVals=logPosteriorAll[:,3]
-        #ErrVals=logPosteriorAll[:,4]
+        ErrVals=logPosteriorAll[:,4]
                 
         
         print('logPrior:')
@@ -300,9 +300,28 @@ def main():
         plt.close()
         
         
-        plt.plot(grid, posterior, label='With sel effects')
+        #AlllogPosts = [np.zeros(grid.shape) for _ in range(len(allData))]
+        for i in range(len(allData)):
+            
+            ll = np.array([ll[i] for ll in logLik ])
+            mu= np.array([ m[i] for m in MuVals ])
+            err= np.array([ e[i] for e in ErrVals ])
+            
+            lpost = ll-mu+err #-np.exp(logNdet.astype('float128')) 
+            # Add uncertainty on MC estimation of the selection effects. err is =zero if we required to ignore it.
+            #logPosts[i] += errs[i]
+            mymax_ = lpost.max()#.astype('float128')
+            #print('max of log posterior:')
+            #print(mymax)
+            post_ = np.exp(np.array(lpost, dtype='float64')-mymax_)
+            post_ /=np.trapz(post_, grid)
+            plt.plot(grid, post_, label='%s, With sel effects' %config.data[i])
+
+            
         
-        plt.plot(grid, posterior_noSel, label='No sel effects')
+        plt.plot(grid, posterior, label='Combined, With sel effects')
+        
+        plt.plot(grid, posterior_noSel, label='Combined, No sel effects')
         plt.xlabel(config.param);
         plt.ylabel(r'$p$');
         plt.legend()
