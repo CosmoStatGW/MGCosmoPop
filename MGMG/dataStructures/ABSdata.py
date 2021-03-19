@@ -184,8 +184,11 @@ class LVCData(Data):
                 spins.append(spins_)
                 assert len(m1z_)==len(m2z_)
                 assert len(m2z_)==len(dL_)
-                assert len(spins_)==2
-                assert len(spins_[0])==len(dL_)
+                if which_spins!="skip":
+                    assert len(spins_)==2
+                    assert len(spins_[0])==len(dL_)
+                else:  assert spins_==[]
+                
                 nSamples = len(m1z_)
                 
                 allNsamples.append(nSamples)
@@ -198,15 +201,18 @@ class LVCData(Data):
         m1det_samples= np.full(fin_shape, np.NaN)  #np.zeros((len(self.events),max_nsamples))
         m2det_samples=np.full(fin_shape, np.NaN)
         dl_samples= np.full(fin_shape, np.NaN)
-        spins_samples= [np.full(fin_shape, np.NaN), np.full(fin_shape, np.NaN) ]
+        if which_spins!="skip":
+            spins_samples= [np.full(fin_shape, np.NaN), np.full(fin_shape, np.NaN) ]
+        else: spins_samples=[]
         
         for i in range(nObsUse):
             
             m1det_samples[i, :allNsamples[i]] = m1s[i]
             m2det_samples[i, :allNsamples[i]] = m2s[i]
             dl_samples[i, :allNsamples[i]] = dLs[i]
-            spins_samples[0][i, :allNsamples[i]] = spins[i][0]
-            spins_samples[1][i, :allNsamples[i]] = spins[i][1]
+            if which_spins!="skip":
+                spins_samples[0][i, :allNsamples[i]] = spins[i][0]
+                spins_samples[1][i, :allNsamples[i]] = spins[i][1]
         
         if self.dist_unit==u.Gpc:
             print('Using distances in Gpc')   

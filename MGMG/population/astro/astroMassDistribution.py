@@ -178,11 +178,11 @@ class TruncPowerLawMass(BBHDistFunction):
         return logp
     
     
-    def _logpdfm2(self, m1, m2, beta, ml):
+    def _logpdfm2(self, m2, beta):
         '''
         Conditional distribution p(m2 | m1)
         '''
-        logp = np.log(m2)*(beta) +self._logC(m1, beta, ml)
+        logp = np.log(m2)*(beta) 
         return logp
     
     
@@ -195,7 +195,7 @@ class TruncPowerLawMass(BBHDistFunction):
         
         where_compute = (m2 < m1) & (ml < m2) & (m1 < mh )
      
-        return np.where( where_compute,   self._logpdfm1(m1,alpha, ) + self._logpdfm2(m1, m2,beta, ml)  -  self._logNorm( alpha, ml, mh) ,  np.NINF)
+        return np.where( where_compute,   self._logpdfm1(m1,alpha, ) + self._logpdfm2(m1, m2,beta, ml) +self._logC(m1, beta, ml) -  self._logNorm( alpha, ml, mh) ,  np.NINF)
         
     
     
