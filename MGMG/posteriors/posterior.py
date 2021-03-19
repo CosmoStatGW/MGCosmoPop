@@ -8,6 +8,16 @@ Created on Thu Mar  4 13:18:13 2021
 import numpy as np
 
 
+
+def logdiffexp(x, y):
+    '''
+    computes log( e^x - e^y)
+    '''
+    return x + np.log1p(-np.exp(y-x))
+
+
+
+
 class Posterior(object):
     
     def __init__(self, hyperLikelihood, prior, selectionBias):
@@ -18,7 +28,7 @@ class Posterior(object):
         #self.params_inference = params_inference
         
         
-    def logPosterior(self, Lambda_test, return_all=False):
+    def logPosterior(self, Lambda_test, return_all=False, **kwargs):
         
         # Compute prior
         lp = self.prior.logPrior(Lambda_test)
@@ -30,19 +40,31 @@ class Posterior(object):
         
         # Compute likelihood
         ll = self.hyperLikelihood.logLik(Lambda_test)
-        logPost= ll+lp
+        
+        logll = np.log(ll)
         
         # Compute selection bias
-        mu, err = self.selectionBias.Ndet(Lambda_test)
-        logPost -= mu
+        # Includes uncertainty on MC estimation of the selection effects if required. err is =zero if we required to ignore it.
+        logMu, logErr = self.selectionBias.logNdet(Lambda_test, **kwargs)
         
-        if err!=np.NAN:
-            # Add uncertainty on MC estimation of the selection effects
-            logPost += err
+        logNdet = logdiffexp(logMu, logErr )
+        
+        
+        logPost = np.exp(logdiffexp(logll, logNdet))
+        #logPost -= mu
+        
+        # Add uncertainty on MC estimation of the selection effects. err is =zero if we required to ignore it.
+        #logPost += err
+        
+        # Add prior
+        logPost+=lp
+        
+        #if err!=np.NAN:   
+        #    logPost += err
         if not return_all:
             return logPost
         else:
-            return logPost, lp, ll, mu, err
+            return logPost, lp, ll, np.exp( logMu.astype('float128')), np.exp(logErr.astype('float128'))
         
         
         

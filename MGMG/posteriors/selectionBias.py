@@ -21,6 +21,14 @@ def logdiffexp(x, y):
     return x + np.log1p(-np.exp(y-x))
 
 
+def logdiffexpvec(xs, ys):
+    '''
+    computes log( sum_i(e^x_i) - sum_i(e^y_i) )
+    '''
+    xs=np.array(xs)
+    ys=np.array(ys)
+    return xs[0] + np.log1p(  np.sum(np.exp(xs[1:]-xs[0]))  - np.sum(np.exp(ys-xs[0])) )
+
 class SelectionBias(ABC):
     
     def __init__(self, population, injData, params_inference ):
@@ -83,7 +91,7 @@ class SelectionBiasInjections(SelectionBias):
         return self.injData.Tobs
     
     
-    def Ndet(self, Lambda_test, verbose=False, Nobs = None):
+    def logNdet(self, Lambda_test, verbose=False, Nobs = None):
         
         Lambda = self.population.get_Lambda(Lambda_test, self.params_inference )
         
@@ -95,32 +103,43 @@ class SelectionBiasInjections(SelectionBias):
         logdN =  np.where( self.injData.condition, self.population.log_dN_dm1zdm2zddL(m1, m2, z, spins, Tobs, Lambda),  np.NINF) 
         logdN -= self.injData.log_weights_sel
         
+        print(np.logaddexp.reduce(logdN)[:10])
+        print(self.injData.logN_gen[:10])
+        
+        
         logMu = np.logaddexp.reduce(logdN) - self.injData.logN_gen
         
         if np.isnan(logMu):
             raise ValueError('NaN value for logMu. Values of Lambda: %s' %( str(Lambda) ) )
         
-        mu = np.exp(logMu)
+        #mu = np.exp(logMu.astype('float128'))
         if not self.get_uncertainty:
-            return mu, np.NaN
+            return logMu, np.NINF
         
         logs2 = ( np.logaddexp.reduce(2*logdN) -2*self.injData.logN_gen)#.astype('float128')
         logSigmaSq = logdiffexp( logs2, 2.0*logMu - self.injData.logN_gen )
         
-        muSq = np.exp(2*logMu)
-        SigmaSq = np.exp(logSigmaSq)
+        #muSq = np.exp(2*logMu)
+        #SigmaSq = np.exp(logSigmaSq.astype('float128')).astype('float128')
         
         if Nobs is not None and verbose:
+            muSq = np.exp(2*logMu)
+            SigmaSq = np.exp(logSigmaSq)
             Neff = muSq/SigmaSq #np.exp( 2.0*logMu - logSigmaSq)
             if Neff < 4 * Nobs:
                 print('NEED MORE SAMPLES FOR SELECTION EFFECTS! Values of Lambda: %s' %str(Lambda))
         
-        Sigma = np.sqrt(SigmaSq)
+        #Sigma = np.sqrt(SigmaSq)
         
         ## Effects of uncertainty on selection effect and/or marginalisation over total rate
         ## Adapted from 1904.10879
-        error = SigmaSq/2-ss.norm(loc=mu, scale=Sigma ).logsf(0)+ss.norm(loc=mu-SigmaSq, scale=Sigma).logsf(0)
         
-        return mu, error
+        #num = ss.norm(loc=mu-SigmaSq, scale=Sigma).logsf(0)
+        #den=ss.norm(loc=mu, scale=Sigma ).logsf(0)
+        #error = SigmaSq/2-den+num
+        
+        logError = logSigmaSq-np.log(2) 
+        
+        return logMu, logError
     
     

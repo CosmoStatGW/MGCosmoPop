@@ -8,6 +8,8 @@ Created on Thu Mar  4 11:54:06 2021
 import numpy as np
 
 
+
+
 class HyperLikelihood(object):
     
     '''

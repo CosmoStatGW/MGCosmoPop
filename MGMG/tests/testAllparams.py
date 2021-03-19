@@ -189,7 +189,7 @@ def main():
         print('Computing posterior with log_posterior %s in range (%s, %s) on %s points... ' %(config.param, grid.min(), grid.max(), grid.shape[0] ) )
     
    
-        print( myPost.logPosterior(truth, return_all=True) )
+        #print( myPost.logPosterior(truth, return_all=True) )
         
         logPosteriorAll = np.array( [ myPost.logPosterior(val, return_all=True) for val in grid ])
         # logPost, lp, ll, mu, err
