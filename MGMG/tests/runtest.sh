@@ -8,7 +8,7 @@ declare -a allGoalParams=("H0" "Om" "Xi0" "R0" "alpha1" "muEff")
 #  "alpha1" "alpha2" "beta" "deltam" "ml"  "mh" "b" 
 
 
-baseName="testAllO3a_spins_1/"
+baseName="testAll_0102_O3/"
 basedir="../../results/$baseName"
 echo $basedir
 mkdir $basedir
@@ -20,8 +20,8 @@ for par in ${allGoalParams[@]};do
     OUT=$OUTbase.py
     
     cat <<EOF >$OUT
-data='O3a'
-dist_unit = 'Gpc'
+data=['O1O2', 'O3a']
+dist_unit = 'Mpc'
 param='$par'
 fout='$baseName$par'
 nObsUse=None

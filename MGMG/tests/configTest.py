@@ -18,6 +18,6 @@ events_use = {'use': None, #['GW190521', 'GW190521_074359'],
 nSamplesUse=100
 nInjUse=100
 npoints=5
-data='O3a' # O3a mock
+data=['O3a','O1O2'] # O3a mock
 massf= 'broken_pow_law' #'broken_pow_law' #'smooth_pow_law'
 spindist='gauss' # 'gauss'

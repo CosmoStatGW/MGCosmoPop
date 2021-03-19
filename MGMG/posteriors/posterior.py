@@ -39,22 +39,24 @@ class Posterior(object):
         # Lambda = self.hyperLikelihood.population.get_Lambda(Lambda_test, self.prior.params_inference )
         
         # Compute likelihood
-        ll = self.hyperLikelihood.logLik(Lambda_test)
+        lls = self.hyperLikelihood.logLik(Lambda_test)
         
         #logll = np.log(ll)
         
         # Compute selection bias
         # Includes uncertainty on MC estimation of the selection effects if required. err is =zero if we required to ignore it.
-        mu, err = self.selectionBias.Ndet(Lambda_test, **kwargs)
+        mus, errs = self.selectionBias.Ndet(Lambda_test, **kwargs)
         
         #logNdet = logdiffexp(logMu, logErr )
+        logPosts = np.zeros(len(lls))
+        for i in range(lls):
+            logPosts[i] = lls[i]-mus[i] #-np.exp(logNdet.astype('float128')) 
+            # Add uncertainty on MC estimation of the selection effects. err is =zero if we required to ignore it.
+            logPosts[i] += errs[i]
         
+        # sum log likelihood of different datasets
+        logPost = logPosts.sum()
         
-        logPost = ll-mu #-np.exp(logNdet.astype('float128')) 
-        #logPost -= mu
-        
-        # Add uncertainty on MC estimation of the selection effects. err is =zero if we required to ignore it.
-        logPost += err
         
         # Add prior
         logPost += lp
@@ -64,7 +66,7 @@ class Posterior(object):
         if not return_all:
             return logPost
         else:
-            return logPost, lp, ll, mu, err #np.exp( logMu.astype('float128')), np.exp(logErr.astype('float128'))
+            return logPost, lp, lls, mus, errs #np.exp( logMu.astype('float128')), np.exp(logErr.astype('float128'))
         
         
         
