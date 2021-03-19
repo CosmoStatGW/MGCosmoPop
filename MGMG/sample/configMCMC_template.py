@@ -141,7 +141,7 @@ include_sel_uncertainty = True
 seed=1312
 nwalkers = 36
 perc_variation_init=50
-max_steps=500
+max_steps=100000
 
 
 convergence_ntaus = 50
@@ -152,7 +152,7 @@ convergence_percVariation = 0.01
 # (suitable for clusters)
 # If 'pool' , it uses python multipricessing module, and we can specify the number of pools
 
-parallelization='pool'  # pool
+parallelization='mpi'  # pool
 
 # only needed if parallelization='pool'
 nPools = 3 
