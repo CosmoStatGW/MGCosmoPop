@@ -39,7 +39,7 @@ class SelectionBias(ABC):
 
 
     @abstractmethod
-    def logNdet(Lambda, **kwargs):
+    def Ndet(Lambda, **kwargs):
         pass
 
 
@@ -91,7 +91,7 @@ class SelectionBiasInjections(SelectionBias):
         return self.injData.Tobs
     
     
-    def logNdet(self, Lambda_test, verbose=False, Nobs = None):
+    def Ndet(self, Lambda_test, verbose=False, Nobs = None):
         
         Lambda = self.population.get_Lambda(Lambda_test, self.params_inference )
         
@@ -109,9 +109,9 @@ class SelectionBiasInjections(SelectionBias):
         if np.isnan(logMu):
             raise ValueError('NaN value for logMu. Values of Lambda: %s' %( str(Lambda) ) )
         
-        #mu = np.exp(logMu.astype('float128'))
+        mu = np.exp(logMu.astype('float128'))
         if not self.get_uncertainty:
-            return logMu, np.NINF
+            return mu, 0
         
         logs2 = ( np.logaddexp.reduce(2*logdN) -2*self.injData.logN_gen)#.astype('float128')
         logSigmaSq = logdiffexp( logs2, 2.0*logMu - self.injData.logN_gen )
@@ -134,10 +134,10 @@ class SelectionBiasInjections(SelectionBias):
         
         num = ss.norm(loc=mu-SigmaSq, scale=Sigma).logsf(0)
         den = ss.norm(loc=mu, scale=Sigma ).logsf(0)
-        #error = SigmaSq/2-den+num
+        error = SigmaSq/2-den+num
         
-        logError = logSigmaSq-np.log(2) +np.log(num-den)
+        #logError = logSigmaSq-np.log(2) +np.log(num-den)
         
-        return logMu, logError
+        return mu, error
     
     

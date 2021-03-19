@@ -45,26 +45,26 @@ class Posterior(object):
         
         # Compute selection bias
         # Includes uncertainty on MC estimation of the selection effects if required. err is =zero if we required to ignore it.
-        logMu, logErr = self.selectionBias.logNdet(Lambda_test, **kwargs)
+        mu, err = self.selectionBias.Ndet(Lambda_test, **kwargs)
         
-        logNdet = logdiffexp(logMu, logErr )
+        #logNdet = logdiffexp(logMu, logErr )
         
         
-        logPost = ll-np.exp(logNdet.astype('float128')) 
+        logPost = ll-mu #-np.exp(logNdet.astype('float128')) 
         #logPost -= mu
         
         # Add uncertainty on MC estimation of the selection effects. err is =zero if we required to ignore it.
-        #logPost += err
+        logPost += err
         
         # Add prior
-        logPost+=lp
+        logPost += lp
         
         #if err!=np.NAN:   
         #    logPost += err
         if not return_all:
             return logPost
         else:
-            return logPost, lp, ll, np.exp( logMu.astype('float128')), np.exp(logErr.astype('float128'))
+            return logPost, lp, ll, mu, err #np.exp( logMu.astype('float128')), np.exp(logErr.astype('float128'))
         
         
         
