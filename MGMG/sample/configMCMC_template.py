@@ -42,13 +42,13 @@ rate_args={}
 # CONFIGURE THE DATA AND UNITS
 ###############################################################################
 
-dataset_name = 'O3a' # 'O3a'
+dataset_names = ['O1O2', 'O3a' ] # 'O3a'
 dist_unit = 'Gpc'
 
 
 # O3 events to include (or not)
-O3_use = {'use': None, #['GW190521', 'GW190521_074359'],
-          'not_use': ['GW190814', 'GW190425']
+O3_use = {'use': None, #['GW190424_180648', 'GW190910_112807', 'GW190828_065509'] , #['GW190521', 'GW190521_074359'],
+          'not_use': ['GW170817', 'GW190814', 'GW190425', 'GW190426', 'GW190719', 'GW190909', 'GW190426_152155', 'GW190719_215514', 'GW190909_114149']
           
           }
 
@@ -83,7 +83,7 @@ priorLimits = { 'H0': (20, 140),
                'Om': (0.05, 1),
                'w0': (-2, -0.5),
                
-               'R0': (1e-03, 1e03), 
+               'R0': (1e-01, 1e03), 
                'lambdaRedshift': (-10, 10),
                
                'alpha': (-5, 10 ),
@@ -141,7 +141,7 @@ include_sel_uncertainty = True
 seed=1312
 nwalkers = 36
 perc_variation_init=50
-max_steps=50000
+max_steps=500
 
 
 convergence_ntaus = 50
@@ -152,10 +152,10 @@ convergence_percVariation = 0.01
 # (suitable for clusters)
 # If 'pool' , it uses python multipricessing module, and we can specify the number of pools
 
-parallelization='mpi'  # pool
+parallelization='pool'  # pool
 
 # only needed if parallelization='pool'
-nPools = nwalkers 
+nPools = 3 
 
 
 ###############################################################################

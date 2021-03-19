@@ -54,6 +54,10 @@ params_O3 = {   'R0': 24. ,  # Gpc^-3 yr^-1
                 'beta'  :1.4                                    
     }
 
+which_spins={ 'gauss':'chiEff',
+             'skip':'skip'
+    
+    }
 
 
 def notify_start(telegram_id, bot_token, filenameT, fname, nwalkers, ndim, params_inference, max_steps):
@@ -148,6 +152,7 @@ def main():
         rate_args['unit'] = units[config.dist_unit]
     
         allPops = build_model( config.populations, 
+                              cosmo_args ={'dist_unit':units[config.dist_unit]},  
                               mass_args=config.mass_args, 
                               spin_args=config.spin_args, 
                               rate_args=rate_args)
@@ -158,31 +163,42 @@ def main():
         
         
         # If using O3 data, set base values to expected ones from LVC
-        if config.dataset_name=='O3a':
+        if 'O3a' in config.dataset_names or 'O1O2' in config.dataset_names :
             allPops.set_values( params_O3)
         
         # Fix values of the parameters not included in the MCMC
         allPops.set_values( config.params_fixed)
         
-        # Fix values of the parameters not included in the MCMC
-        allPops.set_values( config.params_fixed)
         
-        
-        
-        # Check that the order of arguments for MCMC in the config match the order
+        # Check that the order of arguments for MCMC in the config matches the order
         # of arguments in population
         allPops.check_params_order(config.params_inference)
         
         ############################################################
         # DATA
         
-        if config.dataset_name=='O3a':
-            O3_use=config.O3_use
-        elif config.dataset_name=='mock':
-            O3_use=None
+        allData=[]
+        allInjData=[]
+        for dataset_name in config.dataset_names:
+            
+            if dataset_name in ('O3a', 'O1O2'):
+                O3_use=config.O3_use
+            elif dataset_name=='mock':
+                O3_use=None
         
-        print('\nLoading data from %s catalogue...' %config.dataset_name) 
-        Data, injData = load_data(config.dataset_name, nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, nInjUse=config.nInjUse, dist_unit=units[config.dist_unit], events_use=O3_use, )
+            print('\nLoading data from %s catalogue...' %dataset_name) 
+            
+            # This is a hack because the code does not yes support the option of different populations with different spin models
+            # To be fixed in case is needed
+            spindist = config.populations[list(config.populations.keys())[0]]['spin_distribution']
+            
+            
+            Data, injData = load_data(dataset_name, nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, nInjUse=config.nInjUse, dist_unit=units[config.dist_unit], data_args={'events_use':O3_use, 'which_spins':which_spins[spindist]}, inj_args={'which_spins':which_spins[spindist] })
+            allData.append(Data)
+            allInjData.append(injData)
+        
+        
+        #Data, injData = load_data(config.dataset_name, nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, nInjUse=config.nInjUse, dist_unit=units[config.dist_unit], events_use=O3_use, )
         
         
         ############################################################
@@ -196,9 +212,9 @@ def main():
         
         myPrior = Prior(config.priorLimits, config.params_inference, config.priorNames, config.priorParams)
         
-        myLik = HyperLikelihood(allPops, Data, config.params_inference )
+        myLik = HyperLikelihood(allPops, allData, config.params_inference )
         
-        selBias = SelectionBiasInjections( allPops, injData, config.params_inference, get_uncertainty=config.include_sel_uncertainty )
+        selBias = SelectionBiasInjections( allPops, allInjData, config.params_inference, get_uncertainty=config.include_sel_uncertainty )
         
         myPost = Posterior(myLik, myPrior, selBias)
     
