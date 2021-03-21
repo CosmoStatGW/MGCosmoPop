@@ -102,10 +102,16 @@ class SelectionBiasInjections(SelectionBias):
         m1, m2, z = self._get_mass_redshift(Lambda, injData)
         spins = self._getSpins(injData)
         Tobs = self._getTobs(injData)
-    
         
-        logdN =  np.where( injData.condition, self.population.log_dN_dm1zdm2zddL(m1, m2, z, spins, Tobs, Lambda),  np.NINF) 
-        logdN -= injData.log_weights_sel
+        #logdN=np.empty_like(m1)
+        #logdN[~injData.condition]=np.NINF
+    
+        m1, m2, z, spins = m1[injData.condition], m2[injData.condition], z[injData.condition], [s[injData.condition] for s in spins]
+        
+        
+        #logdN =  np.where( injData.condition, self.population.log_dN_dm1zdm2zddL(m1, m2, z, spins, Tobs, Lambda),  np.NINF) 
+        #logdN -= injData.log_weights_sel
+        logdN=self.population.log_dN_dm1zdm2zddL(m1, m2, z, spins, Tobs, Lambda)-injData.log_weights_sel[injData.condition]
         
         
         logMu = np.logaddexp.reduce(logdN) - injData.logN_gen

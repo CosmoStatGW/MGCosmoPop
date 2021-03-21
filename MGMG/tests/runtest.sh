@@ -8,7 +8,7 @@ declare -a allGoalParams=("H0" "Om" "Xi0" "R0" "alpha1" "muEff")
 #  "alpha1" "alpha2" "beta" "deltam" "ml"  "mh" "b" 
 
 
-baseName="testAll_0102_O3/"
+baseName="testAll_010203_1/"
 basedir="../../results/$baseName"
 echo $basedir
 mkdir $basedir

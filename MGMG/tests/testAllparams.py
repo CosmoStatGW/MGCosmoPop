@@ -42,12 +42,12 @@ perc_variation = 10
 skip=['n',  ]
 
 AllpriorLimits =      {   'H0': {    'H0': (20., 140.)}, 
-                        'Xi0':{   'Xi0': (0.1, 10.) }, 
+                        'Xi0':{   'Xi0': (0.3, 10.) }, 
                          'Om': { 'Om': (0.05, 1)},
                           'w0': {'w0': (-2, -0.5)},
                           'n': {'n': (0., 10) }, 
                           
-                          'R0': {'R0': (1e-01 , 1e03)}, # Gpc^-3 yr^-1
+                          'R0': {'R0': (1e-01 , 1e02)}, # Gpc^-3 yr^-1
                          'lambdaRedshift': { 'lambdaRedshift': (-15., 10.) },
                           
                          'alpha': {'alpha': (-5, 10 )},
@@ -96,6 +96,7 @@ which_spins={ 'gauss':'chiEff',
     }
 
 
+units = {'Mpc': u.Mpc, 'Gpc': u.Gpc}
 
 
 
@@ -142,10 +143,18 @@ def main():
     
                          }
         
-        allPops = build_model(myPopulations, rate_args={'unit':u.Gpc} )
+        allPops = build_model(myPopulations, rate_args={'unit':units[config.dist_unit]}, cosmo_args ={'dist_unit':units[config.dist_unit]} )
         
         if 'O3a' in config.data or 'O1O2' in config.data:
             allPops.set_values( params_O3)
+        
+        if units[config.dist_unit]==u.Mpc:
+            print('Converting expected value of rate to yr Mpc^-3')
+            R0base = allPops.get_base_values('R0')[0]
+            #print(R0base)
+            new_rate = {   
+                'R0': R0base*1e-09,}
+            allPops.set_values( new_rate)   
         
         ############################################################
         # DATA
@@ -161,7 +170,7 @@ def main():
                 events_use=config.events_use
             elif data_=='mock':
                 events_use=None
-            Data, injData = load_data(data_, nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, nInjUse=config.nInjUse, dist_unit=u.Gpc, data_args={'events_use':events_use, 'which_spins':which_spins[config.spindist]}, inj_args={'which_spins':which_spins[config.spindist] })
+            Data, injData = load_data(data_, nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, nInjUse=config.nInjUse, dist_unit=units[config.dist_unit], data_args={'events_use':events_use, 'which_spins':which_spins[config.spindist]}, inj_args={'which_spins':which_spins[config.spindist] })
             allData.append(Data)
             allInjData.append(injData)
          

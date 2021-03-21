@@ -63,15 +63,20 @@ class HyperLikelihood(object):
         # If different events have different number of samples, 
         # This is taken into account by filling the likelihood with -infty
         # where the array of samples has been filled with nan
+        logLik_=np.empty_like(m1)
+        where_compute=~np.isnan(m1)
+        logLik_[~where_compute]=np.NINF
         
-        logLik_ = np.where( ~np.isnan(m1), self.population.log_dN_dm1zdm2zddL(m1, m2, z, spins, Tobs, Lambda), np.NINF) #m1, m2, z, spins, Tobs, Lambda
+        #logLik_ = np.where( ~np.isnan(m1), self.population.log_dN_dm1zdm2zddL(m1, m2, z, spins, Tobs, Lambda), np.NINF) #m1, m2, z, spins, Tobs, Lambda
+        spins=[s[where_compute] for s in spins]
+        logLik_[where_compute] = self.population.log_dN_dm1zdm2zddL(m1[where_compute], m2[where_compute], z[where_compute], spins, Tobs, Lambda)
         
         # Remove original prior from posterior samples to get the likelihood
         
         logLik_ -= data.logOrMassPrior()
         logLik_ -= data.logOrDistPrior()
         
-        
+        assert (where_compute.sum(axis=-1)==data.logNsamples).all()
         # mean over posterior samples ~ marginalise over GW parameters for every observation
         allLogLiks = np.logaddexp.reduce(logLik_, axis=-1)-data.logNsamples 
         

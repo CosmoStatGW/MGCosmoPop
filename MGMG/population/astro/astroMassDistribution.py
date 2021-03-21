@@ -286,9 +286,9 @@ class BrokenPowerLawMass(BBHDistFunction):
         return  mMin + b*(mMax - mMin)
     
     
-    def _logS(self, m, deltam, ml, eps=0.1):
-        maskL = m <= ml - eps
-        maskU = m >= (ml + deltam) + eps
+    def _logS(self, m, deltam, ml,):
+        maskL = m <= ml #- eps
+        maskU = m >= (ml + deltam) #+ eps
         s = np.empty_like(m)
         s[maskL] = np.NINF
         s[maskU] = 0
@@ -303,44 +303,110 @@ class BrokenPowerLawMass(BBHDistFunction):
         '''
         #where_compute = (m < mh) & (m > ml)
         mBreak = self._get_Mbreak( ml, mh, b)
-        return np.where( ~np.isnan(m), np.where((m < mh) & (m > ml), np.where(m < mBreak, np.log(m)*(-alpha1)+self._logS(m, deltam, ml), np.log(mBreak)*(-alpha1+alpha2)+np.log(m)*(-alpha2)+self._logS(m, deltam, ml) ), np.NINF), np.NINF)
+        
+        where_nan = np.isnan(m)
+        result = np.empty_like(m)
+
+        result[where_nan]=np.NINF
+        
+        where_compute = (m < mh) & (m > ml) & (~where_nan)
+        result[~where_compute] = np.NINF
+        
+        m = m[where_compute]
+        result[where_compute] = np.where(m < mBreak, np.log(m)*(-alpha1)+self._logS(m, deltam, ml), np.log(mBreak)*(-alpha1+alpha2)+np.log(m)*(-alpha2)+self._logS(m, deltam, ml) )
+        
+        return result
+        #return np.where( ~np.isnan(m), np.where((m < mh) & (m > ml), np.where(m < mBreak, np.log(m)*(-alpha1)+self._logS(m, deltam, ml), np.log(mBreak)*(-alpha1+alpha2)+np.log(m)*(-alpha2)+self._logS(m, deltam, ml) ), np.NINF), np.NINF)
     
     
     def _logpdfm2(self, m2, beta, deltam, ml):
         '''
         Conditional distribution p(m2 | m1)
         '''
+        where_nan = np.isnan(m2)
+        result = np.empty_like(m2)
+
+        result[where_nan]=np.NINF
+        
+        where_compute = (ml< m2) & (~where_nan)
+        result[~where_compute] = np.NINF
+        
+        m2 = m2[where_compute]
+        result[where_compute] = np.log(m2)*(beta)+self._logS(m2, deltam, ml)
+        return result
         #where_compute = (ml< m2) #m2 > ml
-        return np.where( ~np.isnan(m2), np.where( ml< m2, np.log(m2)*(beta)+self._logS(m2, deltam, ml) , np.NINF),  np.NINF)
+        #return np.where( ~np.isnan(m2), np.where( ml< m2, np.log(m2)*(beta)+self._logS(m2, deltam, ml) , np.NINF),  np.NINF)
     
     
-    def logpdf(self, theta, lambdaBBHmass):
+    def logpdf(self, theta, lambdaBBHmass, **kwargs):
         
         '''p(m1, m2 | Lambda ), normalized to one'''
         
         m1, m2 = theta
         alpha1, alpha2, beta, deltam, ml, mh, b = lambdaBBHmass
         
+        where_nan = np.isnan(m1)
+        assert (where_nan==np.isnan(m2)).all()
+        result = np.empty_like(m1)
+
+        result[where_nan]=np.NINF
+        
+        where_compute = (m2 < m1) & (ml< m2) & (m1 < mh ) & (~where_nan)
+        result[~where_compute] = np.NINF
+        
+        m1 = m1[where_compute]
+        m2 = m2[where_compute]
+        
+        result[where_compute] = self._logpdfm1(m1,  alpha1, alpha2, deltam, ml, mh, b ) + self._logpdfm2(m2, beta, deltam, ml) + self._logC(m1, beta, deltam,  ml, **kwargs)-  self._logNorm( alpha1, alpha2, deltam, ml, mh, b,)
+        return result
+        
         #where_compute = (m2 < m1) & (ml< m2) & (m1 < mh )
-     
-        return np.where( ~np.isnan(m1), np.where( (m2 < m1) & (ml< m2) & (m1 < mh ),   self._logpdfm1(m1,  alpha1, alpha2, deltam, ml, mh, b ) + self._logpdfm2(m2, beta, deltam, ml) + self._logC(m1, beta, deltam,  ml)-  self._logNorm( alpha1, alpha2, deltam, ml, mh, b) ,  np.NINF),  np.NINF)
+        #return np.where( ~np.isnan(m1), np.where( (m2 < m1) & (ml< m2) & (m1 < mh ),   self._logpdfm1(m1,  alpha1, alpha2, deltam, ml, mh, b ) + self._logpdfm2(m2, beta, deltam, ml) + self._logC(m1, beta, deltam,  ml, **kwargs)-  self._logNorm( alpha1, alpha2, deltam, ml, mh, b,) ,  np.NINF),  np.NINF)
         
     
     
-    def _logC(self, m, beta, deltam, ml, res = 200):
+    def _logC(self, m, beta, deltam, ml, res = 200, exact_th=0.):
         '''
         Gives inverse log integral of  p(m1, m2) dm2 (i.e. log C(m1) in the LVC notation )
         Approximate to the case where deltam is small 
         '''
-        xlow=np.linspace(ml, ml+deltam+deltam/10, 100)
+        xlow=np.linspace(ml, ml+deltam+deltam/10, 200)
         xup=np.linspace(ml+deltam+deltam/10+1e-01, m[~np.isnan(m)].max(), res)
         xx=np.sort(np.concatenate([xlow,xup], ))
   
         p2 = np.exp(self._logpdfm2( xx , beta, deltam, ml))
         cdf = cumtrapz(p2, xx)
-        return np.where( ~np.isnan(m), -np.log( np.interp(m, xx[1:], cdf) ) , np.NINF)
+        #return np.where( ~np.isnan(m), np.where( m>2*ml, -np.log( np.interp(m, xx[1:], cdf) ), self._logCexact(m, beta, deltam, ml,)), np.NINF) #np.where( ~np.isnan(m), -np.log( np.interp(m, xx[1:], cdf) ) , np.NINF)
+        where_compute = ~np.isnan(m)
+        where_exact = m <exact_th*ml
+        #print('where_exact: %s' %where_exact)
+        #print('m at where_exact: %s' %m[where_exact])
+        where_approx = (~where_exact) & (where_compute)
+        #print('where_approx: %s' %where_approx)
         
+        result = np.empty_like(m)
         
+        result[~where_compute]=np.NINF
+        result[where_exact]=self._logCexact(m[where_exact], beta, deltam, ml,) #np.NINF
+        
+        result[where_approx] = -np.log( np.interp(m[where_approx], xx[1:], cdf) )
+        
+        return result
+    
+    
+    def _logCexact(self, m, beta, deltam, ml, res=1000):
+        result=[]
+    #print(m)
+        for mup in m:
+        #print(type(mup))
+        #print(res)
+            xx = np.linspace(ml, mup, res)
+            p2 = np.exp(self._logpdfm2( xx , beta, deltam, ml))
+            result.append(-np.log(np.trapz(p2,xx)) )
+    #np.trapz(p2,xx)
+    #resFull = 1/np.trapz(p2,xx)
+    
+        return np.array(result)
         
         #if beta>-1:
         #    return np.log1p(beta)-utils.logdiffexp((1+beta)*np.log(m), (1+beta)*np.log(ml)) # -beta*np.log(m)
@@ -353,13 +419,30 @@ class BrokenPowerLawMass(BBHDistFunction):
         #res= cdf[-1]*(x[1]-x[0])
         #return -np.log(res)
 
-    def _logNorm(self, alpha1, alpha2, deltam, ml, mh, b ):
+    def _logNorm(self, alpha1, alpha2, deltam, ml, mh, b , res=200):
         '''
         Gives log integral of  p(m1, m2) dm1 dm2 (i.e. total normalization of mass function )
 
         '''
         
-        ms = np.exp(np.linspace(np.log(ml+1e-02), np.log(mh+1e-01), 200))
+        #ms = np.exp(np.linspace(np.log(1), np.log(100), res))
+        #M1S, M2S = np.meshgrid(ms, ms, indexing='ij')
+        #PS = np.where( M2S <= M1S, np.exp(self._logpdfm1(M1S, alpha1, alpha2, deltam, ml,  mh, b)+self._logpdfm2( M2S, beta, deltam, ml) +   self._logC( M1S, beta, deltam, ml, res = 200, exact_th=0. ) ), 0) 
+        #normPS = np.trapz(np.trapz(PS, M2S, axis=1), ms, axis=0)
+        #return np.log(normPS) 
+        
+        #ms = np.logspace( np.log10(ml-ml/20), np.log10(mh+mh/20), res ) #np.linspace(0., mh+mh/5, res) #np.exp(np.linspace(np.log(ml), np.log(mh), res))
+        
+        mbr = self._get_Mbreak( ml, mh, b)
+        
+        #ms1 = np.logspace( np.log10(0.5), np.log10(ml+deltam+deltam/10), 200)
+        ms1 = np.linspace(1., ml+deltam+deltam/10, 200)
+        ms2 = np.linspace( ml+deltam+deltam/10+1e-01, mbr-mbr/10, int(res/2) )
+        ms3= np.linspace( mbr-mbr/10+1e-01, mbr+mbr/10, 50 )
+        ms3 = np.linspace(mbr+mbr/10+1e-01, mh+mh/2, int(res/2) )
+        
+        ms=np.sort(np.concatenate([ms1,ms2, ms3], ))
+        
         p1 = np.exp(self._logpdfm1( ms ,alpha1, alpha2, deltam, ml, mh, b ))
         return np.log(np.trapz(p1,ms))
         

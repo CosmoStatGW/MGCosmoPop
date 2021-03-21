@@ -174,6 +174,15 @@ def main():
         # of arguments in population
         allPops.check_params_order(config.params_inference)
         
+        
+        if units[config.dist_unit]==u.Mpc:
+            print('Converting expected value of rate to yr Mpc^-3')
+            R0base = allPops.get_base_values('R0')[0]
+            #print(R0base)
+            new_rate = {   
+                'R0': R0base*1e-09,}
+            allPops.set_values( new_rate)   
+        
         ############################################################
         # DATA
         
