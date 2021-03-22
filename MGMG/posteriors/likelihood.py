@@ -76,7 +76,7 @@ class HyperLikelihood(object):
         logLik_ -= data.logOrMassPrior()
         logLik_ -= data.logOrDistPrior()
         
-        assert (where_compute.sum(axis=-1)==data.logNsamples).all()
+        assert (np.log(where_compute.sum(axis=-1))==data.logNsamples).all()
         # mean over posterior samples ~ marginalise over GW parameters for every observation
         allLogLiks = np.logaddexp.reduce(logLik_, axis=-1)-data.logNsamples 
         
