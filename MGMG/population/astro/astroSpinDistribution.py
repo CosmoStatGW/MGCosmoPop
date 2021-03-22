@@ -100,17 +100,19 @@ class GaussSpinDist(BBHDistFunction):
         
         where_compute=~np.isnan(chiP)
         
-        pdftot=np.empty_like(chiEff)
-        pdftot[~where_compute]=0.
+        #pdftot=np.empty_like(chiEff)
+        pdf2=np.empty_like(chiEff)
         
-        muEff, sigmaEff, chiP, sigmaP = muEff[where_compute], sigmaEff[where_compute], chiP[where_compute], sigmaP[where_compute]
+        pdf2[~where_compute]=0.
+        
+        chiP, sigmaP = chiP[where_compute], sigmaP[where_compute]
         
         pdf1 = trunc_gaussian_logpdf(chiEff, lower=self.minChiEff, upper=self.maxChiEff, mu=muEff, sigma=sigmaEff ) #get_truncnorm(self.minChiEff, self.maxChiEff, muEff, sigmaEff ).logpdf(chiEff)
         
         # Put zero (i.e. ignore the effect) when chi_p is not available - this is used when computing selection effects, for which we don't have chi_p
-        pdf2 =  trunc_gaussian_logpdf(chiP, lower=self.minChiP, upper=self.maxChiP, mu=muP, sigma=sigmaP )#get_truncnorm(self.minChiP, self.maxChiP, muP, sigmaP ).logpdf(chiP)
+        pdf2[where_compute] =  trunc_gaussian_logpdf(chiP, lower=self.minChiP, upper=self.maxChiP, mu=muP, sigma=sigmaP )#get_truncnorm(self.minChiP, self.maxChiP, muP, sigmaP ).logpdf(chiP)
         
-        pdftot[where_compute] = pdf1+pdf2
+        pdftot = pdf1+pdf2
         
         return pdftot
     
