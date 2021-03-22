@@ -121,9 +121,9 @@ class O1O2InjectionsData(Data):
     def __init__(self, fname, nInjUse=None,  dist_unit=u.Gpc, ifar_th=1 , which_spins='skip' ):
         
         self.dist_unit=dist_unit
-        self.m1z, self.m2z, self.dL, self.spins, self.weights_sel, self.N_gen, self.Tobs = self._load_data(fname, nInjUse, which_spins=which_spins )        
+        self.m1z, self.m2z, self.dL, self.spins, self.log_weights_sel, self.N_gen, self.Tobs = self._load_data(fname, nInjUse, which_spins=which_spins )        
         self.logN_gen = np.log(self.N_gen)
-        self.log_weights_sel = np.log(self.weights_sel)
+        #self.log_weights_sel = np.log(self.weights_sel)
         assert (self.m1z > 0).all()
         assert (self.m2z > 0).all()
         assert (self.dL > 0).all()
@@ -171,7 +171,7 @@ class O1O2InjectionsData(Data):
                 spins=[s1,s2]
     
             p_draw = np.array(f['sampling_pdf'])
-    
+            log_p_draw = np.log(p_draw)
             #gstlal_ifar = np.array(f['injections/ifar_gstlal'])
             #pycbc_ifar = np.array(f['injections/ifar_pycbc_full'])
             #pycbc_bbh_ifar = np.array(f['injections/ifar_pycbc_bbh'])
@@ -185,9 +185,10 @@ class O1O2InjectionsData(Data):
         
             print('Re-weighting p_draw to go to detector frame quantities...')
             myCosmo = Cosmo(dist_unit=self.dist_unit)
-            p_draw/=(1+z)**2
-            p_draw/=myCosmo.ddL_dz(z, Planck15.H0.value, Planck15.Om0, -1., 1., 0) #z, H0, Om, w0, Xi0, n
-
+            #p_draw/=(1+z)**2
+            #p_draw/=myCosmo.ddL_dz(z, Planck15.H0.value, Planck15.Om0, -1., 1., 0) #z, H0, Om, w0, Xi0, n
+            log_p_draw -=2*np.log1p(z)
+            log_p_draw -= myCosmo.log_ddL_dz(z, Planck15.H0.value, Planck15.Om0, -1., 1., 0. )
         
 
             print('Number of total injections: %s' %Ndraw)
@@ -195,6 +196,6 @@ class O1O2InjectionsData(Data):
             
             self.max_z = np.max(z)
             print('Max redshift of injections: %s' %self.max_z)
-            return m1z, m2z, dL , spins, p_draw , Ndraw, Tobs, #(gstlal_ifar, pycbc_ifar, pycbc_bbh_ifar)
+            return m1z, m2z, dL , spins, log_p_draw , Ndraw, Tobs, #(gstlal_ifar, pycbc_ifar, pycbc_bbh_ifar)
 
    

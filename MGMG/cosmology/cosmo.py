@@ -134,6 +134,8 @@ class Cosmo(object):
 
 
     def log_ddL_dz(self, z, H0, Om0, w0, Xi0, n):
+        #if self.dist_unit==u.Gpc:
+        #    H0*=1e03
         res =  np.log(self.clight)-np.log(H0)+np.log(self.sPrime(z, Xi0, n)*self.uu(z, Om0, w0)+self.s(z, Xi0, n)/self.E(z, Om0, w0))
         if self.dist_unit==u.Gpc:
             res -= 3*np.log(10)
