@@ -10,10 +10,29 @@ from ..ABSpopulation import BBHDistFunction
 import numpy as np
 #from numpy.linalg import inv, det
 from scipy.stats import truncnorm #, multivariate_normal
-
+from scipy.special import erfc
 ########################################################################
 # SPIN DISTRIBUTION
 ########################################################################
+
+
+
+def trunc_gaussian_logpdf(x, mu = 1, sigma = 1, lower = 0, upper=100):
+
+    where_compute= (x>lower) & (x<upper)
+    
+    pdf=np.empty_like(x)
+    pdf[~where_compute]=np.NINF
+    x=x[where_compute]
+    
+    Phialpha = 0.5*erfc(-(lower-mu)/(np.sqrt(2)*sigma))
+    Phibeta = 0.5*erfc(-(upper-mu)/(np.sqrt(2)*sigma))
+    
+    pdf[where_compute] = -np.log(2*np.pi)/2-np.log(sigma)-np.log(Phibeta-Phialpha) -(x-mu)**2/(2*sigma**2)
+    
+    return pdf
+
+
 
 class DummySpinDist(BBHDistFunction):
     
@@ -78,13 +97,22 @@ class GaussSpinDist(BBHDistFunction):
         #logpdf = -np.log(2*np.pi)-0.5*np.log(det(C))-0.5*(theta-mean).dot(inv(C)).dot(theta-mean)
         #logpdf = multivariate_normal.logpdf(theta, mean=mean, cov=C )
         
-        pdf1 = get_truncnorm(self.minChiEff, self.maxChiEff, muEff, sigmaEff ).logpdf(chiEff)
+        
+        where_compute=~np.isnan(chiP)
+        
+        pdftot=np.empty_like(chiEff)
+        pdftot[~where_compute]=0.
+        
+        muEff, sigmaEff, chiP, sigmaP = muEff[where_compute], sigmaEff[where_compute], chiP[where_compute], sigmaP[where_compute]
+        
+        pdf1 = trunc_gaussian_logpdf(chiEff, lower=self.minChiEff, upper=self.maxChiEff, mu=muEff, sigma=sigmaEff ) #get_truncnorm(self.minChiEff, self.maxChiEff, muEff, sigmaEff ).logpdf(chiEff)
         
         # Put zero (i.e. ignore the effect) when chi_p is not available - this is used when computing selection effects, for which we don't have chi_p
-        pdf2 = np.where( np.isnan(chiP), 0. , get_truncnorm(self.minChiP, self.maxChiP, muP, sigmaP ).logpdf(chiP) )
+        pdf2 =  trunc_gaussian_logpdf(chiP, lower=self.minChiP, upper=self.maxChiP, mu=muP, sigma=sigmaP )#get_truncnorm(self.minChiP, self.maxChiP, muP, sigmaP ).logpdf(chiP)
         
+        pdftot[where_compute] = pdf1+pdf2
         
-        return pdf1+pdf2#.logpdf(chiP)
+        return pdftot
     
     
     
