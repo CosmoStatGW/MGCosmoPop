@@ -66,7 +66,7 @@ params_inference = ["R0", "alpha1", "alpha2", "beta", "deltam", "ml",  "mh", "b"
 # "R0" "lambdaRedshift"
 # "alpha" "beta" "ml" "sl" "mh" "sh" 
 #  "alpha1" "alpha2" "beta" "deltam" "ml"  "mh" "b" 
-
+# "muEff", "sigmaEff", "muP", "sigmaP" 
 
 
 # Specify parameters that are kept fixed and their values 
@@ -99,7 +99,12 @@ priorLimits = { 'H0': (20, 140),
                'deltam':  (0, 10),
                #'ml': {}, 
                #'mh': {}, 
-               'b':  (0, 1) 
+               'b':  (0, 1) ,
+               
+               'muEff':(-1, 1.),
+                'sigmaEff':(0.01, 1.),
+                'muP':(0.01, 1.),
+                'sigmaP':(0.01, 1.),
                
                }
 
@@ -123,6 +128,11 @@ priorNames = {'H0' : 'gauss',
                'alpha2':'flat',
                'deltam':'flat',
                'b':'flat',
+               
+               'muEff':'flat',
+               'sigmaEff':'flat',
+                'muP':'flat',
+                'sigmaP':'flat',
                        
                
                }

@@ -48,7 +48,7 @@ units = {'Mpc': u.Mpc, 'Gpc': u.Gpc}
 params_O3 = {   'R0': 24. ,  # Gpc^-3 yr^-1 
                         #'Xi0': 1. , 
                         #'n' : 0.5,  
-                #'lambdaRedshift':2.7.,
+                #'lambdaRedshift':1.8,
                 #'mh':87.,
                 'ml':4., 
                 'beta'  :1.4                                    

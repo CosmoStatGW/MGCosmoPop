@@ -21,7 +21,7 @@ for par in ${allGoalParams[@]};do
     
     cat <<EOF >$OUT
 data=['O1O2', 'O3a']
-dist_unit = 'Mpc'
+dist_unit = 'Gpc'
 param='$par'
 fout='$baseName$par'
 nObsUse=None

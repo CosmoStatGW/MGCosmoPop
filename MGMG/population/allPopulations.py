@@ -60,10 +60,10 @@ class AllPopulations(object):
         
         m1, m2, z = m1[where_compute], m2[where_compute], z[where_compute]
         
-        logN = -np.log1p(z)
+        logN = -np.log1p(z) # differential of time between source and detector frame
         
-        logN += np.log(Tobs)
-        #logN -= np.log1p(z) # differential of time between source and detector frame
+        logN += np.log(Tobs) # obs. time
+        
         H0, Om0, w0 = self.cosmo._get_values(LambdaCosmo, ['H0', 'Om', 'w0'])
         logN += self.cosmo.log_dV_dz(z, H0, Om0, w0)
         
