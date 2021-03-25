@@ -62,8 +62,16 @@ class AstroSmoothPowerLawMass(BBHDistFunction):
          
         self.n_params = len(self.params)
     
+    def _logpdfm1only(self, m1, alpha, ml, sl, mh, sh ):
+        
+        logp = np.log(m1)*(-alpha)+self._logf_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh)
+        
+        return logp
+    
+    
     
     def _logpdfm1(self, m1, alpha, ml, sl, mh, sh ):
+        '''Marginal prob. '''
         
         logp = np.log(m1)*(-alpha)+self._logf_smooth(m1, ml=ml, sl=sl, mh=mh, sh=sh)
         
@@ -83,7 +91,7 @@ class AstroSmoothPowerLawMass(BBHDistFunction):
         m1, m2 = theta
         alpha, beta, ml, sl, mh, sh = lambdaBBHmass
         
-        logpdfMass = self._logpdfm1(m1,alpha, ml, sl, mh, sh ) + self._logpdfm2(m2, beta, ml, sl, mh, sh )
+        logpdfMass = self._logpdfm1only(m1,alpha, ml, sl, mh, sh ) + self._logpdfm2(m2, beta, ml, sl, mh, sh )
         
         if self.normalization=='integral':
             logNorm = -np.log(self._get_normalization(lambdaBBHmass))
@@ -157,8 +165,8 @@ class TruncPowerLawMass(BBHDistFunction):
                            
                            'alpha':0.75,
                            'beta':0.0, 
-                           'ml':5.0, 
-                           'mh':45.0,
+                           'ml':4.0, 
+                           'mh':78.5,
                            }
         
         self.names = {
@@ -225,12 +233,12 @@ class TruncPowerLawMass(BBHDistFunction):
        
     
     def sample(self, nSamples, lambdaBBHmass):
-        alpha, beta, ml, sl, mh, sh = lambdaBBHmass
+        alpha, beta, ml, mh = lambdaBBHmass
         mMin = 3
         mMax = 100
         
         pm1 = lambda x: np.exp(self._logpdfm1(x, alpha ))
-        pm2 = lambda x: np.exp(self._logpdfm2(x, beta, ml, sl, mh, sh ))
+        pm2 = lambda x: np.exp(self._logpdfm2(x, beta ))
         
         m1 = self._sample_pdf(nSamples, pm1, mMin, mMax)
         #m2 = self._sample_pdf(nSamples, pm2, mMin, mMax)
@@ -368,7 +376,6 @@ class BrokenPowerLawMass(BBHDistFunction):
     def _logC(self, m, beta, deltam, ml, res = 200, exact_th=0.):
         '''
         Gives inverse log integral of  p(m1, m2) dm2 (i.e. log C(m1) in the LVC notation )
-        Approximate to the case where deltam is small 
         '''
         xlow=np.linspace(ml, ml+deltam+deltam/10, 200)
         xup=np.linspace(ml+deltam+deltam/10+1e-01, m[~np.isnan(m)].max(), res)
