@@ -155,6 +155,9 @@ class O3InjectionsData(Data):
                     spins=[chi1z, chi2z]
     
             p_draw = np.array(f['injections/sampling_pdf'])
+            if which_spins=='skip':
+                print('Removing factor of 1/2 for each spin dimension from p_draw...')
+                p_draw *= 4
             log_p_draw = np.log(p_draw)
         
             gstlal_ifar = np.array(f['injections/ifar_gstlal'])
@@ -163,7 +166,9 @@ class O3InjectionsData(Data):
         
             m1z = m1*(1+z)
             m2z = m2*(1+z)
-            dL = Planck15.luminosity_distance(z).to(self.dist_unit).value
+            dL = np.array(Planck15.luminosity_distance(z).to(self.dist_unit).value)
+            
+                
             #dL = np.array(f['injections/distance']) #in Mpc for GWTC2 !
             #if self.dist_unit==u.Gpc:
             #    print('Converting original distance in Mpc to Gpc ...')
