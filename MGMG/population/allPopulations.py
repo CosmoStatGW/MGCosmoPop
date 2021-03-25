@@ -95,6 +95,26 @@ class AllPopulations(object):
         #return np.where( ~np.isnan(m1), self.log_dN_dm1dm2dz(m1, m2, z, spins, Tobs, Lambda)-self._log_dMsourcedMdet(z) - self.cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n ) , np.NINF)
     
     
+    
+    def logdN_dz(self, z, H0, Om0, w0, lambdaBBHrate, pop):
+        #LambdaCosmo, LambdaAllPop = self._split_params(Lambda)
+        #if np.isscalar(z):
+        #    res=np.zeros((self.nPops, 1))
+        #else:   
+        #    res=np.zeros((self.nPops, z.shape[0]))
+        #H0, Om0, w0 = self.cosmo._get_values(LambdaCosmo, ['H0', 'Om', 'w0'])
+        #prev=npop
+        #for i,pop in enumerate(self._pops):
+        #pop=self._pops[npop]
+        #LambdaPop = LambdaAllPop[npop:npop+self._allNParams[npop]]
+        #lambdaBBHrate, lambdaBBHmass, lambdaBBHspin = pop._split_lambdas(LambdaPop)
+        res = pop.rateEvol.log_dNdVdt(z, lambdaBBHrate)+ self.cosmo.log_dV_dz(z, H0, Om0, w0)-np.log1p(z)
+        #prev=self._allNParams[i]
+            
+        return res # shape n_pops x len(z)
+        
+        
+    
     #########################################################################
     # Sampling 
     
@@ -151,6 +171,7 @@ class AllPopulations(object):
             
             allsamples[:, i, 0] = m1s
             allsamples[:, i, 1] = m2s
+            prev=self._allNParams[i]
 
         return allsamples
     
@@ -172,9 +193,10 @@ class AllPopulations(object):
             LambdaPop = LambdaAllPop[prev:prev+self._allNParams[i]]
             lambdaBBHrate, lambdaBBHmass, lambdaBBHspin = pop._split_lambdas(LambdaPop)
             
-            zpdf = lambda z: np.exp(pop.rateEvol.log_dNdVdt(z, lambdaBBHrate)+ self.cosmo.log_dV_dz(z, H0, Om0, w0)-np.log1p(z))
+            zpdf = lambda z: np.exp(self.logdN_dz(z,  H0, Om0, w0, lambdaBBHrate, pop ))#lambda z: np.exp(pop.rateEvol.log_dNdVdt(z, lambdaBBHrate)+ self.cosmo.log_dV_dz(z, H0, Om0, w0)-np.log1p(z))
             
             allsamples[:, i] = self._sample_pdf(nSamples, zpdf, 0., zmax)
+            #prev=self._allNParams[i]
         return allsamples
         
     
