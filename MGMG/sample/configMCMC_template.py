@@ -149,12 +149,12 @@ priorParams = { 'H0' : {'mu': 67.66, 'sigma': 0.42},
 include_sel_uncertainty = True
 
 seed=1312
-nwalkers = 36
-perc_variation_init=50
+nwalkers = 72
+perc_variation_init=60
 max_steps=100000
 
 
-convergence_ntaus = 50
+convergence_ntaus = 100
 convergence_percVariation = 0.01
 
 
