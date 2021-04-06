@@ -17,8 +17,8 @@ class PowerLawRateEvolution(RateEvolution):
         RateEvolution.__init__(self)
         
         self.params = ['R0', 'lambdaRedshift']
-        self.baseValues = {'R0': 19., #60 , # Gpc^-3 yr^-1
-                           'lambdaRedshift':1.8}
+        self.baseValues = {'R0': 20., #60 , # Gpc^-3 yr^-1
+                           'lambdaRedshift':1.8 }
         self.n_params = len(self.params)
         
         self.names = { 'R0':r'$R_0$', 

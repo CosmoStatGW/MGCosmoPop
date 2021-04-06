@@ -74,7 +74,6 @@ fnames_inj  = { 'mock': 'selected.h5',
 
 fnames_SNRs = { 'mock': 'optimal_snr.h5'
     
-    
     }
 
 
@@ -164,24 +163,30 @@ def build_model( populations, cosmo_args={}, mass_args={}, spin_args={}, rate_ar
 
 
 
-def load_data(dataset_name, nObsUse=None, nSamplesUse=None, nInjUse=None, dist_unit=u.Gpc, data_args ={}, inj_args ={}):
+def load_data(dataset_name, nObsUse=None, nSamplesUse=None, nInjUse=None, dist_unit=u.Gpc, data_args ={}, inj_args ={}, Tobs=None):
         
         
         ############################################################
         # DATA
         
-        fname = os.path.join(Globals.dataPath, dataset_name, fnames_data[dataset_name])
-        fnameInj = os.path.join(Globals.dataPath, dataset_name, fnames_inj[dataset_name] )
+        if "mock" in dataset_name:
+            dataset_key='mock'
+        else:
+            dataset_key=dataset_name
         
-        if dataset_name=='mock':
-            Data = GWMockData(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, dist_unit=dist_unit)
-            injData = GWMockInjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit)
+        fname = os.path.join(Globals.dataPath, dataset_name, fnames_data[dataset_key])
+        fnameInj = os.path.join(Globals.dataPath, dataset_name, fnames_inj[dataset_key] )
+        
+        if dataset_key=='mock':
+            Data = GWMockData(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, dist_unit=dist_unit, Tobs=Tobs)
+            injData = GWMockInjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit, Tobs=Tobs)
         elif dataset_name=='O3a':
             Data = O3aData(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, dist_unit=dist_unit, **data_args)
             injData = O3InjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit, **inj_args)
         elif dataset_name=='O1O2':
             Data = O1O2Data(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, dist_unit=dist_unit, **data_args)
             injData = O1O2InjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit, **inj_args)
-        
+        else:
+            raise ValueError('Dataset name not valid')
         
         return Data, injData

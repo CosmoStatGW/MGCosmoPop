@@ -95,7 +95,8 @@ class BBHDistFunction(ABC):
     
     def _sample_pdf(self, nSamples, pdf, lower, upper):
         res = 100000
-        x = np.linspace(lower, upper, res)
+        eps=1e-02
+        x = np.linspace(lower+eps, upper-eps, res)
         cdf = np.cumsum(pdf(x))
         cdf /= cdf[-1]
         return np.interp(np.random.uniform(size=nSamples), cdf, x)
@@ -110,7 +111,8 @@ class BBHDistFunction(ABC):
     def _sample_vector_upper(self, pdf, lower, upper):
         nSamples = len(upper)
         res = 100000
-        x = np.linspace(lower, upper.max(), res)
+        eps=1e-02
+        x = np.linspace(lower+eps, upper.max()-eps, res)
         cdf = np.cumsum(pdf(x))
         cdf = cdf / cdf[-1]
         probTilUpper = np.interp(upper, x, cdf)

@@ -111,7 +111,7 @@ class SelectionBiasInjections(SelectionBias):
         
         #logdN =  np.where( injData.condition, self.population.log_dN_dm1zdm2zddL(m1, m2, z, spins, Tobs, Lambda),  np.NINF) 
         #logdN -= injData.log_weights_sel
-        logdN=self.population.log_dN_dm1zdm2zddL(m1, m2, z, spins, Tobs, Lambda)-injData.log_weights_sel[injData.condition]
+        logdN=np.squeeze(self.population.log_dN_dm1zdm2zddL(m1, m2, z, spins, Tobs, Lambda)-injData.log_weights_sel[injData.condition])
         
         
         logMu = np.logaddexp.reduce(logdN) - injData.logN_gen

@@ -234,16 +234,17 @@ class TruncPowerLawMass(BBHDistFunction):
     
     def sample(self, nSamples, lambdaBBHmass):
         alpha, beta, ml, mh = lambdaBBHmass
-        mMin = 3
-        mMax = 100
+
         
         pm1 = lambda x: np.exp(self._logpdfm1(x, alpha ))
         pm2 = lambda x: np.exp(self._logpdfm2(x, beta ))
         
-        m1 = self._sample_pdf(nSamples, pm1, mMin, mMax)
+        m1 = self._sample_pdf(nSamples, pm1, ml, mh)
         #m2 = self._sample_pdf(nSamples, pm2, mMin, mMax)
-        m2 = self._sample_vector_upper(pm2, mMin, m1)
-        
+        m2 = self._sample_vector_upper(pm2, ml, m1)
+        assert(m2<=m1).all() 
+        assert(m2>=ml).all() 
+        assert(m1<=mh).all() 
             
         return m1, m2
 
@@ -317,7 +318,7 @@ class BrokenPowerLawMass(BBHDistFunction):
 
         result[where_nan]=np.NINF
         
-        where_compute = (m < mh) & (m > ml) & (~where_nan)
+        where_compute = (m <= mh) & (m >= ml) & (~where_nan)
         result[~where_compute] = np.NINF
         
         m = m[where_compute]
@@ -336,7 +337,7 @@ class BrokenPowerLawMass(BBHDistFunction):
 
         result[where_nan]=np.NINF
         
-        where_compute = (ml< m2) & (~where_nan)
+        where_compute = (ml<= m2) & (~where_nan)
         result[~where_compute] = np.NINF
         
         m2 = m2[where_compute]
@@ -509,7 +510,9 @@ class BrokenPowerLawMass(BBHDistFunction):
         m1 = self._sample_pdf(nSamples, pm1, mMin, mMax)
         #m2 = self._sample_pdf(nSamples, pm2, mMin, mMax)
         m2 = self._sample_vector_upper(pm2, mMin, m1)
-        
+        assert(m2<=m1).all() 
+        assert(m2>=ml).all() 
+        assert(m1<=mh).all() 
             
         return m1, m2
 

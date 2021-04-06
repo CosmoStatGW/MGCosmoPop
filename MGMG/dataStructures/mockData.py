@@ -17,7 +17,7 @@ from astropy.cosmology import Planck15, z_at_value
         
 class GWMockData(Data):
     
-    def __init__(self, fname, nObsUse=None, nSamplesUse=None, dist_unit=u.Gpc ):
+    def __init__(self, fname, nObsUse=None, nSamplesUse=None, dist_unit=u.Gpc, Tobs=2.5 ):
         
         self.dist_unit = dist_unit
         self.m1z, self.m2z, self.dL, self.Nsamples = self._load_data(fname, nObsUse, nSamplesUse, )  
@@ -29,10 +29,11 @@ class GWMockData(Data):
         assert (self.m1z > 0).all()
         assert (self.m2z > 0).all()
         assert (self.dL > 0).all()
-        assert(self.m2z<self.m1z).all()
+        assert(self.m2z<=self.m1z).all()
         
-        self.Tobs=2.5
-        self.chiEff = np.zeros(self.m1z.shape)
+        self.Tobs=Tobs
+        #self.chiEff = np.zeros(self.m1z.shape)
+        self.spins = []
         print('Obs time: %s' %self.Tobs )
         
         self.Nobs=self.m1z.shape[0]
@@ -83,7 +84,7 @@ class GWMockData(Data):
 
 class GWMockInjectionsData(Data):
     
-    def __init__(self, fname, nInjUse=None,  dist_unit=u.Gpc ):
+    def __init__(self, fname, nInjUse=None,  dist_unit=u.Gpc, Tobs=2.5 ):
         
         self.dist_unit=dist_unit
         self.m1z, self.m2z, self.dL, self.weights_sel, self.N_gen = self._load_data(fname, nInjUse )        
@@ -92,11 +93,11 @@ class GWMockInjectionsData(Data):
         assert (self.m1z > 0).all()
         assert (self.m2z > 0).all()
         assert (self.dL > 0).all()
-        assert(self.m2z<self.m1z).all()
+        assert(self.m2z<=self.m1z).all()
         self.condition=True
         
-        self.Tobs=2.5
-        self.chiEff = np.zeros(self.m1z.shape)
+        self.Tobs=Tobs
+        self.spins = []# np.zeros(self.m1z.shape)
         print('Obs time: %s' %self.Tobs )
         
         
@@ -126,10 +127,17 @@ class GWMockInjectionsData(Data):
             
         #self.max_z = np.max(z)
         self.max_z=z_at_value(Planck15.luminosity_distance, dl_sel.max()*self.dist_unit)
+        
+        # Drop points in the unlikely case of m1==m2, to avoid crashes
+        keep = m1_sel!=m2_sel
+        throw = ~keep
+        print('Dropping %s points with exactly equal masses' %str(throw.sum()) )
+        
+        
         print('Max redshift of injections: %s' %self.max_z)
         print('Number of total injections: %s' %N_gen)
-        print('Number of detected injections: %s' %weights_sel.shape[0])
-        return m1_sel, m2_sel, dl_sel, weights_sel , N_gen
+        print('Number of detected injections: %s' %weights_sel[keep].shape[0])
+        return m1_sel[keep], m2_sel[keep], dl_sel[keep], weights_sel[keep] , N_gen
       
     
     def originalMassPrior(self):
