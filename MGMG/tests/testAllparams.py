@@ -100,6 +100,10 @@ units = {'Mpc': u.Mpc, 'Gpc': u.Gpc}
 
 
 
+params_mock_BPL_5yr_aLIGOdesignSensitivity = {'H0':67.74, 'Om':0.3075, 'w0':-1., 'Xi0':1., 'n':1.91, 'R0':25.0,
+                  'lambdaRedshift':2., 'alpha1':1.6, 'alpha2':5.6, 'beta':1.4, 'deltam':5.0, 'ml':4., 'mh':90.0, 'b':0.4}
+
+
 
 
 
@@ -147,6 +151,8 @@ def main():
         
         if 'O3a' in config.data or 'O1O2' in config.data:
             allPops.set_values( params_O3)
+        if 'mock_BPL_5yr_aLIGOdesignSensitivity' in config.data:
+            allPops.set_values( params_mock_BPL_5yr_aLIGOdesignSensitivity)
         
         if units[config.dist_unit]==u.Mpc:
             print('Converting expected value of rate to yr Mpc^-3')
@@ -168,9 +174,13 @@ def main():
         for data_ in config.data:
             if data_ in ('O1O2', 'O3a'):
                 events_use=config.events_use
-            elif data_=='mock':
+            else:
                 events_use=None
-            Data, injData = load_data(data_, nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, nInjUse=config.nInjUse, dist_unit=units[config.dist_unit], data_args={'events_use':events_use, 'which_spins':which_spins[config.spindist]}, inj_args={'which_spins':which_spins[config.spindist] })
+            Data, injData = load_data(data_, 
+                                      nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, nInjUse=config.nInjUse, 
+                                      dist_unit=units[config.dist_unit], 
+                                      data_args={'events_use':events_use, 'which_spins':which_spins[config.spindist]},
+                                      inj_args={'which_spins':which_spins[config.spindist] }, Tobs=config.Tobs)
             allData.append(Data)
             allInjData.append(injData)
          
@@ -211,7 +221,7 @@ def main():
    
         #print( myPost.logPosterior(truth, return_all=True) )
         
-        logPosteriorAll = np.array( [ myPost.logPosterior(val, return_all=True) for val in grid ])
+        logPosteriorAll = np.array( [ myPost.logPosterior(val, return_all=True, verbose=True, allNobs=[d.Nobs for d in allData ]) for val in grid ])
         # logPost, lp, ll, mu, err
         #print(logPosteriorAll)
         logPosterior=logPosteriorAll[:,0]
@@ -244,8 +254,12 @@ def main():
             
             ndet_t = mu[idx_truth][0][0]
             print('N_det for %s at true value of %s: %s '%(config.data[i], truth, ndet_t ) )
-        
-            lab = r'$N_{\rm det}$, %s'%config.data[i]+'('+config.param +')'+'\n'+r'$N_{\rm det}$ (%s)=%s' %(truth, np.round(ndet_t, 1) )   
+            
+            if 'mock' in config.data[i]:
+                dataset_name_label='mock'
+            else:
+                dataset_name_label=str(config.data[i])
+            lab = r'$N_{\rm det}$'+'('+config.param +')'+', '+dataset_name_label+'\n'+r'$N_{\rm det}$ (%s)=%s' %(truth, np.round(ndet_t, 1) )   
             plt.plot(grid, mu, label=lab)
             if config.nObsUse is None:
                 plt.axhline(data.Nobs, ls=':', color='k', lw=1.5);
@@ -324,7 +338,11 @@ def main():
             #print(mymax)
             post_ = np.exp(np.array(lpost, dtype='float64')-mymax_)
             post_ /=np.trapz(post_, grid)
-            plt.plot(grid, post_, label='%s, With sel effects' %config.data[i])
+            if 'mock' in config.data[i]:
+                dataset_name_label='mock'
+            else:
+                dataset_name_label=str(config.data[i])
+            plt.plot(grid, post_, label='%s, With sel effects' %dataset_name_label)
 
             
         

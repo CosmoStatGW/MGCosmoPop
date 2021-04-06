@@ -33,6 +33,7 @@ events_use = {'use': None,
           'not_use': ['GW170817', 'GW190814', 'GW190425', 'GW190426', 'GW190719', 'GW190909', 'GW190426_152155', 'GW190719_215514', 'GW190909_114149'] 
           }
 spindist='skip'
+Tobs=5.
 EOF
     
     #echo $baseName$par
