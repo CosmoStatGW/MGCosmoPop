@@ -54,6 +54,15 @@ params_O3 = {   'R0': 24. ,  # Gpc^-3 yr^-1
                 'beta'  :1.4                                    
     }
 
+
+params_mock_BPL_5yr_aLIGOdesignSensitivity = {'H0':67.74, 'Om':0.3075, 'w0':-1., 'Xi0':1., 'n':1.91, 'R0':25.0,
+                  'lambdaRedshift':2., 'alpha1':1.6, 'alpha2':5.6, 'beta':1.4, 'deltam':5.0, 'ml':4., 'mh':90.0, 'b':0.4}
+
+
+params_mock_BPL_5yr_aLIGOdesignSensitivity_MG = {'H0':67.74, 'Om':0.3075, 'w0':-1., 'Xi0':1.2, 'n':2., 'R0':25.0,
+                  'lambdaRedshift':2., 'alpha1':1.6, 'alpha2':5.6, 'beta':1.4, 'deltam':5.0, 'ml':4., 'mh':90.0, 'b':0.4}
+
+
 which_spins={ 'gauss':'chiEff',
              'skip':'skip'
     
@@ -192,7 +201,7 @@ def main():
             
             if dataset_name in ('O3a', 'O1O2'):
                 O3_use=config.O3_use
-            elif dataset_name=='mock':
+            elif 'mock' in dataset_name:
                 O3_use=None
         
             print('\nLoading data from %s catalogue...' %dataset_name) 
@@ -202,7 +211,12 @@ def main():
             spindist = config.populations[list(config.populations.keys())[0]]['spin_distribution']
             
             
-            Data, injData = load_data(dataset_name, nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, nInjUse=config.nInjUse, dist_unit=units[config.dist_unit], data_args={'events_use':O3_use, 'which_spins':which_spins[spindist]}, inj_args={'which_spins':which_spins[spindist] })
+            Data, injData = load_data(dataset_name, 
+                                      nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, nInjUse=config.nInjUse, 
+                                      dist_unit=units[config.dist_unit], 
+                                      data_args={'events_use':O3_use, 'which_spins':which_spins[spindist]}, 
+                                      inj_args={'which_spins':which_spins[spindist] },
+                                      Tobs=config.Tobs)
             allData.append(Data)
             allInjData.append(injData)
         
@@ -271,7 +285,7 @@ def main():
             if sampler.iteration % 100:
                 continue
             else:
-                tau = sampler.get_autocorr_time(tol=0) # tol=0 is in irder to continue the chain
+                tau = sampler.get_autocorr_time(tol=0) # tol=0 is in order to continue the chain
                 if np.any(np.isnan(tau)):
                     burnin=0
                     converged=False

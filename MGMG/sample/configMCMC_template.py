@@ -42,7 +42,7 @@ rate_args={}
 # CONFIGURE THE DATA AND UNITS
 ###############################################################################
 
-dataset_names = ['O1O2', 'O3a' ] # 'O3a'
+dataset_names = ['mock_BPL_5yr_aLIGOdesignSensitivity_MG', ] # 'O3a' # mock_BPL_5yr_aLIGOdesignSensitivity_MG  #mock_BPL_5yr_aLIGOdesignSensitivity #O1O2 # O3a
 dist_unit = 'Gpc'
 
 
@@ -60,7 +60,7 @@ O3_use = {'use': None, #['GW190424_180648', 'GW190910_112807', 'GW190828_065509'
 ### The parameters have to be in the same order as they are listed in 
 ### the population object in the code !!! 
 
-params_inference = ["R0", "alpha1", "alpha2", "beta", "deltam", "ml",  "mh", "b"]
+params_inference = [ "H0", "Om", "Xi0", "n", "R0", "lambdaRedshift", "alpha1", "alpha2", "beta", "deltam", "ml",  "mh", "b"]
 
 # "H0" "Om" "Xi0" "n"
 # "R0" "lambdaRedshift"
@@ -71,9 +71,9 @@ params_inference = ["R0", "alpha1", "alpha2", "beta", "deltam", "ml",  "mh", "b"
 
 # Specify parameters that are kept fixed and their values 
 params_fixed = {   'w0': -1. , 
-                        'Xi0': 1. , 
-                        'n' : 0.,   
-                        'lambdaRedshift ':0. ,                                     
+                        #'Xi0': 1. , 
+                        #'n' : 0.,   
+                        #'lambdaRedshift ':0. ,                                     
     }
 
 
@@ -82,7 +82,7 @@ priorLimits = { 'H0': (20, 140),
                'Xi0': (0.1, 10) ,
                'Om': (0.05, 1),
                'w0': (-2, -0.5),
-               
+               'n':(0.,10.),
                'R0': (1e-01, 1e03), 
                'lambdaRedshift': (-10, 10),
                
@@ -113,7 +113,7 @@ priorNames = {'H0' : 'gauss',
               'Xi0': 'flat',
               'Om': 'gauss',
                'w0': 'flat',
-              
+              'n':'flat',
                'R0': 'flatLog',
               'lambdaRedshift': 'flat',
               
@@ -145,13 +145,16 @@ priorParams = { 'H0' : {'mu': 67.66, 'sigma': 0.42},
                 'Om' : {'mu': 0.311, 'sigma': 0.056}}
 
 
+# Duration in yrs of the observing run , needed only if using mock data
+Tobs=5.
+
 
 include_sel_uncertainty = True
 
 seed=1312
 nwalkers = 72
 perc_variation_init=60
-max_steps=100000
+max_steps=300
 
 
 convergence_ntaus = 100
@@ -162,16 +165,17 @@ convergence_percVariation = 0.01
 # (suitable for clusters)
 # If 'pool' , it uses python multipricessing module, and we can specify the number of pools
 
-parallelization='mpi'  # pool
+parallelization='pool'  # pool
 
 # only needed if parallelization='pool'
 nPools = 3 
+
 
 
 ###############################################################################
 # For testing
 ###############################################################################
 
-nObsUse=None
-nSamplesUse=None
-nInjUse=None
+nObsUse=10
+nSamplesUse=100
+nInjUse=100
