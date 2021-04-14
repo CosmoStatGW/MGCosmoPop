@@ -46,6 +46,7 @@ units = {'Mpc': u.Mpc, 'Gpc': u.Gpc}
 
 
 params_O3 = {   'R0': 24. ,  # Gpc^-3 yr^-1 
+
                         #'Xi0': 1. , 
                         #'n' : 0.5,  
                 #'lambdaRedshift':1.8,
@@ -53,6 +54,20 @@ params_O3 = {   'R0': 24. ,  # Gpc^-3 yr^-1
                 'ml':4., 
                 'beta'  :1.4                                    
     }
+
+
+params_O3_GW190814 = {   'R0': 24. ,  # Gpc^-3 yr^-1 
+                        #'Xi0': 1. , 
+                        #'n' : 0.5,  
+                        'alpha1':1., 'alpha2':5.17, 'beta':0.28, 
+                'lambdaRedshift':1.8,
+                'mh':87.,
+                'ml':2., 
+                'deltam':0.4 ,
+                'b':0.4                                  
+    }
+
+
 
 
 params_mock_BPL_5yr_aLIGOdesignSensitivity = {'H0':67.74, 'Om':0.3075, 'w0':-1., 'Xi0':1., 'n':1.91, 'R0':25.0,
@@ -173,7 +188,13 @@ def main():
         
         # If using O3 data, set base values to expected ones from LVC
         if 'O3a' in config.dataset_names or 'O1O2' in config.dataset_names :
-            allPops.set_values( params_O3)
+            
+            if 'GW190814' in config.O3_use['not_use']:
+                    # Exclude 'GW190814' . Standard choice
+                    allPops.set_values( params_O3)
+            else:
+                print('GW190814 is included in the analysis. Setting expected values to %s' %str(params_O3_GW190814))
+                allPops.set_values( params_O3_GW190814)
         
         # Fix values of the parameters not included in the MCMC
         allPops.set_values( config.params_fixed)

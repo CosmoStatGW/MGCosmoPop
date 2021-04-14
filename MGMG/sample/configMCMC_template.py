@@ -24,7 +24,7 @@ telegram_bot_token='1580787370:AAGyCFRjxRTt4Dsg8S4XaKwNkBDjwoYuZIQ'
 
 populations = { 'astro' : { 'mass_function': 'broken_pow_law' , #'smooth_pow_law',
                            'spin_distribution': 'skip',
-                           'rate': 'simple_pow_law'
+                           'rate': 'astro-ph' # astro-ph simple_pow_law'
     
                             }
     
@@ -42,7 +42,7 @@ rate_args={}
 # CONFIGURE THE DATA AND UNITS
 ###############################################################################
 
-dataset_names = ['mock_BPL_5yr_aLIGOdesignSensitivity_MG', ] # 'O3a' # mock_BPL_5yr_aLIGOdesignSensitivity_MG  #mock_BPL_5yr_aLIGOdesignSensitivity #O1O2 # O3a
+dataset_names = ['O1O2', 'O3a', ] # 'O3a' # mock_BPL_5yr_aLIGOdesignSensitivity_MG  #mock_BPL_5yr_aLIGOdesignSensitivity #O1O2 # O3a
 dist_unit = 'Gpc'
 
 
@@ -60,13 +60,14 @@ O3_use = {'use': None, #['GW190424_180648', 'GW190910_112807', 'GW190828_065509'
 ### The parameters have to be in the same order as they are listed in 
 ### the population object in the code !!! 
 
-params_inference = [ "H0", "Om", "Xi0", "n", "R0", "lambdaRedshift", "alpha1", "alpha2", "beta", "deltam", "ml",  "mh", "b"]
+params_inference = [ "H0", "Om", "Xi0", "n", 'R0', 'alphaRedshift', 'betaRedshift', 'zp', "alpha1", "alpha2", "beta", "deltam", "ml",  "mh", "b"]
 
 # "H0" "Om" "Xi0" "n"
 # "R0" "lambdaRedshift"
 # "alpha" "beta" "ml" "sl" "mh" "sh" 
 #  "alpha1" "alpha2" "beta" "deltam" "ml"  "mh" "b" 
 # "muEff", "sigmaEff", "muP", "sigmaP" 
+# 'R0', 'alphaRedshift', 'betaRedshift', 'zp'
 
 
 # Specify parameters that are kept fixed and their values 
@@ -83,8 +84,16 @@ priorLimits = { 'H0': (20, 140),
                'Om': (0.05, 1),
                'w0': (-2, -0.5),
                'n':(0.,10.),
+               
+               
                'R0': (1e-01, 1e03), 
                'lambdaRedshift': (-10, 10),
+               
+               'alphaRedshift': (-15, 15),
+               'betaRedshift': (0., 15.),
+               'zp':(0., 4.),
+               
+               
                
                'alpha': (-5, 10 ),
                'beta': (-4, 12 ), 
@@ -114,8 +123,13 @@ priorNames = {'H0' : 'gauss',
               'Om': 'gauss',
                'w0': 'flat',
               'n':'flat',
+              
                'R0': 'flatLog',
               'lambdaRedshift': 'flat',
+              
+              'alphaRedshift': 'flat',
+               'betaRedshift': 'flat',
+               'zp':'flat',
               
               'alpha': 'flat',
                'beta': 'flat', 
@@ -145,15 +159,15 @@ priorParams = { 'H0' : {'mu': 67.66, 'sigma': 0.42},
                 'Om' : {'mu': 0.311, 'sigma': 0.056}}
 
 
-# Duration in yrs of the observing run , needed only if using mock data
-Tobs=5.
+# Duration in yrs of the observing run , needed only if using mock data. Set None otherwise
+Tobs=None
 
 
 include_sel_uncertainty = True
 
 seed=1312
-nwalkers = 72
-perc_variation_init=60
+nwalkers = 30
+perc_variation_init=40
 max_steps=300
 
 
@@ -176,6 +190,6 @@ nPools = 3
 # For testing
 ###############################################################################
 
-nObsUse=10
+nObsUse=5
 nSamplesUse=100
 nInjUse=100

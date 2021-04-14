@@ -20,7 +20,7 @@ import astropy.units as u
 
 from population.astro.astroMassDistribution import AstroSmoothPowerLawMass, BrokenPowerLawMass, TruncPowerLawMass
 from population.astro.astroSpinDistribution import DummySpinDist, GaussSpinDist
-from population.astro.rateEvolution import PowerLawRateEvolution
+from population.astro.rateEvolution import PowerLawRateEvolution, AstroPhRateEvolution
 from population.astro.astroPopulation import AstroPopulation
 from cosmology.cosmo import Cosmo
 from population.allPopulations import AllPopulations
@@ -52,7 +52,8 @@ spin_functions = {  'gauss': GaussSpinDist,
 
 rate_functions = { # 'gauss': AstroSmoothPowerLawMass(),
                   
-                      'simple_pow_law': PowerLawRateEvolution
+                      'simple_pow_law': PowerLawRateEvolution, 
+                               'astro-ph'       : AstroPhRateEvolution, 
      }
 
 
