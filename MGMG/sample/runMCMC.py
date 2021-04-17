@@ -126,17 +126,33 @@ def main():
     in_time=time.time()
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", default='', type=str, required=True) # config file
+    parser.add_argument("--config", default='', type=str, required=False) # config file
     parser.add_argument("--fout", default='', type=str, required=True) # output folder 
+    parser.add_argument("--resume", default=0, type=int, required=False) # restart chain or not
     FLAGS = parser.parse_args()
-    
-    config = importlib.import_module(FLAGS.config, package=None)
+
     
     fout = FLAGS.fout
-    
     out_path=os.path.join(Globals.dirName, 'results', fout)
     
-    out_path=os.path.join(Globals.dirName, 'results', fout)
+    if FLAGS.resume==0:
+        resume=False
+    else: resume=True
+    
+    if resume and FLAGS.config!='':
+        raise ValueError('If continuing a pre-existing chain, you do not have to specify the config file.')
+    
+    if not resume:
+        configname = FLAGS.config
+        #config = importlib.import_module(FLAGS.config, package=None)
+    else:
+        shutil.copy(os.path.join(out_path, 'config_original.py'), 'config_tmp.py', )
+        configname = 'config_tmp'
+    
+    print('Reading config from %s...' %configname)
+    config = importlib.import_module(configname, package=None)
+        
+
     #if not os.path.exists(out_path):
     try:
         print('Creating directory %s' %out_path)
@@ -145,9 +161,20 @@ def main():
     except FileExistsError:
         print('Using directory %s for output' %out_path)
     
-    shutil.copy(FLAGS.config+'.py', os.path.join(out_path, 'config_original.py'))
+    if not resume:
+        shutil.copy(FLAGS.config+'.py', os.path.join(out_path, 'config_original.py'))
     
-    logfile = os.path.join(out_path, 'logfile.txt') #out_path+'logfile.txt'
+    baselogfileName= 'logfile'
+    if resume:
+        logfile=os.path.join(out_path, baselogfileName+'_run1.txt')
+        nResume=1
+        while os.path.exists(logfile):
+            logfileName=baselogfileName+'_run'+str(nResume)+'.txt'
+            logfile=os.path.join(out_path, logfileName)
+            nResume += 1
+    else:   
+         logfile = os.path.join(out_path, 'logfile.txt') #out_path+'logfile.txt'
+    
     myLog = utils.Logger(logfile)
     sys.stdout = myLog
     sys.stderr = myLog
@@ -266,19 +293,28 @@ def main():
         ############################################################
         # SETUP MCMC
         
-        # Initial position of the walkers
-        exp_values = allPops.get_base_values(config.params_inference)
-        pos = setup_chain(config.nwalkers, exp_values, config.priorNames, config.priorLimits, config.priorParams, config.params_inference, perc_variation_init=config.perc_variation_init, seed=config.seed)
-        print('nwalkers=%s, ndim=%s' %(pos.shape[0], pos.shape[1]))
-        #if (ndim<5) & (config.nwalkers<5):
-        #print('Initial positions of the walkers: %s' %str(pos))
-        
-    
         # Set up the backend
         # Don't forget to clear it in case the file already exists
         filename = "chains.h5"
         backend = emcee.backends.HDFBackend(os.path.join(out_path,filename))
-        backend.reset(config.nwalkers, ndim)
+        if not resume:
+            backend.reset(config.nwalkers, ndim)
+        
+        
+        # Initial position of the walkers
+        
+        if not resume:
+            exp_values = allPops.get_base_values(config.params_inference)
+            pos = setup_chain(config.nwalkers, exp_values, config.priorNames, config.priorLimits, config.priorParams, config.params_inference, perc_variation_init=config.perc_variation_init, seed=config.seed)
+        else:
+            print('Restarting chain from last point of the previous run')
+            all_samples = backend.get_chain(discard=int(0), flat=False, thin=1)
+            pos = all_samples[-1]
+        
+        print('nwalkers=%s, ndim=%s' %(pos.shape[0], pos.shape[1]))
+        #if (ndim<5) & (config.nwalkers<5):
+        #print('Initial positions of the walkers: %s' %str(pos))
+        
     
         autocorr_fname = os.path.join(out_path, "autocorr.txt")
     
@@ -297,6 +333,11 @@ def main():
         # Track autocorrelation time
         index = 0
         autocorr = np.empty(config.max_steps)
+        if resume:
+            autocorr_old=np.loadtxt(autocorr_fname)
+            index  =len(autocorr_old)
+            autocorr[:index] = autocorr_old
+            #index+=1
         
         old_tau = np.inf
 
@@ -368,10 +409,13 @@ def main():
     
     ############################################################
     # SUMMARY PLOTS           
+    reader = emcee.backends.HDFBackend(os.path.join(out_path,'chains.h5'))
+    
     
     print('Plotting chains... ')
     fig, axes = plt.subplots(ndim, figsize=(10, 7), sharex=True)
-    samples = sampler.get_chain()
+    samples = reader.get_chain()
+    print("all chains shape : {0}".format(samples.shape))
     labels = allPops.get_labels(config.params_inference)
     for i in range(ndim):
         ax = axes[i]
@@ -383,16 +427,18 @@ def main():
     axes[-1].set_xlabel("step number");  
     
     plt.savefig(os.path.join(out_path,'chains.pdf'))  
-
-    tau = sampler.get_autocorr_time(quiet=True)
+    plt.close()
+    
+    tau = reader.get_autocorr_time(quiet=True)
     if np.any(np.isnan(tau)):
         burnin=0
         thin=1
     else:
         burnin = int(2 * np.max(tau))
         thin = int(0.5 * np.min(tau))
-    samples = sampler.get_chain(discard=burnin, flat=True, thin=thin)
-    plt.close()
+    samples = reader.get_chain(discard=burnin, flat=True, thin=thin)
+    print("flat chains shape (after discarding burnin phase and thin): {0}".format(samples.shape))
+    
 
     
     print('Plotting cornerplot... ')
@@ -436,7 +482,9 @@ def main():
         pool.close()
         sys.exit(0)
     
-    
+    if resume:
+        # rm config_tmp 'config_tmp.py'
+        os.remove('config_tmp.py')
     
     
 if __name__=='__main__':
