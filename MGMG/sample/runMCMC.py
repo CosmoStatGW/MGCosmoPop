@@ -129,82 +129,92 @@ def main():
     parser.add_argument("--config", default='', type=str, required=False) # config file
     parser.add_argument("--fout", default='', type=str, required=True) # output folder 
     parser.add_argument("--resume", default=0, type=int, required=False) # restart chain or not
+    parser.add_argument("--parallelization", default='mpi', type=str, required=False) # output folder 
+    parser.add_argument("--nPools", default=1, type=int, required=False) 
     FLAGS = parser.parse_args()
 
     
     fout = FLAGS.fout
     out_path=os.path.join(Globals.dirName, 'results', fout)
     
-    if FLAGS.resume==0:
-        resume=False
-    else: resume=True
+    def run():
     
-    if resume and FLAGS.config!='':
-        raise ValueError('If continuing a pre-existing chain, you do not have to specify the config file.')
     
-    if not resume:
-        configname = FLAGS.config
+        if FLAGS.resume==0:
+            resume=False
+        else: resume=True
+    
+        if resume and FLAGS.config!='':
+            raise ValueError('If continuing a pre-existing chain, you do not have to specify the config file.')
+    
+        if not resume:
+            configname = FLAGS.config
         #config = importlib.import_module(FLAGS.config, package=None)
-    else:
-        try:
-            configspath=os.path.join(out_path, "configs")
-            print('Creating directory %s' %configspath)
-            os.makedirs(configspath)
-        except FileExistsError:
-            print('Using directory %s for configs files' %configspath)
-        configname='config_tmp'
-        confignameFull = os.path.join(out_path, configname)
+        else:
+            try:
+                configspath=os.path.join(out_path, "configs")
+                print('Creating directory %s' %configspath)
+                os.makedirs(configspath)
+            except FileExistsError:
+                print('Using directory %s for configs files' %configspath)
+            configname='config_tmp'
+            confignameFull = os.path.join(out_path, configname)
         
-        shutil.copy(os.path.join(out_path, 'config_original.py'), os.path.join(configspath,'config_tmp.py') )
+            shutil.copy(os.path.join(out_path, 'config_original.py'), os.path.join(configspath,'config_tmp.py') )
         #configname = os.path.join(configspath, 'config_tmp')
         
-        sys.path.append(configspath)
+            sys.path.append(configspath)
     
-    print('Reading config from %s...' %confignameFull)
-    config = importlib.import_module(configname, package=None)
-        
+        print('Reading config from %s...' %confignameFull)
+        config = importlib.import_module(configname, package=None)
+        if resume:
+            from inspect import getmembers, ismodule
+            config_items = {item[0]: item[1] for item in getmembers(config) if '__' not in item[0]}
+            print('Config items:')
+            print(config_items)
 
     #if not os.path.exists(out_path):
-    try:
-        print('Creating directory %s' %out_path)
-        os.makedirs(out_path)
+        try:
+            os.makedirs(out_path)
+            print('Creating directory %s' %out_path)
+
     #else:
-    except FileExistsError:
-        print('Using directory %s for output' %out_path)
+        except FileExistsError:
+            print('Using directory %s for output' %out_path)
     
-    if not resume:
-        shutil.copy(FLAGS.config+'.py', os.path.join(out_path, 'config_original.py'))
+        if not resume:
+            shutil.copy(FLAGS.config+'.py', os.path.join(out_path, 'config_original.py'))
     
-    baselogfileName= 'logfile'
-    if resume:
-        logfile=os.path.join(out_path, baselogfileName+'_run1.txt')
-        nResume=1
-        while os.path.exists(logfile):
-            logfileName=baselogfileName+'_run'+str(nResume)+'.txt'
-            logfile=os.path.join(out_path, logfileName)
-            nResume += 1
-    else:   
-         logfile = os.path.join(out_path, 'logfile.txt') #out_path+'logfile.txt'
+        baselogfileName= 'logfile'
+        if resume:
+            logfile=os.path.join(out_path, baselogfileName+'_run1.txt')
+            nResume=1
+            while os.path.exists(logfile):
+                logfileName=baselogfileName+'_run'+str(nResume)+'.txt'
+                logfile=os.path.join(out_path, logfileName)
+                nResume += 1
+        else:   
+            logfile = os.path.join(out_path, 'logfile.txt') #out_path+'logfile.txt'
     
-    myLog = utils.Logger(logfile)
-    sys.stdout = myLog
-    sys.stderr = myLog
+        myLog = utils.Logger(logfile)
+        sys.stdout = myLog
+        sys.stderr = myLog
         
-    if config.telegram_notifications:
-        scriptname = __file__
-        filenameT = scriptname.replace("_", "\_")
-        filenameT = scriptname+'(run %s)'%fout
+        if config.telegram_notifications:
+            scriptname = __file__
+            filenameT = scriptname.replace("_", "\_")
+            filenameT = scriptname+'(run %s)'%fout
     
     #ncpu = cpu_count()
     #print('Parallelizing on %s CPUs ' %config.nPools)
     #print('Number of availabel cores:  %s ' %ncpu)
     
-    ndim = len(config.params_inference)
+        ndim = len(config.params_inference)
     
    ############################################################## 
    ##############################################################
     
-    def run():
+    
         ##############################################################
         # POPULATION MODELS
         print('\nCreating populations...')
@@ -389,30 +399,30 @@ def main():
                         old_tau = np.inf
                     else:
                         old_tau = tau
-        return allPops, sampler, index, autocorr
+        return allPops, sampler, index, autocorr, ndim, config, myLog, filenameT
     
     ##############################################################
     ##############################################################
     
-    if config.parallelization == 'mpi':
+    if FLAGS.parallelization == 'mpi':
         from schwimmbad import MPIPool
         myPool=MPIPool()
-    elif config.parallelization == 'pool':
+    elif FLAGS.parallelization == 'pool':
         from multiprocessing import Pool, cpu_count
         ncpu = cpu_count()
         print('Number of availabel cores:  %s ' %ncpu)
-        npools = min(config.nPools,ncpu )
+        npools = min(FLAGS.nPools,ncpu )
         print('Parallelizing on %s CPUs ' %npools)
         myPool=Pool(npools)
     
     with myPool as pool:
-        if config.parallelization == 'mpi':
+        if FLAGS.parallelization == 'mpi':
             if not pool.is_master():
                 pool.wait()
                 sys.exit(0)
-            allPops, sampler, index, autocorr  = run()
+            allPops, sampler, index, autocorr, ndim, config, myLog, filenameT  = run()
         else:
-            allPops, sampler,  index, autocorr = run()
+            allPops, sampler,  index, autocorr, ndim, config, myLog, filenameT = run()
     
               
     
