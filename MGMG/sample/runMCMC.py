@@ -146,10 +146,21 @@ def main():
         configname = FLAGS.config
         #config = importlib.import_module(FLAGS.config, package=None)
     else:
-        shutil.copy(os.path.join(out_path, 'config_original.py'), os.path.join(out_path,'config_tmp.py') )
-        configname = os.path.join(out_path, 'config_tmp')
+        try:
+            configspath=os.path.join(out_path, "configs")
+            print('Creating directory %s' %configspath)
+            os.makedirs(configspath)
+        except FileExistsError:
+            print('Using directory %s for configs files' %configspath)
+        configname='config_tmp'
+        confignameFull = os.path.join(out_path, configname)
+        
+        shutil.copy(os.path.join(out_path, 'config_original.py'), os.path.join(configspath,'config_tmp.py') )
+        #configname = os.path.join(configspath, 'config_tmp')
+        
+        sys.path.append(configspath)
     
-    print('Reading config from %s...' %configname)
+    print('Reading config from %s...' %confignameFull)
     config = importlib.import_module(configname, package=None)
         
 
