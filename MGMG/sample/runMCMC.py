@@ -146,8 +146,8 @@ def main():
         configname = FLAGS.config
         #config = importlib.import_module(FLAGS.config, package=None)
     else:
-        shutil.copy(os.path.join(out_path, 'config_original.py'), 'config_tmp.py', )
-        configname = 'config_tmp'
+        shutil.copy(os.path.join(out_path, 'config_original.py'), os.path.join(out_path,'config_tmp.py') )
+        configname = os.path.join(out_path, 'config_tmp')
     
     print('Reading config from %s...' %configname)
     config = importlib.import_module(configname, package=None)
@@ -482,9 +482,9 @@ def main():
         pool.close()
         sys.exit(0)
     
-    if resume:
+    #if resume:
         # rm config_tmp 'config_tmp.py'
-        os.remove('config_tmp.py')
+    #    os.remove('config_tmp.py')
     
     
 if __name__=='__main__':

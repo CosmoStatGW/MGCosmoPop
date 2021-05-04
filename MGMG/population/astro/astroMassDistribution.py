@@ -178,20 +178,44 @@ class TruncPowerLawMass(BBHDistFunction):
         self.n_params = len(self.params)
     
     
-    def _logpdfm1(self, m1, alpha, ):
+    def _logpdfm1(self, m, alpha, ml, mh):
         '''
         Marginal distribution p(m1)
         '''
-        logp = np.log(m1)*(-alpha)
-        return logp
+       
+        
+        where_nan = np.isnan(m)
+        result = np.empty_like(m)
+        
+        #if where_nan.sum()!=0:
+        result[where_nan]=np.NINF
+        
+        where_compute = (ml < m) & (m < mh )
+        result[~where_compute] = np.NINF
+        
+        m = m[where_compute]
+        result[where_compute] = np.log(m)*(-alpha)
+        
+        return result
     
     
-    def _logpdfm2(self, m2, beta):
+    def _logpdfm2(self, m, beta, ml):
         '''
         Conditional distribution p(m2 | m1)
         '''
-        logp = np.log(m2)*(beta) 
-        return logp
+        where_nan = np.isnan(m)
+        result = np.empty_like(m)
+        
+        #if where_nan.sum()!=0:
+        result[where_nan]=np.NINF
+        
+        where_compute = (ml < m)
+        result[~where_compute] = np.NINF
+        
+        m = m[where_compute]
+        result[where_compute] = np.log(m)*(beta) 
+        
+        return result
     
     
     def logpdf(self, theta, lambdaBBHmass):
@@ -203,7 +227,7 @@ class TruncPowerLawMass(BBHDistFunction):
         
         where_compute = (m2 < m1) & (ml < m2) & (m1 < mh )
      
-        return np.where( where_compute,   self._logpdfm1(m1,alpha, ) + self._logpdfm2(m1, beta) +self._logC(m1, beta, ml) -  self._logNorm( alpha, ml, mh) ,  np.NINF)
+        return np.where( where_compute,   self._logpdfm1(m1, alpha, ml, mh) + self._logpdfm2(m1, beta, ml) +self._logC(m1, beta, ml) -  self._logNorm( alpha, ml, mh) ,  np.NINF)
         
     
     
@@ -308,14 +332,15 @@ class BrokenPowerLawMass(BBHDistFunction):
     
     def _logpdfm1(self, m,  alpha1, alpha2, deltam, ml, mh, b):
         '''
-        Marginal distribution p(m1)
+        Marginal distribution p(m1), not normalised
         '''
         #where_compute = (m < mh) & (m > ml)
         mBreak = self._get_Mbreak( ml, mh, b)
         
         where_nan = np.isnan(m)
         result = np.empty_like(m)
-
+        
+        #if where_nan.sum()!=0:
         result[where_nan]=np.NINF
         
         where_compute = (m <= mh) & (m >= ml) & (~where_nan)

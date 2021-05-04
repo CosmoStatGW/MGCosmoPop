@@ -19,7 +19,7 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 from scipy.interpolate import interp1d
 from scipy.integrate import cumtrapz
 
-from SNRtools import oSNR
+from .SNRtools import oSNR
 import scipy.stats as ss
 
 import Globals
@@ -271,7 +271,8 @@ class Observations(object):
         
     
     
-    def generate_dataset(self,  duty_cycle, tot_time_yrs = 5., chunks = None, seed=1312, save=False, return_vals=True):
+    def generate_dataset(self,  duty_cycle, tot_time_yrs = 5., chunks = None, seed=1312, 
+                         save=False, return_vals=True, return_generated=False):
         
         '''
         Steps is the intermediate obs steps in units of yrs.
@@ -294,7 +295,8 @@ class Observations(object):
         self.allm1s, self.allm2s, self.allzs, self.allthetas = np.array([]),  np.array([]),  np.array([]),  np.array([])
         self.allmc_obs, self.alleta_obs, self.allrho_obs, self.alltheta_obs =  np.array([]),  np.array([]),  np.array([]),  np.array([])
         self.allsigma_mc, self.allsigma_eta, self.allsigma_rho, self.allsigma_theta =  np.array([]),  np.array([]),  np.array([]),  np.array([])
-        
+        if return_generated:
+            self.allm1Gen, self.allm2Gen, self.allzGen = np.array([]), np.array([]), np.array([])
         
         allNexp = []
         allDets = []
@@ -316,6 +318,12 @@ class Observations(object):
             
             print('Generating events in source frame and redshift...')
             m1sGen, m2sGen, zsGen, thetasGen = self._generate_mergers(Nexp_)
+            if return_generated:
+                self.allm1Gen = np.append(self.allm1Gen, m1sGen)
+                self.allm2Gen = np.append(self.allm2Gen, m2sGen)
+                self.allzGen = np.append(self.allzGen, zsGen)
+                
+            
             print('Generated %s events .' %str(m1sGen.shape))
             
             keep = np.random.rand(Nexp_)<duty_cycle
@@ -426,10 +434,10 @@ class Observations(object):
                 cd('sigma_rho', self.allsigma_rho)
                 cd('sigma_t', self.allsigma_theta)
                 
-        if return_vals:
+        if return_vals and not return_generated:
             return self.allm1s, self.allm2s, self.allzs, self.allthetas, self.allmc_obs, self.alleta_obs, self.allrho_obs, self.alltheta_obs, self.allsigma_mc, self.allsigma_eta, self.allsigma_rho, self.allsigma_theta
-        
-    
+        elif return_vals and return_generated:
+            return self.allm1s, self.allm2s, self.allzs, self.allthetas, self.allmc_obs, self.alleta_obs, self.allrho_obs, self.alltheta_obs, self.allsigma_mc, self.allsigma_eta, self.allsigma_rho, self.allsigma_theta, self.allm1Gen, self.allm2Gen, self.allzGen
     
     def _mcetathetarho_to_m1m2thetadl(self, mc, eta, theta, rho):
         
