@@ -126,11 +126,11 @@ def main():
     in_time=time.time()
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", default='', type=str, required=False) # config file
+    parser.add_argument("--config", default='', type=str, required=False) # config file (do not put if resuming)
     parser.add_argument("--fout", default='', type=str, required=True) # output folder 
     parser.add_argument("--resume", default=0, type=int, required=False) # restart chain or not
-    parser.add_argument("--parallelization", default='mpi', type=str, required=False) # output folder 
-    parser.add_argument("--nPools", default=1, type=int, required=False) 
+    parser.add_argument("--parallelization", default='mpi', type=str, required=False) # mpi or pool 
+    parser.add_argument("--nPools", default=1, type=int, required=False) # if using multiprocessing, specify number of pools
     FLAGS = parser.parse_args()
 
     
@@ -138,6 +138,7 @@ def main():
     out_path=os.path.join(Globals.dirName, 'results', fout)
     
     def run():
+    
     
     
         if FLAGS.resume==0:
@@ -164,8 +165,8 @@ def main():
         #configname = os.path.join(configspath, 'config_tmp')
         
             sys.path.append(configspath)
-    
-        print('Reading config from %s...' %confignameFull)
+            print('Reading config from %s...' %confignameFull)
+        
         config = importlib.import_module(configname, package=None)
         if resume:
             from inspect import getmembers, ismodule
