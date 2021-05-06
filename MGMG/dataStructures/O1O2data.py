@@ -13,8 +13,8 @@ import astropy.units as u
 import h5py
 import os
 import sys
-from pesummary.io import read
-import glob
+#from pesummary.io import read
+#import glob
    
 
 PACKAGE_PARENT = '..'

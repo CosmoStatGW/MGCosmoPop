@@ -14,7 +14,7 @@ import h5py
 import os
 import sys
 #from pesummary.io import read
-import glob
+#import glob
    
 
 PACKAGE_PARENT = '..'
