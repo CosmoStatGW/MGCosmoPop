@@ -260,8 +260,8 @@ class TruncPowerLawMass(BBHDistFunction):
         alpha, beta, ml, mh = lambdaBBHmass
 
         
-        pm1 = lambda x: np.exp(self._logpdfm1(x, alpha ))
-        pm2 = lambda x: np.exp(self._logpdfm2(x, beta ))
+        pm1 = lambda x: np.exp(self._logpdfm1(x, alpha, ml, mh ))
+        pm2 = lambda x: np.exp(self._logpdfm2(x, beta, ml ))
         
         m1 = self._sample_pdf(nSamples, pm1, ml, mh)
         #m2 = self._sample_pdf(nSamples, pm2, mMin, mMax)
