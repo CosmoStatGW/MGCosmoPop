@@ -49,6 +49,9 @@ AllpriorLimits =      {   'H0': {    'H0': (20., 140.)},
                           
                           'R0': {'R0': (1e-01 , 1e02)}, # Gpc^-3 yr^-1
                          'lambdaRedshift': { 'lambdaRedshift': (-15., 10.) },
+                          'alphaRedshift': (-15, 15),
+                          'betaRedshift': (0., 15.),
+                          'zp':(0., 4.),
                           
                          'alpha': {'alpha': (-5, 10 )},
                           'beta': {'beta': (-4, 12 ) }, 
@@ -104,8 +107,15 @@ params_mock_BPL_5yr_aLIGOdesignSensitivity = {'H0':67.74, 'Om':0.3075, 'w0':-1.,
                   'lambdaRedshift':2., 'alpha1':1.6, 'alpha2':5.6, 'beta':1.4, 'deltam':5.0, 'ml':4., 'mh':90.0, 'b':0.4}
 
 
-params_mock_BPL_5yr_aLIGOdesignSensitivity_MG = {'H0':67.74, 'Om':0.3075, 'w0':-1., 'Xi0':1.2, 'n':2., 'R0':25.0,
-                  'lambdaRedshift':2., 'alpha1':1.6, 'alpha2':5.6, 'beta':1.4, 'deltam':5.0, 'ml':4., 'mh':90.0, 'b':0.4}
+params_mock_BPL_5yr_aLIGOdesignSensitivity_MG = {'H0':67.74, 'Om':0.3075, 'w0':-1., 
+                                                 'Xi0':1.8, 'n':1.91, 'R0':50.0, 
+                                                 'alphaRedshift':3.,'betaRedshift':2, 'zp':2,
+                                                 
+                                                 'alpha1':1.6, 'alpha2':5.6, 'beta':1.4, 
+                                                 'deltam':5.0, 'ml':4., 'mh':70.0, 'b':0.5}
+
+
+#{'H0':67.74, 'Om':0.3075, 'w0':-1., 'Xi0':1.2, 'n':2., 'R0':25.0,                  'lambdaRedshift':2., 'alpha1':1.6, 'alpha2':5.6, 'beta':1.4, 'deltam':5.0, 'ml':4., 'mh':90.0, 'b':0.4}
 
 
 
@@ -143,7 +153,7 @@ def main():
         
         myPopulations = { 'astro' : { 'mass_function': config.massf,
                                      'spin_distribution': config.spindist,
-                                     'rate': 'simple_pow_law'
+                                     'rate': config.rate#'simple_pow_law'
     
     
                             }
@@ -156,6 +166,8 @@ def main():
             allPops.set_values( params_O3)
         if 'mock_BPL_5yr_aLIGOdesignSensitivity' in config.data:
             allPops.set_values( params_mock_BPL_5yr_aLIGOdesignSensitivity)
+        if 'mock_BPL_5yr_aLIGOdesignSensitivity_MG' in config.data:
+            allPops.set_values( params_mock_BPL_5yr_aLIGOdesignSensitivity_MG)
         
         if units[config.dist_unit]==u.Mpc:
             print('Converting expected value of rate to yr Mpc^-3')

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -a allGoalParams=("H0" "Om" "Xi0" "R0" "alpha1" "muEff")
+declare -a allGoalParams=("H0" "Om" "Xi0" "R0" "alphaRedshift" "betaRedshift" "zp" "alpha1" "alpha2" "beta" "deltam" "ml"  "mh" "b" )
 
 # "H0" "Om" "Xi0" "n"
 # "R0" "lambdaRedshift"
@@ -8,7 +8,7 @@ declare -a allGoalParams=("H0" "Om" "Xi0" "R0" "alpha1" "muEff")
 #  "alpha1" "alpha2" "beta" "deltam" "ml"  "mh" "b" 
 
 
-baseName="testAll_010203_1/"
+baseName="testAll_Xi0-1.8/"
 basedir="../../results/$baseName"
 echo $basedir
 mkdir $basedir
@@ -20,19 +20,20 @@ for par in ${allGoalParams[@]};do
     OUT=$OUTbase.py
     
     cat <<EOF >$OUT
-data=['O1O2', 'O3a']
+data= ['mock_BPL_5yr_aLIGOdesignSensitivity', ] #['O1O2', 'O3a']
 dist_unit = 'Gpc'
 param='$par'
 fout='$baseName$par'
 nObsUse=None
 nSamplesUse=None
 nInjUse=None
-npoints=10
+npoints=20
 massf='broken_pow_law'
 events_use = {'use': None,
           'not_use': ['GW170817', 'GW190814', 'GW190425', 'GW190426', 'GW190719', 'GW190909', 'GW190426_152155', 'GW190719_215514', 'GW190909_114149'] 
           }
 spindist='skip'
+rate='astro-ph'
 Tobs=5.
 EOF
     
