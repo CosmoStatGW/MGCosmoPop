@@ -49,9 +49,9 @@ AllpriorLimits =      {   'H0': {    'H0': (20., 140.)},
                           
                           'R0': {'R0': (1e-01 , 1e02)}, # Gpc^-3 yr^-1
                          'lambdaRedshift': { 'lambdaRedshift': (-15., 10.) },
-                          'alphaRedshift': (-15, 15),
-                          'betaRedshift': (0., 15.),
-                          'zp':(0., 4.),
+                          'alphaRedshift': { 'alphaRedshift': (-15., 15.) },
+                          'betaRedshift':{ 'betaRedshift': (0., 10.) },
+                          'zp':{ 'betaRedshift': (0., 5.) },
                           
                          'alpha': {'alpha': (-5, 10 )},
                           'beta': {'beta': (-4, 12 ) }, 
