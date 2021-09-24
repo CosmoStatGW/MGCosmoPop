@@ -19,10 +19,27 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 from scipy.interpolate import interp1d
 from scipy.integrate import cumtrapz
 
-from .SNRtools import oSNR
+from SNRtools import oSNR
 import scipy.stats as ss
 
 import Globals
+
+
+from scipy.special import erfc, erfcinv
+
+def sample_trunc_gaussian(mu = 1, sigma = 1, lower = 0, size = 1):
+
+    sqrt2 = np.sqrt(2)
+    Phialpha = 0.5*erfc(-(lower-mu)/(sqrt2*sigma))
+    
+    if np.isscalar(mu):
+        arg = Phialpha + np.random.uniform(size=size)*(1-Phialpha)
+        return np.squeeze(mu - sigma*sqrt2*erfcinv(2*arg))
+    else:
+        Phialpha = Phialpha[:,np.newaxis]
+        arg = Phialpha + np.random.uniform(size=(mu.size, size))*(1-Phialpha)
+        
+        return np.squeeze(mu[:,np.newaxis] - sigma[:,np.newaxis]*sqrt2*erfcinv(2*arg))
 
 
 
@@ -86,11 +103,12 @@ class Observations(object):
         
         zz = np.linspace(0, self.zmax, 1000)
         
+        print('rate parameters in _find_Nperyear_expected: %s' %str(lambdaBBHrate))
         dNdz = np.exp(self.allPops.logdN_dz( zz, self.H0base, self.Om0Base, self.w0Base, lambdaBBHrate, self.allPops._pops[0]))
         
         self.Nperyear_expected = np.trapz(dNdz,zz)
         
-        print('Expected number per year: %s'%self.Nperyear_expected)
+        print('Expected number per year between redshift 0 and %s: %s'%(self.zmax, self.Nperyear_expected) )
     
     
     def  _generate_mergers(self, N, verbose=True):
@@ -112,7 +130,7 @@ class Observations(object):
     
     
     
-    def _generate_observations(self, m1s, m2s, zs, theta, verbose=True):
+    def _generate_observations(self, m1s, m2s, zs, theta, verbose=True, eps=0.001):
         
         
         if np.isscalar(m1s) or m1s.ndim==0:
@@ -122,10 +140,10 @@ class Observations(object):
             dim = m1s.shape[0]
         
         ## Get quantities in detector frame
-        
+        print('COSMO PARAMETERS FOR DL: %s' %str([self.H0base, self.Om0Base, self.w0Base, self.Xi0Base, self.nBase]))
         dLs = self.allPops.cosmo.dLGW(zs, self.H0base, self.Om0Base, self.w0Base, self.Xi0Base, self.nBase)
         m1d, m2d, = m1s*(1+zs), m2s*(1+zs)
-        
+        print('Example: z = %s, dLs: %s' %(str(zs[:5]), str(dLs[:5])) )
         oSNRs = self.osnr.get_oSNR(m1d, m2d, dLs)
         SNR = oSNRs*theta
         if verbose:
@@ -135,6 +153,12 @@ class Observations(object):
         
         
         rho_obs = SNR + np.random.randn(dim)
+        out = rho_obs<0
+        print('Imposing observed SNR>0...')
+        while np.any(out):
+            rho_obs[out] = SNR[out]+np.random.randn(rho_obs[out].shape[0])
+            out = rho_obs<0
+        
         sigma_rho = np.ones(dim)
     
         mtot = m1d+m2d
@@ -153,11 +177,20 @@ class Observations(object):
             eta_obs = eta + sigma_eta*np.random.randn(dim)
             out = (eta_obs<0) | (eta_obs>0.25)
             print('Imposing cut on Mc...')
+            #print(eta)
+            #print(sigma_eta)
+            npoints=0
             while np.any(out):
-            #print('out dimension: %s' %str(out.shape) )
-            #print('eta_obs dimension: %s' %str(eta_obs.shape) )
-            #print('sigma_eta dimension: %s' %str(sigma_eta.shape) )
-                eta_obs[out] =  eta[out] + sigma_eta[out]*np.random.randn(eta[out].shape[0])
+                replace =  eta[out] + sigma_eta[out]*np.random.randn(eta[out].shape[0])
+                Nrep = out.sum()
+                if Nrep!=npoints and Nrep<6:
+                    print('N. of points to replace: %s' %str(Nrep))
+                    npoints=Nrep
+                    #if Nrep==1:
+                    #print('eta, sigma eta, rho_obs, m1, m2, z: %s' %str([eta[out], sigma_eta[out], rho_obs[out], m1s[out], m2s[out], zs[out]]) )
+                    replace =  np.random.uniform(low=0, high=0.25, size=1)
+               
+                eta_obs[out] = replace  
                 out = (eta_obs<0) | (eta_obs>0.25)
             assert np.all( (eta_obs>0) & (eta_obs<0.25))
         
@@ -165,9 +198,19 @@ class Observations(object):
             theta_obs = theta + sigma_theta*np.random.randn(dim)
             out = (theta_obs<0) | (theta_obs>1)
             print('Imposing cut on Theta...')
+            npoints=0
             while np.any(out):
-            
-                theta_obs[out] =  theta[out] + sigma_theta[out]*np.random.randn(theta[out].shape[0])
+                Nrep = out.sum()
+                replace=theta[out] + sigma_theta[out]*np.random.randn(theta[out].shape[0])
+                if Nrep!=npoints and Nrep<6:
+                    
+                    print('N. of points to replace: %s' %str(Nrep))
+                    npoints=Nrep
+                    #if Nrep==1:
+                        #print('theta, sigma theta, rho_obs, m1, m2, z: %s' %str([theta[out], sigma_theta[out], rho_obs[out], m1s[out], m2s[out], zs[out]]) )
+                    replace = np.random.uniform(low=0, high=1, size=1)
+                    
+                theta_obs[out] =  replace
                 out = (theta_obs<0) | (theta_obs>1)
             assert np.all( (theta_obs>0) & (theta_obs<1))
         
@@ -207,6 +250,12 @@ class Observations(object):
         SNR = oSNRs*thetas
  
         rho_obs = SNR + np.random.randn(SNR.shape[0])
+        
+        out = rho_obs<0
+        print('Imposing observed SNR>0...')
+        while np.any(out):
+            rho_obs[out] = SNR[out]+np.random.randn(rho_obs[out].shape[0])
+            out = rho_obs<0
         
         
         # Get p_draw

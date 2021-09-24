@@ -180,7 +180,7 @@ class AllPopulations(object):
         '''
         Returns samples from the redshift distribution of all populations. 
         
-        For each population, the redshift distribution id given by
+        For each population, the redshift distribution is given by
         dN/dVdt * dV/dz /(1+z)
 
         '''
@@ -188,6 +188,7 @@ class AllPopulations(object):
         
         LambdaCosmo, LambdaAllPop = self._split_params(Lambda)
         H0, Om0, w0 = self.cosmo._get_values(LambdaCosmo, ['H0', 'Om', 'w0'])
+        print('Cosmo params in _sample_redshift: %s' %(str([H0, Om0, w0])))
         prev=0
         for i,pop in enumerate(self._pops):
             LambdaPop = LambdaAllPop[prev:prev+self._allNParams[i]]

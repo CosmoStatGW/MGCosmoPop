@@ -149,11 +149,17 @@ class Cosmo(object):
             cosmo=FlatwCDM(H0=H0, Om0=Om, w0=w0, Neff=0)
         else:
             cosmo=FlatLambdaCDM(H0=H0, Om0=Om)
+        if Xi0!=1 and n!=0:
             return (cosmo.luminosity_distance(z).to(self.dist_unit).value)*self.Xi(z, Xi0, n)
-
+        else:
+            return cosmo.luminosity_distance(z).to(self.dist_unit).value
 
     def Xi(self, z, Xi0, n):
-        return Xi0+(1-Xi0)/(1+z)**n
+        if Xi0!=1 and n!=0:
+            Xi=Xi0+(1-Xi0)/(1+z)**n
+        else: 
+            Xi=1.
+        return Xi
 
 
     ######################
@@ -172,7 +178,7 @@ class Cosmo(object):
             else:
                 cosmo = FlatwCDM(H0=H0, Om0=Om, w0=w0, Neff=0)
             dLGrid = cosmo.luminosity_distance(self.zGridGlobals).to(self.dist_unit).value
-        z2dL = interpolate.interp1d( dLGrid*self.Xi(self.zGridGlobals, Xi0, n), self.zGridGlobals, kind='cubic', bounds_error=False, fill_value=(0,np.NaN), assume_sorted=True)
+        z2dL = interpolate.interp1d( dLGrid*self.Xi(self.zGridGlobals, Xi0, n), self.zGridGlobals, kind='cubic', bounds_error=False, fill_value=(0,np.NaN), assume_sorted=False)
         return z2dL(r)
 
     def z_from_dLGW(self, dL_GW_val, H0, Om, w0, Xi0, n):

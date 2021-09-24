@@ -136,6 +136,7 @@ class SelectionBiasInjections(SelectionBias):
             Neff = muSq/SigmaSq #np.exp( 2.0*logMu - logSigmaSq)
             if Neff < 4 * Nobs:
                 print('NEED MORE SAMPLES FOR SELECTION EFFECTS! Values of Lambda: %s' %str(Lambda))
+                #return np.INF, 0
         
         #mu = np.exp(logMu.astype('float128'))
         Sigma = np.sqrt(SigmaSq)

@@ -100,25 +100,28 @@ def main():
     
     
     if FLAGS.type=='data':
-        m1s, m2s, zs, thetas, mc_obs, eta_obs, rho_obs, theta_obs, sigma_mc, sigma_eta, sigma_rho, sigma_theta = myObs.generate_dataset(duty_cycle=config.duty_cycle, 
+        m1s, m2s, zs, thetas, mc_obs, eta_obs, rho_obs, theta_obs, sigma_mc, sigma_eta, sigma_rho, sigma_theta, allm1Gen, allm2Gen, allzGen = myObs.generate_dataset(duty_cycle=config.duty_cycle, 
                                                                                                                                     tot_time_yrs=config.tot_time_yrs, 
                                                                                                                                     chunks = config.time_steps,
                                                                                                                                     seed=config.seed, 
-                                                                                                                                    save=True, return_vals=True)
+                                                                                                                                    save=True, return_vals=True, return_generated=True)
 
 
     
-        _ = plt.hist(zs, bins=20, density=True)
+        _ = plt.hist(zs, bins=20, density=True, label='Observed', alpha=0.5)
+        _ = plt.hist(allzGen, bins=20, density=True, label='True', alpha=0.5)
         plt.xlabel('z')
         plt.savefig(os.path.join(out_path, 'zs_dist.pdf') )
         plt.close()
     
-        _ = plt.hist(m1s, bins=20, density=True)
+        _ = plt.hist(m1s, bins=20, density=True, label='Observed', alpha=0.5)
+        _ = plt.hist(allm1Gen, bins=20, density=True, label='True', alpha=0.5)
         plt.xlabel('m1')
         plt.savefig(os.path.join(out_path, 'm1s_dist.pdf') )
         plt.close()
     
-        _ = plt.hist(m2s, bins=20, density=True)
+        _ = plt.hist(m2s, bins=20, density=True, label='Observed', alpha=0.5)
+        _ = plt.hist(allm2Gen, bins=20, density=True, label='Observed', alpha=0.5)
         plt.xlabel('m2')
         plt.savefig(os.path.join(out_path, 'm2s_dist.pdf') )
         plt.close()

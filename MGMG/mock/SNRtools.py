@@ -293,7 +293,7 @@ class oSNR(object):
     
     def get_oSNR(self, m1det, m2det, dL):  
         '''
-        m1det, m2det : masses in detector frame in units of somar mass
+        m1det, m2det : masses in detector frame in units of solar mass
         dL : luminosity distance in Gpc
         '''
         
