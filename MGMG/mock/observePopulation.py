@@ -19,7 +19,7 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 from scipy.interpolate import interp1d
 from scipy.integrate import cumtrapz
 
-from SNRtools import oSNR
+from .SNRtools import oSNR
 import scipy.stats as ss
 
 import Globals
@@ -498,7 +498,7 @@ class Observations(object):
         dl = self.osnr.get_oSNR(m1, m2, np.ones(m1.shape))*theta/rho
     
         mwt = (m1+m2)**2 / (eta**(3.0/5.0)*(m1-m2))
-        dlwt = self.osnr.get_oSNR(m1, m2, np.ones(m1.shape))*theta/(rho*rho)
+        dlwt = dl/rho #self.osnr.get_oSNR(m1, m2, np.ones(m1.shape))*theta/(rho*rho)
     
         wt = mwt*dlwt*self.theta_p(theta)
         wt /= np.max(wt)
@@ -535,7 +535,7 @@ class Observations(object):
         return rho_obs + np.random.randn(size) # Hope nothing negative!
     
     
-    def get_likelihood_samples(self, Nsamples, save=True, nparallel=2):
+    def get_likelihood_samples(self, Nsamples, save=True, nparallel=2, return_vals=False):
         
         #import multiprocessing as multi
         #pool = multi.Pool(processes=nparallel)
@@ -546,6 +546,8 @@ class Observations(object):
         #finally:
         #    pool.close()
         #m1post, m2post, thetapost, dlpost = list(posteriors)#zip(*posteriors)
+        
+        
         
         if save:
             print('Saving to %s '%os.path.join(self.out_dir, 'observations.h5'))
@@ -560,6 +562,9 @@ class Observations(object):
                 pg.create_dataset('m2det', data=np.array(m2post), compression='gzip', shuffle=True, chunks=(1, Nsamples))
                 pg.create_dataset('theta', data=np.array(thetapost), compression='gzip', shuffle=True, chunks=(1, Nsamples))
                 pg.create_dataset('dl', data=np.array(dlpost), compression='gzip', shuffle=True, chunks=(1, Nsamples))
+                
+        if return_vals:
+            return np.array(m1post), np.array(m2post), np.array(thetapost), np.array(dlpost)
     
     
     def _get_likelihood_samples(self, i, Nsamples):
