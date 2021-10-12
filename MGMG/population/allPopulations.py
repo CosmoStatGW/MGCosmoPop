@@ -300,6 +300,7 @@ class AllPopulations(object):
         
         # update values in each object that forms the population
         for pop in self._pops:
+            print('Setting values in populations...')
             pop._set_values(values_dict)
          
         # update values also in this object

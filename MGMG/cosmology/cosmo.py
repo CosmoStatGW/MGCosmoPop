@@ -133,11 +133,24 @@ class Cosmo(object):
         return (self.sPrime(z, Xi0, n)*self.uu(z, Om, w0)+self.s(z, Xi0, n)/self.E(z, Om, w0))*(self.clight/H0)
 
 
-    def log_ddL_dz(self, z, H0, Om0, w0, Xi0, n):
-        #if self.dist_unit==u.Gpc:
-        #    H0*=1e03
-        res =  np.log(self.clight)-np.log(H0)+np.log(self.sPrime(z, Xi0, n)*self.uu(z, Om0, w0)+self.s(z, Xi0, n)/self.E(z, Om0, w0))
-        if self.dist_unit==u.Gpc:
+    def log_ddL_dz(self, z, H0, Om0, w0, Xi0, n, dLGW=None):
+        if self.dist_unit==u.Gpc and dLGW is not None:
+            H0*=1e03
+        
+        if Xi0!=1 and n!=0:
+        
+            if dLGW is None:
+                res =  np.log(self.clight)-np.log(H0)+np.log(self.sPrime(z, Xi0, n)*self.uu(z, Om0, w0)+self.s(z, Xi0, n)/self.E(z, Om0, w0))
+        
+            else:
+                res = np.log(  dLGW*( 1-(n*(1-Xi0))/(Xi0*(1+z)**n+1-Xi0))/(1+z) + self.clight*(1+z)/(H0*self.E(z, Om0, w0)) )
+        else:
+            if dLGW is None:
+                res = np.log(self.clight)-np.log(H0)+np.log(  self.uu(z, Om0, w0) +(1+z)/(self.E(z, Om0, w0)) )
+            else:
+                res = np.log( dLGW/(1+z)+self.clight*(1+z)/(H0*self.E(z, Om0, w0)  )  )
+        
+        if self.dist_unit==u.Gpc and dLGW is None:
             res -= 3*np.log(10)
         return res
 
@@ -146,7 +159,7 @@ class Cosmo(object):
         Modified GW luminosity distance in units set by self.dist_unit (default Mpc)                                                                           
         '''
         if w0!=-1:
-            cosmo=FlatwCDM(H0=H0, Om0=Om, w0=w0, Neff=0)
+            cosmo=FlatwCDM(H0=H0, Om0=Om, w0=w0, )
         else:
             cosmo=FlatLambdaCDM(H0=H0, Om0=Om)
         if Xi0!=1 and n!=0:
@@ -174,9 +187,9 @@ class Cosmo(object):
             dLGrid = self.dLGridGlobals/H0*self.baseValues['H0']
         else:
             if w0==-1:
-                cosmo = FlatLambdaCDM(H0=H0, Om0=Om, Neff=0)
+                cosmo = FlatLambdaCDM(H0=H0, Om0=Om, )
             else:
-                cosmo = FlatwCDM(H0=H0, Om0=Om, w0=w0, Neff=0)
+                cosmo = FlatwCDM(H0=H0, Om0=Om, w0=w0, )
             dLGrid = cosmo.luminosity_distance(self.zGridGlobals).to(self.dist_unit).value
         z2dL = interpolate.interp1d( dLGrid*self.Xi(self.zGridGlobals, Xi0, n), self.zGridGlobals, kind='cubic', bounds_error=False, fill_value=(0,np.NaN), assume_sorted=False)
         return z2dL(r)
