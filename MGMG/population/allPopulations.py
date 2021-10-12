@@ -79,7 +79,7 @@ class AllPopulations(object):
         #return np.where( ~np.isnan(m1), logN, np.NINF)
     
     
-    def log_dN_dm1zdm2zddL(self, m1, m2, z, spins, Tobs, Lambda):
+    def log_dN_dm1zdm2zddL(self, m1, m2, z, spins, Tobs, Lambda, dLGWs=None):
         LambdaCosmo, LambdaAllPop = self._split_params(Lambda)
         H0, Om0, w0, Xi0, n = self.cosmo._get_values(LambdaCosmo, ['H0', 'Om', 'w0', 'Xi0', 'n'])
         where_compute=~np.isnan(m1)
@@ -88,7 +88,7 @@ class AllPopulations(object):
         
         m1, m2, z, spins = m1[where_compute], m2[where_compute], z[where_compute], [s[where_compute] for s in spins]
         
-        logdN = self.log_dN_dm1dm2dz(m1, m2, z, spins, Tobs, Lambda)-self._log_dMsourcedMdet(z) - self.cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n )
+        logdN = self.log_dN_dm1dm2dz(m1, m2, z, spins, Tobs, Lambda)-self._log_dMsourcedMdet(z) - self.cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n , dLGW=dLGWs)
         
         res[where_compute] = logdN
         return res

@@ -267,7 +267,7 @@ class Observations(object):
         #logpm1m2 = self.allPops._pops[0].massDist.logpdf([m1s, m2s], lambdaBBHmass)
         
 
-        log_p_draw = self.allPops.log_dN_dm1zdm2zddL(m1s, m2s, zs, [], 1., self.lambdaBase)-np.log(self.Nperyear_expected) #logdNdz+logpm1m2-2*np.log1p(zs)-self.allPops.cosmo.log_ddL_dz(zs, self.H0base, self.Om0Base, self.w0Base, self.Xi0Base, self.nBase )
+        log_p_draw = self.allPops.log_dN_dm1zdm2zddL(m1s, m2s, zs, [], 1., self.lambdaBase, dLGWs=dLs)-np.log(self.Nperyear_expected) #logdNdz+logpm1m2-2*np.log1p(zs)-self.allPops.cosmo.log_ddL_dz(zs, self.H0base, self.Om0Base, self.w0Base, self.Xi0Base, self.nBase )
         p_draw=np.exp(log_p_draw)
         # Select
         keep = rho_obs>self.rho_th
