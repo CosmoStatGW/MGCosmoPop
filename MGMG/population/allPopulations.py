@@ -88,7 +88,7 @@ class AllPopulations(object):
         
         m1, m2, z, spins = m1[where_compute], m2[where_compute], z[where_compute], [s[where_compute] for s in spins]
         
-        logdN = self.log_dN_dm1dm2dz(m1, m2, z, spins, Tobs, Lambda)-self._log_dMsourcedMdet(z) - self.cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n , dL=dL)
+        logdN = self.log_dN_dm1dm2dz(m1, m2, z, spins, Tobs, Lambda)-self._log_dMsourcedMdet(z) - self.cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n , dL=dL[where_compute])
         
         res[where_compute] = logdN
         return res
