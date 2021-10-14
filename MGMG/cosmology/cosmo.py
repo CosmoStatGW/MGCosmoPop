@@ -38,7 +38,10 @@ class Cosmo(object):
                            'Xi0':r'$\Xi_0$', 
                            'n':r'$n$', }
         
-        self.cosmoGlobals = FlatwCDM( H0=self.baseValues['H0'], Om0=self.baseValues['Om'], w0=self.baseValues['w0'])
+        if self.baseValues['w0']==-1:
+            self.cosmoGlobals = FlatwCDM( H0=self.baseValues['H0'], Om0=self.baseValues['Om'], w0=self.baseValues['w0'])
+        else:
+            self.cosmoGlobals = FlatLambdaCDM( H0=self.baseValues['H0'], Om0=self.baseValues['Om'],)
         self.zGridGlobals = np.concatenate([ np.logspace(start=-15, stop=np.log10(9.99e-09), base=10, num=10), np.logspace(start=-8, stop=np.log10(7.99), base=10, num=1000), np.logspace(start=np.log10(8), stop=5, base=10, num=100)])
         self.dLGridGlobals = self.cosmoGlobals.luminosity_distance(self.zGridGlobals).to(dist_unit).value
 
@@ -85,7 +88,7 @@ class Cosmo(object):
         Dimensionless comoving distance. Does not depend on H0
         '''
         if w0!=-1:
-            return 70/self.clight*FlatwCDM(H0=70, Om0=Om, w0=w0, Neff=0).comoving_distance(z).to(u.Mpc).value
+            return 70/self.clight*FlatwCDM(H0=70, Om0=Om, w0=w0).comoving_distance(z).to(u.Mpc).value
         else:
             return 70/self.clight*FlatLambdaCDM(H0=70, Om0=Om).comoving_distance(z).to(u.Mpc).value
 
@@ -94,7 +97,7 @@ class Cosmo(object):
         E(z). Does not depend on H0
         '''
         if w0!=-1:
-            return FlatwCDM(H0=70, Om0=Om, w0=w0, Neff=0).efunc(z)
+            return FlatwCDM(H0=70, Om0=Om, w0=w0).efunc(z)
         else:
             return FlatLambdaCDM(H0=70, Om0=Om).efunc(z)
 
@@ -105,7 +108,7 @@ class Cosmo(object):
         Jacobian of comoving volume, with correct dimensions [Mpc^3]. Depends on H0
         '''
         if w0!=-1:
-            return 4*np.pi*FlatwCDM(H0=H0, Om0=Om, w0=w0, Neff=0).differential_comoving_volume(z).to(self.dist_unit**3/u.sr).value
+            return 4*np.pi*FlatwCDM(H0=H0, Om0=Om, w0=w0).differential_comoving_volume(z).to(self.dist_unit**3/u.sr).value
         else:
             return 4*np.pi*FlatLambdaCDM(H0=H0, Om0=Om,).differential_comoving_volume(z).to(self.dist_unit**3/u.sr).value
 
@@ -133,25 +136,27 @@ class Cosmo(object):
         return (self.sPrime(z, Xi0, n)*self.uu(z, Om, w0)+self.s(z, Xi0, n)/self.E(z, Om, w0))*(self.clight/H0)
 
 
-    def log_ddL_dz(self, z, H0, Om0, w0, Xi0, n, dLGW=None):
-        if self.dist_unit==u.Gpc and dLGW is not None:
+    def log_ddL_dz(self, z, H0, Om0, w0, Xi0, n, dL=None):
+        if self.dist_unit==u.Gpc: # and dL is not None:
             H0*=1e03
         
         if Xi0!=1 and n!=0:
         
-            if dLGW is None:
+            if dL is None:
                 res =  np.log(self.clight)-np.log(H0)+np.log(self.sPrime(z, Xi0, n)*self.uu(z, Om0, w0)+self.s(z, Xi0, n)/self.E(z, Om0, w0))
         
             else:
-                res = np.log(  dLGW*( 1-(n*(1-Xi0))/(Xi0*(1+z)**n+1-Xi0))/(1+z) + self.clight*(1+z)/(H0*self.E(z, Om0, w0)) )
+                #res = np.log(  dL*( 1-(n*(1-Xi0))/(Xi0*(1+z)**n+1-Xi0))/(1+z) + self.clight*(1+z)/(H0*self.E(z, Om0, w0)) )
+                res = np.log( dL/(1+z)*( 1-(n*(1-Xi0))/(self.Xi(z, Xi0, n)*(1+z)**n) )+self.clight*(1+z)*self.Xi(z, Xi0, n)/(H0*self.E(z, Om0, w0)))
         else:
-            if dLGW is None:
-                res = np.log(self.clight)-np.log(H0)+np.log(  self.uu(z, Om0, w0) +(1+z)/(self.E(z, Om0, w0)) )
+            print('Using GR expression')
+            if dL is None:
+                res = np.log(self.clight)-np.log(H0)+np.log( self.uu(z, Om0, w0) +(1+z)/(self.E(z, Om0, w0)) )
             else:
-                res = np.log( dLGW/(1+z)+self.clight*(1+z)/(H0*self.E(z, Om0, w0)  )  )
+                res = np.log( dL/(1+z) + self.clight*(1+z)/(H0*self.E(z, Om0, w0)) )
         
-        if self.dist_unit==u.Gpc and dLGW is None:
-            res -= 3*np.log(10)
+        #if self.dist_unit==u.Gpc and dL is None:
+        #    res -= 3*np.log(10)
         return res
 
     def dLGW(self, z, H0, Om, w0, Xi0, n):

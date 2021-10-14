@@ -69,7 +69,7 @@ class HyperLikelihood(object):
         
         #logLik_ = np.where( ~np.isnan(m1), self.population.log_dN_dm1zdm2zddL(m1, m2, z, spins, Tobs, Lambda), np.NINF) #m1, m2, z, spins, Tobs, Lambda
         spins=[s[where_compute] for s in spins]
-        logLik_[where_compute] = self.population.log_dN_dm1zdm2zddL(m1[where_compute], m2[where_compute], z[where_compute], spins, Tobs, Lambda, dLGWs=data.dL[where_compute])
+        logLik_[where_compute] = self.population.log_dN_dm1zdm2zddL(m1[where_compute], m2[where_compute], z[where_compute], spins, Tobs, Lambda, dL=data.dL)
         
         # Remove original prior from posterior samples to get the likelihood
         
