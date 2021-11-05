@@ -1,3 +1,8 @@
+#    Copyright (c) 2021 Michele Mancarella <michele.mancarella@unige.ch>
+#
+#    All rights reserved. Use of this source code is governed by a modified BSD
+#    license that can be found in the LICENSE file.
+
 import sys
 import requests
 import numpy as np

@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Mar  4 13:06:04 2021
-
-@author: Michi
-"""
+#    Copyright (c) 2021 Michele Mancarella <michele.mancarella@unige.ch>
+#
+#    All rights reserved. Use of this source code is governed by a modified BSD
+#    license that can be found in the LICENSE file.
  
 from abc import ABC, abstractmethod
 import numpy as np
@@ -130,14 +128,15 @@ class SelectionBiasInjections(SelectionBias):
         muSq = np.exp(2*logMu)
         SigmaSq = np.exp(logSigmaSq)#.astype('float128')
         
-        if Nobs is not None and verbose:
+        if Nobs is not None:# and verbose:
             #muSq = np.exp(2*logMu)
             #SigmaSq = np.exp(logSigmaSq)
             Neff = muSq/SigmaSq #np.exp( 2.0*logMu - logSigmaSq)
             if Neff < 4 * Nobs:
                 print('NEED MORE SAMPLES FOR SELECTION EFFECTS! Values of Lambda: %s' %str(Lambda))
-                #return np.INF, 0
-        
+                # return -inf and reject sample
+                #return mu, np.NINF
+
         #mu = np.exp(logMu.astype('float128'))
         Sigma = np.sqrt(SigmaSq)
         

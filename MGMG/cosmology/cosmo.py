@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Mar  3 11:34:47 2021
+#    Copyright (c) 2021 Michele Mancarella <michele.mancarella@unige.ch>
+#
+#    All rights reserved. Use of this source code is governed by a modified BSD
+#    license that can be found in the LICENSE file.
 
-@author: Michi
-"""
 
 import numpy as np
 from astropy.cosmology import FlatwCDM, FlatLambdaCDM, Planck15
@@ -149,7 +148,7 @@ class Cosmo(object):
                 #res = np.log(  dL*( 1-(n*(1-Xi0))/(Xi0*(1+z)**n+1-Xi0))/(1+z) + self.clight*(1+z)/(H0*self.E(z, Om0, w0)) )
                 res = np.log( dL/(1+z)*( 1-(n*(1-Xi0))/(self.Xi(z, Xi0, n)*(1+z)**n) )+self.clight*(1+z)*self.Xi(z, Xi0, n)/(H0*self.E(z, Om0, w0)))
         else:
-            print('Using GR expression')
+#            print('Using GR expression')
             if dL is None:
                 res = np.log(self.clight)-np.log(H0)+np.log( self.uu(z, Om0, w0) +(1+z)/(self.E(z, Om0, w0)) )
             else:

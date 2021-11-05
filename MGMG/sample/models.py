@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Fri Mar  5 09:01:46 2021
+#    Copyright (c) 2021 Michele Mancarella <michele.mancarella@unige.ch>
+#
+#    All rights reserved. Use of this source code is governed by a modified BSD
+#    license that can be found in the LICENSE file.
 
-@author: Michi
-"""
 import os
 import sys
 import numpy as np
@@ -164,7 +164,7 @@ def build_model( populations, cosmo_args={}, mass_args={}, spin_args={}, rate_ar
 
 
 
-def load_data(dataset_name, nObsUse=None, nSamplesUse=None, nInjUse=None, dist_unit=u.Gpc, data_args ={}, inj_args ={}, Tobs=None):
+def load_data(dataset_name, injections_name, nObsUse=None, nSamplesUse=None, nInjUse=None, dist_unit=u.Gpc, data_args ={}, inj_args ={}, Tobs=None, get_injections=True):
         
         
         ############################################################
@@ -176,18 +176,23 @@ def load_data(dataset_name, nObsUse=None, nSamplesUse=None, nInjUse=None, dist_u
             dataset_key=dataset_name
         
         fname = os.path.join(Globals.dataPath, dataset_name, fnames_data[dataset_key])
-        fnameInj = os.path.join(Globals.dataPath, dataset_name, fnames_inj[dataset_key] )
+        fnameInj = os.path.join(Globals.dataPath, injections_name, fnames_inj[dataset_key] )
         
         if dataset_key=='mock':
             Data = GWMockData(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, dist_unit=dist_unit, Tobs=Tobs)
-            injData = GWMockInjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit, Tobs=Tobs)
+            if get_injections:
+                injData = GWMockInjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit, Tobs=Tobs)
         elif dataset_name=='O3a':
             Data = O3aData(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, dist_unit=dist_unit, **data_args)
-            injData = O3InjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit, **inj_args)
+            if get_injections:
+                injData = O3InjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit, **inj_args)
         elif dataset_name=='O1O2':
             Data = O1O2Data(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, dist_unit=dist_unit, **data_args)
-            injData = O1O2InjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit, **inj_args)
+            if get_injections:
+                injData = O1O2InjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit, **inj_args)
         else:
             raise ValueError('Dataset name not valid')
-        
-        return Data, injData
+        if not get_injections:
+            return Data, None
+        else:
+            return Data, injData

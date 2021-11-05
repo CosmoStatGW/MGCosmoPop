@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Mar  5 08:55:07 2021
+#    Copyright (c) 2021 Michele Mancarella <michele.mancarella@unige.ch>
+#
+#    All rights reserved. Use of this source code is governed by a modified BSD
+#    license that can be found in the LICENSE file.
 
-@author: Michi
-"""
 
 import sys
 import os
@@ -70,12 +69,52 @@ params_O3_GW190814 = {   'R0': 24. ,  # Gpc^-3 yr^-1
 
 
 
-params_mock_BPL_5yr_aLIGOdesignSensitivity = {'H0':67.74, 'Om':0.3075, 'w0':-1., 'Xi0':1., 'n':1.91, 'R0':25.0,
-                  'lambdaRedshift':2., 'alpha1':1.6, 'alpha2':5.6, 'beta':1.4, 'deltam':5.0, 'ml':4., 'mh':90.0, 'b':0.4}
+#params_mock_BPL_5yr_aLIGOdesignSensitivity = {'H0':67.74, 'Om':0.3075, 'w0':-1., 'Xi0':1., 'n':1.91, 'R0':25.0,
+#                  'lambdaRedshift':2., 'alpha1':1.6, 'alpha2':5.6, 'beta':1.4, 'deltam':5.0, 'ml':4., 'mh':90.0, 'b':0.4}
 
 
-params_mock_BPL_5yr_aLIGOdesignSensitivity_MG = {'H0':67.74, 'Om':0.3075, 'w0':-1., 'Xi0':1.2, 'n':2., 'R0':25.0,
-                  'lambdaRedshift':2., 'alpha1':1.6, 'alpha2':5.6, 'beta':1.4, 'deltam':5.0, 'ml':4., 'mh':90.0, 'b':0.4}
+#params_mock_BPL_5yr_aLIGOdesignSensitivity_MG = {'H0':67.74, 'Om':0.3075, 'w0':-1., 'Xi0':1.2, 'n':2., 'R0':25.0,
+#                  'lambdaRedshift':2., 'alpha1':1.6, 'alpha2':5.6, 'beta':1.4, 'deltam':5.0, 'ml':4., 'mh':90.0, 'b':0.4}
+
+params_mock_BPL_5yr_aLIGOdesignSensitivity_MG = {'H0':67.74, 'Om':0.3075, 'w0':-1.,
+                                                 'Xi0':1.8, 'n':1.91, 'R0':50.0,
+                                                 'alphaRedshift':3.,'betaRedshift':2, 'zp':2,
+
+                                                 'alpha1':1.6, 'alpha2':5.6, 'beta':1.4,
+                                                 'deltam':5.0, 'ml':4., 'mh':70.0, 'b':0.5}
+
+
+params_mock_BPL_5yr_GR = {'H0':67.74, 'Om':0.3075, 'w0':-1, 'Xi0':1.0,
+                          'n':2,'R0': 50.0,'alphaRedshift': 3.0, 'betaRedshift':2.0,'zp': 2.0,
+                          'alpha1':1.6, 'alpha2':5.6,'beta': 1.4, 'deltam':5.0, 'ml':4.0,'mh': 70.0, 'b':0.5 }
+
+
+
+params_mock = {'H0':67.74, 'Om':0.3075, 'w0':-1., 'Xi0':1., 'n':2., 'R0':60.0,
+                  'lambdaRedshift':3., 'alpha':0.75, 'beta': 0., 'ml':5, 'mh':45, 'sh':0.1, 'sl':0.1
+
+}
+
+params_mock_BPL_5yr_GR_1410 = {'H0':67.74, 'Om':0.3075, 'w0':-1, 'Xi0':1.,
+                               'n':2,'R0': 30.0,'alphaRedshift': 2.7, 'betaRedshift':2.0,'zp': 2.0,
+                               'alpha1':1.6, 'alpha2':5.6,'beta': 1.4, 'deltam':5.0, 'ml':4.0,'mh': 70.0, 'b':0.5 }
+
+params_mock_BPL_5yr_MG_1410 = {'H0':67.74, 'Om':0.3075, 'w0':-1, 'Xi0':1.8,
+                               'n':2,'R0': 30.0,'alphaRedshift': 2.7, 'betaRedshift':2.0,'zp': 2.0,
+                               'alpha1':1.6, 'alpha2':5.6,'beta': 1.4, 'deltam':5.0, 'ml':4.0,'mh': 70.0, 'b':0.5 }
+
+params_mock_BPL_5yr_GR_2010 ={'H0':67.74, 'Om':0.3075, 'w0':-1, 'Xi0':1., 'n':2,
+                            'R0': 30. ,
+                              'alphaRedshift': 2.7 , 'betaRedshift': 4, 'zp':1.5,
+                              'alpha1':1.6, 'alpha2':5.6,'beta': 1.4, 'deltam':5.0, 'ml':4.0,'mh': 70.0, 'b':0.5
+                              
+                              }
+params_mock_BPL_5yr_MG_2010 ={'H0':67.74, 'Om':0.3075, 'w0':-1, 'Xi0':1.8, 'n':2,
+                            'R0': 30. ,
+                              'alphaRedshift': 2.7 , 'betaRedshift': 4, 'zp':1.5,
+                              'alpha1':1.6, 'alpha2':5.6,'beta': 1.4, 'deltam':5.0, 'ml':4.0,'mh': 70.0, 'b':0.5
+                            
+                              }
 
 
 which_spins={ 'gauss':'chiEff',
@@ -244,6 +283,20 @@ def main():
             else:
                 print('GW190814 is included in the analysis. Setting expected values to %s' %str(params_O3_GW190814))
                 allPops.set_values( params_O3_GW190814)
+
+        else:
+            assert len(config.dataset_names)==1
+            if 'mock_BPL_5yr_aLIGOdesignSensitivity'==config.dataset_names[0]:
+                allPops.set_values( params_mock_BPL_5yr_aLIGOdesignSensitivity)
+            elif 'mock_BPL_5yr_aLIGOdesignSensitivity_MG'==config.dataset_names[0]:
+                allPops.set_values( params_mock_BPL_5yr_aLIGOdesignSensitivity_MG)
+            elif 'mock'==config.dataset_names[0]:
+                allPops.set_values( params_mock)
+            elif ('mock_BPL_5yr_GR'==config.dataset_names[0]) or ('mock_BPL5yrs_GR_2410'==config.dataset_names[0]) or ('mock_BPL_5yr_GR_1'==config.dataset_names[0]):
+                allPops.set_values( params_mock_BPL_5yr_GR)
+
+
+
         
         # Fix values of the parameters not included in the MCMC
         allPops.set_values( config.params_fixed)
@@ -267,26 +320,35 @@ def main():
         
         allData=[]
         allInjData=[]
-        for dataset_name in config.dataset_names:
+        for i,dataset_name in enumerate(config.dataset_names):
             
             if dataset_name in ('O3a', 'O1O2'):
                 O3_use=config.O3_use
             elif 'mock' in dataset_name:
                 O3_use=None
-        
-            print('\nLoading data from %s catalogue...' %dataset_name) 
+            try:
+                injections_name_ = config.injections_names[i]
+            except AttributeError:
+                injections_name_ = dataset_name
+            try:
+                use_selection_bias = config.use_selection_bias
+            except AttributeError:
+                use_selection_bias=True
+
             
+            print('\nLoading data from %s catalogue...' %dataset_name) 
+            print('\nLoading injections from %s...' %injections_name_)
             # This is a hack because the code does not yes support the option of different populations with different spin models
             # To be fixed in case is needed
             spindist = config.populations[list(config.populations.keys())[0]]['spin_distribution']
             
             
-            Data, injData = load_data(dataset_name, 
+            Data, injData = load_data(dataset_name, injections_name_, 
                                       nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, nInjUse=config.nInjUse, 
                                       dist_unit=units[config.dist_unit], 
                                       data_args={'events_use':O3_use, 'which_spins':which_spins[spindist]}, 
                                       inj_args={'which_spins':which_spins[spindist] },
-                                      Tobs=config.Tobs)
+                                      Tobs=config.Tobs, get_injections = use_selection_bias)
             allData.append(Data)
             allInjData.append(injData)
         
@@ -307,8 +369,11 @@ def main():
         
         myLik = HyperLikelihood(allPops, allData, config.params_inference )
         
-        selBias = SelectionBiasInjections( allPops, allInjData, config.params_inference, get_uncertainty=config.include_sel_uncertainty )
-        
+
+        if use_selection_bias:
+            selBias = SelectionBiasInjections( allPops, allInjData, config.params_inference, get_uncertainty=use_selection_bias )
+        else: 
+            selBias = None
         myPost = Posterior(myLik, myPrior, selBias)
     
 
@@ -339,7 +404,8 @@ def main():
         
     
         autocorr_fname = os.path.join(out_path, "autocorr.txt")
-    
+        accF_fname  = os.path.join(out_path, "acceptance_fraction.txt")
+
         if config.telegram_notifications:
             notify_start(config.telegram_id, config.telegram_bot_token, filenameT, fout, config.nwalkers, ndim, config.params_inference, config.max_steps)
     
@@ -355,12 +421,21 @@ def main():
         # Track autocorrelation time
         index = 0
         autocorr = np.empty(config.max_steps)
+        accF = np.empty(config.max_steps)
         if resume:
-            autocorr_old=np.loadtxt(autocorr_fname)
-            index  =len(autocorr_old)
-            autocorr[:index] = autocorr_old
-            #index+=1
-        
+            try:
+                autocorr_old=np.loadtxt(autocorr_fname)
+                index  =len(autocorr_old)
+                autocorr[:index] = autocorr_old
+            except TypeError:
+                print('No points in older autocorrelation file')
+            try:
+                accF_old = np.loadtxt(accF_fname)
+                index_1 = len(accF_old)
+                #assert index_1 ==index
+                accF[:index_1] = accF_old
+            except TypeError:
+                print('No points in older acceptance fraction file file')
         old_tau = np.inf
 
         # Sample
@@ -380,16 +455,20 @@ def main():
                     converged &= np.all(np.abs(old_tau - tau) / tau < config.convergence_percVariation)
                     
                 autocorr[index] = np.mean(tau)
+                accF[index] = np.mean(sampler.acceptance_fraction)
                 index +=1
                 print('Step n %s. Check autocorrelation: ' %(index*100))
                 print(tau)
                 np.savetxt(autocorr_fname, autocorr[:index])
-        
+                np.savetxt(accF_fname, accF[:index])
+                print("Mean acceptance fraction: {0:.3f}".format(np.mean(sampler.acceptance_fraction)))
+                
                 
                 
                 if config.telegram_notifications:
                     N=len(sampler.get_chain())
                     utils.telegram_bot_sendtext( "%s: step No.  %s, converged=%s, N/%s=%s, burnin=%s" %(filenameT, sampler.iteration, converged, config.convergence_ntaus, N/config.convergence_ntaus, burnin ), config.telegram_id, config.telegram_bot_token)
+                    utils.telegram_bot_sendtext("Mean acceptance fraction: {0:.3f}".format(np.mean(sampler.acceptance_fraction)), config.telegram_id, config.telegram_bot_token)
                 
                 if converged:
                     print('Chain has converged. Stopping. ')

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Mar  4 13:18:13 2021
+#    Copyright (c) 2021 Michele Mancarella <michele.mancarella@unige.ch>
+#
+#    All rights reserved. Use of this source code is governed by a modified BSD
+#    license that can be found in the LICENSE file.
 
-@author: Michi
-"""
 import numpy as np
 
 
@@ -26,9 +26,9 @@ class Posterior(object):
         self.prior = prior
         self.selectionBias = selectionBias
         #self.params_inference = params_inference
+
         
-        
-    def logPosterior(self, Lambda_test, return_all=False, **kwargs):
+    def logPosterior(self, Lambda_test, return_all=False):
         
         # Compute prior
         lp = self.prior.logPrior(Lambda_test)
@@ -43,10 +43,17 @@ class Posterior(object):
         
         #logll = np.log(ll)
         
+
+        
         # Compute selection bias
         # Includes uncertainty on MC estimation of the selection effects if required. err is =zero if we required to ignore it.
-        mus, errs = self.selectionBias.Ndet(Lambda_test, **kwargs)
-        
+        if self.selectionBias is not None:
+            mus, errs = self.selectionBias.Ndet(Lambda_test, allNobs=[d.Nobs for d in self.hyperLikelihood.data ]) #**kwargs)
+        else:
+            Lambda = self.hyperLikelihood.population.get_Lambda(Lambda_test, self.hyperLikelihood.params_inference )
+            mus = [ self.hyperLikelihood.population.Nperyear_expected(Lambda)*self.hyperLikelihood._getTobs(self.hyperLikelihood.data[i]) for i in range(len(lls))]
+            errs = [0 for _ in range(len(lls))]
+            
         #logNdet = logdiffexp(logMu, logErr )
         logPosts = np.zeros(len(lls))
         for i in range(len(lls)):

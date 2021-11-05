@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Mar  4 13:41:18 2021
-
-@author: Michi
-"""
+#    Copyright (c) 2021 Michele Mancarella <michele.mancarella@unige.ch>
+#
+#    All rights reserved. Use of this source code is governed by a modified BSD
+#    license that can be found in the LICENSE file.
  
 from .ABSdata import Data
 
@@ -87,9 +85,9 @@ class GWMockInjectionsData(Data):
     def __init__(self, fname, nInjUse=None,  dist_unit=u.Gpc, Tobs=2.5 ):
         
         self.dist_unit=dist_unit
-        self.m1z, self.m2z, self.dL, self.weights_sel, self.N_gen = self._load_data(fname, nInjUse )        
+        self.m1z, self.m2z, self.dL, self.weights_sel, self.log_weights_sel, self.N_gen = self._load_data(fname, nInjUse )
         self.logN_gen = np.log(self.N_gen)
-        self.log_weights_sel = np.log(self.weights_sel)
+        #self.log_weights_sel = np.log(self.weights_sel)
         assert (self.m1z > 0).all()
         assert (self.m2z > 0).all()
         assert (self.dL > 0).all()
@@ -106,7 +104,7 @@ class GWMockInjectionsData(Data):
     def get_theta(self):
         return np.array( [self.m1z, self.m2z, self.dL  ] )  
     
-    def _load_data(self, fname, nInjUse,):
+    def _load_data(self, fname, nInjUse=None):
         print('Loading injections...')
         with h5py.File(fname, 'r') as f:
         
@@ -114,13 +112,22 @@ class GWMockInjectionsData(Data):
                 m1_sel = np.array(f['m1det'])[:nInjUse]
                 m2_sel = np.array(f['m2det'])[:nInjUse]
                 dl_sel = np.array(f['dl'])[:nInjUse]
-                weights_sel = np.array(f['wt'])[:nInjUse]
+                try:
+                    weights_sel = np.array(f['wt'])[:nInjUse]
+                    log_weights_sel = np.log(weights_sel)
+                except KeyError:
+                    log_weights_sel = np.array(f['logwt'])[:nInjUse]
+                    weights_sel=None
             else:
                 m1_sel = np.array(f['m1det'])
                 m2_sel = np.array(f['m2det'])
                 dl_sel = np.array(f['dl'])
-                weights_sel = np.array(f['wt'])
-        
+                try:
+                    weights_sel = np.array(f['wt'])
+                    log_weights_sel = np.log(weights_sel)
+                except KeyError:
+                    log_weights_sel = np.array(f['logwt'])[:nInjUse]
+                    weights_sel = None
             N_gen = f.attrs['N_gen']
         if self.dist_unit==u.Mpc:
             dl_sel*=1e03
@@ -132,12 +139,15 @@ class GWMockInjectionsData(Data):
         keep = m1_sel!=m2_sel
         throw = ~keep
         print('Dropping %s points with exactly equal masses' %str(throw.sum()) )
+        N_gen -= throw.sum()
+        if weights_sel is not None:
+            weights_sel=weights_sel[keep]
         
-        
-        print('Max redshift of injections: %s' %self.max_z)
+        print('Max redshift of injections assuming Planck 15 cosmology: %s' %self.max_z)
         print('Number of total injections: %s' %N_gen)
-        print('Number of detected injections: %s' %weights_sel[keep].shape[0])
-        return m1_sel[keep], m2_sel[keep], dl_sel[keep], weights_sel[keep] , N_gen
+        print('Number of detected injections: %s' %dl_sel[keep].shape[0])
+        
+        return m1_sel[keep], m2_sel[keep], dl_sel[keep], weights_sel, log_weights_sel[keep] , N_gen
       
     
     def originalMassPrior(self):
