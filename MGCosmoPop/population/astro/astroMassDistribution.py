@@ -100,18 +100,7 @@ class AstroSmoothPowerLawMass(BBHDistFunction):
         
        
     def _logf_smooth(self, m, ml=5, sl=0.1, mh=45, sh=0.1):
-        
-        #mmin = ml-20*sl
-        #mmax = mh + 20*sh
-        
-        #maskL = m <= mmin #+ eps
-        #maskU = m >= mmax #- eps
-        #s = np.empty_like(m)
-        #s[maskL] = np.NINF
-        #s[maskU] = 0
-        #maskM = ~(maskL | maskU)
-        #s[maskM] = np.log(ss.norm().cdf((np.log(m[maskM])-np.log(ml))/sl))+np.log((1-ss.norm().cdf((np.log(m[maskM])-np.log(mh))/sh)))
-        
+                
         return np.log(ss.norm().cdf((np.log(m)-np.log(ml))/sl))+np.log((1-ss.norm().cdf((np.log(m)-np.log(mh))/sh)))
        
     
@@ -134,12 +123,11 @@ class AstroSmoothPowerLawMass(BBHDistFunction):
         pm2 = lambda x: np.exp(self._logpdfm2(x, beta, ml, sl, mh, sh ))
         
         m1 = self._sample_pdf(nSamples, pm1, mMin, mMax)
-        #m2 = self._sample_pdf(nSamples, pm2, mMin, mMax)
         m2 = self._sample_vector_upper(pm2, mMin, m1)
         
             
         return m1, m2
-        #raise NotImplementedError()
+
     
 
 
@@ -185,7 +173,7 @@ class TruncPowerLawMass(BBHDistFunction):
         where_nan = np.isnan(m)
         result = np.empty_like(m)
         
-        #if where_nan.sum()!=0:
+
         result[where_nan]=np.NINF
         
         where_compute = (ml < m) & (m < mh )
@@ -204,7 +192,7 @@ class TruncPowerLawMass(BBHDistFunction):
         where_nan = np.isnan(m)
         result = np.empty_like(m)
         
-        #if where_nan.sum()!=0:
+
         result[where_nan]=np.NINF
         
         where_compute = (ml < m)
@@ -248,7 +236,7 @@ class TruncPowerLawMass(BBHDistFunction):
         '''
         if (alpha < 1) & (alpha!=0):
             return -np.log1p(-alpha)+utils.logdiffexp( (1-alpha)*np.log(mh), (1-alpha)*np.log(ml) ) #(1 - alpha) / (mh ** (1 - alpha) - ml ** (1 - alpha))
-        #return 1 / np.log(mh / ml)
+
         elif (alpha > 1) :
             return -np.log(alpha-1)+utils.logdiffexp(  (1-alpha)*np.log(ml), (1-alpha)*np.log(mh) )
         raise ValueError
@@ -332,13 +320,12 @@ class BrokenPowerLawMass(BBHDistFunction):
         '''
         Marginal distribution p(m1), not normalised
         '''
-        #where_compute = (m < mh) & (m > ml)
+
         mBreak = self._get_Mbreak( ml, mh, b)
         
         where_nan = np.isnan(m)
         result = np.empty_like(m)
         
-        #if where_nan.sum()!=0:
         result[where_nan]=np.NINF
         
         where_compute = (m <= mh) & (m >= ml) & (~where_nan)
@@ -348,7 +335,7 @@ class BrokenPowerLawMass(BBHDistFunction):
         result[where_compute] = np.where(m < mBreak, np.log(m)*(-alpha1)+self._logS(m, deltam, ml), np.log(mBreak)*(-alpha1+alpha2)+np.log(m)*(-alpha2)+self._logS(m, deltam, ml) )
         
         return result
-        #return np.where( ~np.isnan(m), np.where((m < mh) & (m > ml), np.where(m < mBreak, np.log(m)*(-alpha1)+self._logS(m, deltam, ml), np.log(mBreak)*(-alpha1+alpha2)+np.log(m)*(-alpha2)+self._logS(m, deltam, ml) ), np.NINF), np.NINF)
+        
     
     
     def _logpdfm2(self, m2, beta, deltam, ml):
@@ -366,8 +353,7 @@ class BrokenPowerLawMass(BBHDistFunction):
         m2 = m2[where_compute]
         result[where_compute] = np.log(m2)*(beta)+self._logS(m2, deltam, ml)
         return result
-        #where_compute = (ml< m2) #m2 > ml
-        #return np.where( ~np.isnan(m2), np.where( ml< m2, np.log(m2)*(beta)+self._logS(m2, deltam, ml) , np.NINF),  np.NINF)
+        
     
     
     def logpdf(self, theta, lambdaBBHmass, **kwargs):
@@ -392,8 +378,7 @@ class BrokenPowerLawMass(BBHDistFunction):
         result[where_compute] = self._logpdfm1(m1,  alpha1, alpha2, deltam, ml, mh, b ) + self._logpdfm2(m2, beta, deltam, ml) + self._logC(m1, beta, deltam,  ml, **kwargs)-  self._logNorm( alpha1, alpha2, deltam, ml, mh, b,)
         return result
         
-        #where_compute = (m2 < m1) & (ml< m2) & (m1 < mh )
-        #return np.where( ~np.isnan(m1), np.where( (m2 < m1) & (ml< m2) & (m1 < mh ),   self._logpdfm1(m1,  alpha1, alpha2, deltam, ml, mh, b ) + self._logpdfm2(m2, beta, deltam, ml) + self._logC(m1, beta, deltam,  ml, **kwargs)-  self._logNorm( alpha1, alpha2, deltam, ml, mh, b,) ,  np.NINF),  np.NINF)
+        
         
     
     
@@ -407,13 +392,12 @@ class BrokenPowerLawMass(BBHDistFunction):
   
         p2 = np.exp(self._logpdfm2( xx , beta, deltam, ml))
         cdf = cumtrapz(p2, xx)
-        #return np.where( ~np.isnan(m), np.where( m>2*ml, -np.log( np.interp(m, xx[1:], cdf) ), self._logCexact(m, beta, deltam, ml,)), np.NINF) #np.where( ~np.isnan(m), -np.log( np.interp(m, xx[1:], cdf) ) , np.NINF)
+        
         where_compute = ~np.isnan(m)
         where_exact = m <exact_th*ml
-        #print('where_exact: %s' %where_exact)
-        #print('m at where_exact: %s' %m[where_exact])
+        
         where_approx = (~where_exact) & (where_compute)
-        #print('where_approx: %s' %where_approx)
+        
         
         result = np.empty_like(m)
         
@@ -427,28 +411,17 @@ class BrokenPowerLawMass(BBHDistFunction):
     
     def _logCexact(self, m, beta, deltam, ml, res=1000):
         result=[]
-    #print(m)
+
         for mup in m:
-        #print(type(mup))
-        #print(res)
+
             xx = np.linspace(ml, mup, res)
             p2 = np.exp(self._logpdfm2( xx , beta, deltam, ml))
             result.append(-np.log(np.trapz(p2,xx)) )
-    #np.trapz(p2,xx)
-    #resFull = 1/np.trapz(p2,xx)
+
     
         return np.array(result)
         
-        #if beta>-1:
-        #    return np.log1p(beta)-utils.logdiffexp((1+beta)*np.log(m), (1+beta)*np.log(ml)) # -beta*np.log(m)
-        #elif beta<-1:
-        #    return +np.log(-1-beta)-utils.logdiffexp( (1+beta)*np.log(ml), (1+beta)*np.log(m)) #-beta*np.log(m)
-        #raise ValueError # 1 / m / np.log(m / ml)
-        
-        #x = np.linspace(ml, m, res)
-        #cdf = np.cumsum(np.exp(self._logpdfm2(x, beta, deltam, ml)))
-        #res= cdf[-1]*(x[1]-x[0])
-        #return -np.log(res)
+
 
     def _logNorm(self, alpha1, alpha2, deltam, ml, mh, b , res=200):
         '''
@@ -456,17 +429,10 @@ class BrokenPowerLawMass(BBHDistFunction):
 
         '''
         
-        #ms = np.exp(np.linspace(np.log(1), np.log(100), res))
-        #M1S, M2S = np.meshgrid(ms, ms, indexing='ij')
-        #PS = np.where( M2S <= M1S, np.exp(self._logpdfm1(M1S, alpha1, alpha2, deltam, ml,  mh, b)+self._logpdfm2( M2S, beta, deltam, ml) +   self._logC( M1S, beta, deltam, ml, res = 200, exact_th=0. ) ), 0) 
-        #normPS = np.trapz(np.trapz(PS, M2S, axis=1), ms, axis=0)
-        #return np.log(normPS) 
-        
-        #ms = np.logspace( np.log10(ml-ml/20), np.log10(mh+mh/20), res ) #np.linspace(0., mh+mh/5, res) #np.exp(np.linspace(np.log(ml), np.log(mh), res))
         
         mbr = self._get_Mbreak( ml, mh, b)
         
-        #ms1 = np.logspace( np.log10(0.5), np.log10(ml+deltam+deltam/10), 200)
+
         ms1 = np.linspace(1., ml+deltam+deltam/10, 200)
         ms2 = np.linspace( ml+deltam+deltam/10+1e-01, mbr-mbr/10, int(res/2) )
         ms3= np.linspace( mbr-mbr/10+1e-01, mbr+mbr/10, 50 )
@@ -477,12 +443,6 @@ class BrokenPowerLawMass(BBHDistFunction):
         p1 = np.exp(self._logpdfm1( ms ,alpha1, alpha2, deltam, ml, mh, b ))
         return np.log(np.trapz(p1,ms))
         
-        
-        #mbr = self._get_Mbreak( ml, mh, b)
-        
-        #x1 = ( mbr**(1-alpha1) - ml**(1-alpha1))/(1-alpha1)
-        #x2 = mbr**(alpha2-alpha1)*(mh**(1-alpha2) - mbr**(1-alpha2))/(1-alpha2)
-        #return np.log(x1+x2)
     
     
     def _logNorm1(self, alpha1, alpha2, deltam, ml, mh, b ):
@@ -498,13 +458,12 @@ class BrokenPowerLawMass(BBHDistFunction):
         if (alpha1 < 1) & (alpha2<1) & (alpha1 != 0) & (alpha2!= 0) :
             x1 = -np.log1p(-alpha1)
             x2 = -np.log1p(-alpha2)
-            #return -np.log1p(-alpha1)-np.log1p(-alpha2)+np.log( mbr**(1-alpha1)*(alpha2-alpha1)-ml**(1-alpha1)*(1-alpha2) +mh**(1-alpha2)*mbr**(alpha2-alpha1)*(1-alpha1) )
+
         elif (alpha1 > 1) & (alpha2<1) :
             x1 = -np.log(alpha1-1)
             x2 = -np.log1p(-alpha2)
-            #return -np.log(alpha1-1)-np.log1p(-alpha2)+np.log( mbr**(1-alpha1)*(alpha2-alpha1)-ml**(1-alpha1)*(1-alpha2) +mh**(1-alpha2)*mbr**(alpha2-alpha1)*(1-alpha1) )
+
         elif  (alpha1 < 1) & (alpha2>1) :   
-            #return -np.log(alpha1-1)-np.log(alpha2-1)+np.log( mbr**(1-alpha1)*(alpha2-alpha1)-ml**(1-alpha1)*(1-alpha2) +mh**(1-alpha2)*mbr**(alpha2-alpha1)*(1-alpha1) )
             x1 = -np.log1p(-alpha1)
             x2 = -np.log(alpha2-1)
         elif (alpha1 > 1) & (alpha2>1):
@@ -515,12 +474,6 @@ class BrokenPowerLawMass(BBHDistFunction):
         
         return x1+x2+x3
         
-        #-np.log1p(-alpha1)+utils.logdiffexp( (1-alpha1)*np.log(mbr), (1-alpha1)*np.log(ml) ) 
-        #return 1 / np.log(mh / ml)
-        #elif (alpha > 1) :
-        #    return -np.log(alpha-1)+utils.logdiffexp(  (1-alpha)*np.log(ml), (1-alpha)*np.log(mh) )
-        #raise ValueError
-        #return 1
     
     
     def sample(self, nSamples, lambdaBBHmass, mMin=5, mMax=100):
@@ -531,7 +484,6 @@ class BrokenPowerLawMass(BBHDistFunction):
         pm2 = lambda x: np.exp(self._logpdfm2(x,  beta, deltam, ml ))
         
         m1 = self._sample_pdf(nSamples, pm1, mMin, mMax)
-        #m2 = self._sample_pdf(nSamples, pm2, mMin, mMax)
         m2 = self._sample_vector_upper(pm2, mMin, m1)
         assert(m2<=m1).all() 
         assert(m2>=ml).all() 
