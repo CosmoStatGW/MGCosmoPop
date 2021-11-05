@@ -5,13 +5,18 @@ This package implements a hierarchical bayesian framework for constraining the s
 Developed by [Michele Mancarella](<https://github.com/Mik3M4n>).
 
 
+Here we show the analysis of the GWTC-2 catalog  with a BBH population model given by a broken power law mass distribution using MGCosmoPop, and compare to the result of the LVC. See [the LVC paper](https://arxiv.org/abs/2010.14533) for details. We compare the LVC result (blue) to the result obtained with this code using the LVC injections for computing selection effects (green) and using this code and our own injections (red).
+
+![alt text](https://github.com/CosmoStatGW/MGCosmoPop/blob/master/R0_lambda_alpha1_alpha2_beta_deltam_ml_mh_b_corner_local_LVC.png?raw=true)
+
+
 ## Summary
 
 
 * [Overview and code organisation](https://github.com/CosmoStatGW/MGCosmoPop#Overview-and-code-organisation)
 * [Data](https://github.com/CosmoStatGW/MGCosmoPop#Data)
 * [Usage](https://github.com/CosmoStatGW/MGCosmoPop#Usage)
-*  [Citation](https://github.com/CosmoStatGW/MGCosmoPop#citation)
+
 
 
 
@@ -109,3 +114,5 @@ Coming soon...
 ## Usage
 
 An introductory notebook is available in notebooks/
+
+
