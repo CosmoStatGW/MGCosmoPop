@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Mar  2 16:19:57 2021
+#
+#    Copyright (c) 2021 Michele Mancarella <michele.mancarella@unige.ch>
+#
+#    All rights reserved. Use of this source code is governed by a modified BSD
+#    license that can be found in the LICENSE file.
 
-@author: Michi
-"""
+
+
+
 #import astropy.units as u
 #import numpy as np
 #import scipy.stats as ss
