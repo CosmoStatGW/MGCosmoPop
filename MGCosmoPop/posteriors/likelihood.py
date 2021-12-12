@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
-#    Copyright (c) 2021 Michele Mancarella <michele.mancarella@unige.ch>
-#
-#    All rights reserved. Use of this source code is governed by a modified BSD
-#    license that can be found in the LICENSE file.
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Mar  4 11:54:06 2021
 
+@author: Michi
+"""
 import numpy as np
 
+def logdiffexp(x, y):
+    '''                                                                                                                                                                      
+    computes log( e^x - e^y)                                                                                                                                                 
+    '''
+    return x + np.log1p(-np.exp(y-x))
 
 
 
@@ -16,7 +22,7 @@ class HyperLikelihood(object):
     marginalised over the GW parameters
     
     '''
-    def __init__(self, population, data, params_inference ):
+    def __init__(self, population, data, params_inference, safety_factor=100, verbose=False):
         '''
         
 
@@ -30,7 +36,8 @@ class HyperLikelihood(object):
         self.population=population
         self.data = data # list of data objects
         self.params_inference=params_inference
-    
+        self.safety_factor = safety_factor
+        self.verbose=verbose
     
     def _get_mass_redshift(self, Lambda, data):
         
@@ -50,7 +57,7 @@ class HyperLikelihood(object):
         return data.Tobs
      
     
-    def _logLik(self, Lambda_test, data):
+    def _logLik(self, Lambda_test, data,):
         """
         Returns log likelihood for each dataset
         """
@@ -70,8 +77,7 @@ class HyperLikelihood(object):
         spins=[s[where_compute] for s in spins]
         logLik_[where_compute] = self.population.log_dN_dm1zdm2zddL(m1[where_compute], m2[where_compute], z[where_compute], spins, Tobs, Lambda, dL=data.dL[where_compute])
         
-        # Remove original prior from posterior samples to get the likelihood
-        
+        # Remove original prior from posterior samples to get the likelihood        
         logLik_ -= data.logOrMassPrior()
         logLik_ -= data.logOrDistPrior()
         
@@ -79,20 +85,29 @@ class HyperLikelihood(object):
         # mean over posterior samples ~ marginalise over GW parameters for every observation
         allLogLiks = np.logaddexp.reduce(logLik_, axis=-1)-data.logNsamples 
         
-        # add log likelihoods for all observations
-        ll = allLogLiks.sum() 
-   
-        if np.isnan(ll):
-            raise ValueError('NaN value for logLik. Values of Lambda: %s' %(str(Lambda) ) )
+        # Now allLogLiks has shape=n. of observations
+        # Check number of effective samples
+        logs2 = ( np.logaddexp.reduce(2*logLik_, axis=-1) -2*data.logNsamples)
+        logSigmaSq = logdiffexp( logs2, 2.0*allLogLiks - data.logNsamples)
+        Neff = np.exp( 2.0*allLogLiks - logSigmaSq)
+        if np.any(Neff<self.safety_factor):
+            if self.verbose:
+                print('Not enough samples to safely evaluate the likelihood. Neff: %s at position(s) %s for safety factor: %s. Rejecting sample. Values of Lambda: %s' %(str(Neff[Neff<self.safety_factor]), str(np.argwhere(Neff<self.safety_factor).T),self.safety_factor,str(Lambda)))
+            return np.NINF
 
-        return ll
+        else:
+            # add log likelihoods for all observations
+            ll = allLogLiks.sum()
+            if np.isnan(ll):
+                raise ValueError('NaN value for logLik. Values of Lambda: %s' %(str(Lambda) ) )
+            return ll
     
     
-    def logLik(self, Lambda_test, ):
+    def logLik(self, Lambda_test, **kwargs):
         
         allL = []
         for data_ in self.data:
-            allL.append(self._logLik( Lambda_test, data_))
+            allL.append(self._logLik( Lambda_test, data_, **kwargs))
         return  allL  
         
             

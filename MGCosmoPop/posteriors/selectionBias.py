@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-#    Copyright (c) 2021 Michele Mancarella <michele.mancarella@unige.ch>
-#
-#    All rights reserved. Use of this source code is governed by a modified BSD
-#    license that can be found in the LICENSE file.
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Mar  4 13:06:04 2021
+
+@author: Michi
+"""
  
 from abc import ABC, abstractmethod
 import numpy as np
@@ -93,7 +95,7 @@ class SelectionBiasInjections(SelectionBias):
         return injData.Tobs
     
     
-    def _Ndet(self, Lambda_test, injData, verbose=False, Nobs = None):
+    def _Ndet(self, Lambda_test, injData, verbose=False, ):
         
         Lambda = self.population.get_Lambda(Lambda_test, self.params_inference )
         
@@ -119,51 +121,52 @@ class SelectionBiasInjections(SelectionBias):
         
         mu = np.exp(logMu)#.astype('float128')
         
-        if not self.get_uncertainty:
-            return mu, 0
         
         logs2 = ( np.logaddexp.reduce(2*logdN) -2*injData.logN_gen)#.astype('float128')
         logSigmaSq = logdiffexp( logs2, 2.0*logMu - injData.logN_gen )
         
-        muSq = np.exp(2*logMu)
-        SigmaSq = np.exp(logSigmaSq)#.astype('float128')
         
-        if Nobs is not None:# and verbose:
+        #if Nobs is not None:# and verbose:
             #muSq = np.exp(2*logMu)
             #SigmaSq = np.exp(logSigmaSq)
-            Neff = muSq/SigmaSq #np.exp( 2.0*logMu - logSigmaSq)
-            if Neff < 4 * Nobs:
-                print('NEED MORE SAMPLES FOR SELECTION EFFECTS! Values of Lambda: %s' %str(Lambda))
+        Neff = np.exp( 2.0*logMu - logSigmaSq) #muSq/SigmaSq #np.exp( 2.0*logMu - logSigmaSq)
+            #if Neff < 4 * Nobs:
+                #print('NEED MORE SAMPLES FOR SELECTION EFFECTS! Values of Lambda: %s' %str(Lambda))
                 # return -inf and reject sample
                 #return mu, np.NINF
 
-        #mu = np.exp(logMu.astype('float128'))
-        Sigma = np.sqrt(SigmaSq)
-        
+        if not self.get_uncertainty:
+            return mu, 0, Neff
+
         ## Effects of uncertainty on selection effect and/or marginalisation over total rate
         ## Adapted from 1904.10879
+        
+        muSq = np.exp(2*logMu)
+        SigmaSq = np.exp(logSigmaSq)#.astype('float128')
+        Sigma = np.sqrt(SigmaSq)
         
         num = ss.norm(loc=mu-SigmaSq, scale=Sigma).logsf(0)
         den = ss.norm(loc=mu, scale=Sigma ).logsf(0)
         error = SigmaSq/2-den+num
         
-        #logError = logSigmaSq-np.log(2) +np.log(num-den)
-        
-        return mu, error
+                
+        return mu, error, Neff
     
     
-    def Ndet(self, Lambda_test, verbose=False, allNobs = None):
+    def Ndet(self, Lambda_test, verbose=False, ):
         
         mus=[]
         errs=[]
+        Neffs=[]
         for i, injData_ in enumerate(self.injData):
-            if allNobs is None:
-                Nobs=None
-            else: Nobs=allNobs[i]
-            mu_, err_ = self._Ndet(Lambda_test, injData_, verbose=verbose, Nobs = Nobs)
+            #if allNobs is None:
+            #    Nobs=None
+            #else: Nobs=allNobs[i]
+            mu_, err_, Neff_ = self._Ndet(Lambda_test, injData_, verbose=verbose, )
             mus.append(mu_)
             errs.append(err_)
-        return mus, errs
+            Neffs.append(Neff_)
+        return mus, errs, Neffs
             
         
         
