@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-#    Copyright (c) 2021 Michele Mancarella <michele.mancarella@unige.ch>
-#
-#    All rights reserved. Use of this source code is governed by a modified BSD
-#    license that can be found in the LICENSE file.
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Mar  2 16:31:45 2021
 
+@author: Michi
+"""
 import numpy as np
 #import cosmo
 from copy import deepcopy
@@ -86,9 +87,8 @@ class AllPopulations(object):
         res[~where_compute]=np.NINF
         
         m1, m2, z, spins = m1[where_compute], m2[where_compute], z[where_compute], [s[where_compute] for s in spins]
-        if dL is not None:
-            dL=dL[where_compute]
-        logdN = self.log_dN_dm1dm2dz(m1, m2, z, spins, Tobs, Lambda)-self._log_dMsourcedMdet(z) - self.cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n , dL=dL)
+        
+        logdN = self.log_dN_dm1dm2dz(m1, m2, z, spins, Tobs, Lambda)-self._log_dMsourcedMdet(z) - self.cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n , dL=dL[where_compute])
         
         res[where_compute] = logdN
         return res

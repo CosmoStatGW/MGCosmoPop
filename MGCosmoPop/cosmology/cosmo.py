@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-#    Copyright (c) 2021 Michele Mancarella <michele.mancarella@unige.ch>
-#
-#    All rights reserved. Use of this source code is governed by a modified BSD
-#    license that can be found in the LICENSE file.
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Mar  3 11:34:47 2021
 
+@author: Michi
+"""
 
 import numpy as np
 from astropy.cosmology import FlatwCDM, FlatLambdaCDM, Planck15

@@ -213,7 +213,7 @@ class TruncPowerLawMass(BBHDistFunction):
         
         where_compute = (m2 < m1) & (ml < m2) & (m1 < mh )
      
-        return np.where( where_compute,   self._logpdfm1(m1, alpha, ml, mh) + self._logpdfm2(m1, beta, ml) +self._logC(m1, beta, ml) -  self._logNorm( alpha, ml, mh) ,  np.NINF)
+        return np.where( where_compute,   self._logpdfm1(m1, alpha, ml, mh) + self._logpdfm2(m2, beta, ml) +self._logC(m1, beta, ml) -  self._logNorm( alpha, ml, mh) ,  np.NINF)
         
     
     
