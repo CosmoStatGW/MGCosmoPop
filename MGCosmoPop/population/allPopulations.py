@@ -87,8 +87,9 @@ class AllPopulations(object):
         res[~where_compute]=np.NINF
         
         m1, m2, z, spins = m1[where_compute], m2[where_compute], z[where_compute], [s[where_compute] for s in spins]
-        
-        logdN = self.log_dN_dm1dm2dz(m1, m2, z, spins, Tobs, Lambda)-self._log_dMsourcedMdet(z) - self.cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n , dL=dL[where_compute])
+        if dL is not None:
+            dL=dL[where_compute]
+        logdN = self.log_dN_dm1dm2dz(m1, m2, z, spins, Tobs, Lambda)-self._log_dMsourcedMdet(z) - self.cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n , dL=dL)
         
         res[where_compute] = logdN
         return res
@@ -208,7 +209,7 @@ class AllPopulations(object):
             
             zpdf = lambda z: np.exp(self.logdN_dz(z,  H0, Om0, w0, lambdaBBHrate, pop ))#lambda z: np.exp(pop.rateEvol.log_dNdVdt(z, lambdaBBHrate)+ self.cosmo.log_dV_dz(z, H0, Om0, w0)-np.log1p(z))
             
-            allsamples[:, i] = self._sample_pdf(nSamples, zpdf, 0., zmax)
+            allsamples[:, i] = self._sample_pdf(nSamples, zpdf, 1e-05, zmax)
             #prev=self._allNParams[i]
         return allsamples
         
