@@ -27,10 +27,12 @@ from cosmology.cosmo import Cosmo
      
 class O1O2Data(LVCData):
     
-    def __init__(self, fname, nObsUse=None, nSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='skip' ):
+    def __init__(self, fname, **kwargs):#nObsUse=None, nSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='skip' ):
         
         self.post_file_extension='.hdf5'
-        LVCData.__init__(self, fname, nObsUse=nObsUse, nSamplesUse=nSamplesUse, dist_unit=dist_unit, events_use=events_use, which_spins=which_spins)
+        import pandas as pd
+        self.metadata = pd.read_csv(os.path.join(fname, 'GWTC-1-confident.csv'))
+        LVCData.__init__(self, fname, **kwargs) #nObsUse=nObsUse, nSamplesUse=nSamplesUse, dist_unit=dist_unit, events_use=events_use, which_spins=which_spins)
         
         
         
@@ -98,7 +100,7 @@ class O1O2Data(LVCData):
                 spins=[s1,s2]
             
         # Downsample if needed
-        all_ds = self.downsample( [m1z, m2z, dL, *spins], nSamplesUse)
+        all_ds = self._downsample( [m1z, m2z, dL, *spins], nSamplesUse)
         
         m1z = all_ds[0]
         m2z= all_ds[1]
@@ -116,7 +118,7 @@ class O1O2Data(LVCData):
  
 class O1O2InjectionsData(Data):
     
-    def __init__(self, fname, nInjUse=None,  dist_unit=u.Gpc, ifar_th=1 , which_spins='skip' ):
+    def __init__(self, fname, nInjUse=None,  dist_unit=u.Gpc, ifar_th=1 , which_spins='skip', SNR_th=None ):
         
         self.dist_unit=dist_unit
         self.m1z, self.m2z, self.dL, self.spins, self.log_weights_sel, self.N_gen, self.Tobs = self._load_data(fname, nInjUse, which_spins=which_spins )        

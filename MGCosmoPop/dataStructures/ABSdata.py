@@ -26,8 +26,78 @@ class Data(ABC):
     def get_theta(self):
         pass
     
-    
-    def downsample(self, posterior, nSamples, pth=0.05, verbose=True):
+    def downsample(self, nSamples=None, percSamples=None, verbose=True):
+        if nSamples is None:
+            return self._downsample_perc(percSamples, verbose=verbose)
+        elif percSamples is None:
+            return self._downsample_n(nSamples, verbose=verbose)
+        else:
+            raise ValueError('One among nSamples and percSamples should not be None')
+
+    def _downsample_perc(self, percSamples, verbose=True):
+        try:
+            samples = np.array([self.m1z, self.m2z, self.dL, *self.spins ])#self.Nsamples                                       
+        except:
+            print('No spins in this data')
+            samples = np.array([self.m1z, self.m2z, self.dL])
+        Npar = samples.shape[0]
+        print('Npar: %s' %Npar)
+        Nobs = samples.shape[1]
+        print('Nobs in downsample: %s' %Nobs)
+        print('Reducing all samples by %s percent' %(percSamples*100))
+        self.Nsamples = (np.array(self.Nsamples)*percSamples).astype(int)
+        self.logNsamples=np.log(self.Nsamples)
+        maxNsamples = self.Nsamples.max()
+        m1zD, m2zD, dLD,  = np.full((Nobs,maxNsamples), np.nan), np.full((Nobs,maxNsamples), np.nan), np.full((Nobs,maxNsamples), np.nan) #np.zeros((Nobs,maxNsamples)), np.zeros((Nobs,maxNsamples)), np.zeros((Nobs,maxNsamples))
+        if Npar==5:
+            s0D, s1D = np.full((Nobs,maxNsamples), np.nan), np.full((Nobs,maxNsamples), np.nan)#np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples))
+        for o in range(Nobs):
+            if Npar==5:
+                m1zD[o, :self.Nsamples[o]], m2zD[o, :self.Nsamples[o]], dLD[o, :self.Nsamples[o]], s0D[o, :self.Nsamples[o]], s1D[o, :self.Nsamples[o]] = self._downsample(samples[:,o, :], self.Nsamples[o], verbose=verbose)
+            elif Npar==3:
+                m1zD[o, :self.Nsamples[o]], m2zD[o, :self.Nsamples[o]], dLD[o, :self.Nsamples[o]] = self._downsample(samples[:,o, :], self.Nsamples[o], verbose=verbose)
+        if Npar==5:
+            self.spins = [s0D, s1D]
+
+        self.m1z = m1zD
+        self.m2z = m2zD
+        self.dL = dLD
+
+
+    def _downsample_n(self, nSamples, verbose=True):
+        
+        try:
+            samples = np.array([self.m1z, self.m2z, self.dL, *self.spins ])#self.Nsamples
+        except:
+            print('No spins in this data')
+            samples = np.array([self.m1z, self.m2z, self.dL])
+        Npar = samples.shape[0]
+        print('Npar: %s' %Npar)
+        Nobs = samples.shape[1]
+        
+        print('Nobs in downsample: %s' %Nobs)
+        m1zD, m2zD, dLD,  = np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), #np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples))
+        if Npar==5:
+            s0D, s1D = np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples))
+        for o in range(Nobs):
+            if Nobs>200:
+                if o>0:
+                    verbose=False
+            if Npar==5:
+                m1zD[o], m2zD[o], dLD[o], s0D[o], s1D[o] = self._downsample(samples[:,o, :], nSamples, verbose=verbose)
+            elif Npar==3:
+                m1zD[o], m2zD[o], dLD[o] = self._downsample(samples[:,o, :], nSamples, verbose=verbose)
+        if Npar==5:
+            self.spins = [s0D, s1D]
+                
+        self.m1z = m1zD
+        self.m2z = m2zD
+        self.dL = dLD
+
+        self.logNsamples=np.where(self.logNsamples<np.log(nSamples), self.logNsamples, np.log(nSamples)) #np.full(Nobs, np.log(nSamples))
+        self.Nsamples=np.where(np.array(self.Nsamples)<nSamples, self.Nsamples, nSamples)
+
+    def _downsample(self, posterior, nSamples,  verbose=True):
         
         if nSamples is None:
             return posterior
@@ -36,11 +106,13 @@ class Data(ABC):
         
         posterior = np.array(posterior)
         #nparams=posterior.shape[0]
-        nOrSamples=posterior.shape[1]
+        nOrSamples=(~np.isnan(posterior)[0]).sum()
         if verbose:
             print('Number of original samples: %s '%nOrSamples)
-        
+        #print('posterior shape: %s' %str(posterior.shape))
         if len(posterior) == 1:
+            if verbose:
+                print('Using inverse sampling method')
             n, bins = np.histogram(posterior, bins=50)
             n = np.array([0] + [i for i in n])
             cdf = cumtrapz(n, bins, initial=0)
@@ -48,22 +120,32 @@ class Data(ABC):
             icdf = interp1d(cdf, bins)
             samples = icdf(np.random.rand(nSamples))
         else:
-            #posterior = np.array([i for i in arr])
-            keep_idxs = np.random.choice(nOrSamples, nSamples, replace=False)
-            samples = [i[keep_idxs] for i in posterior]
-
-        
-        #step = arr.shape[0]//nMax
-        #shortarr = arr[::step][:nMax]
-        
-        #keep = np.random.choice(len(arr), nMax, replace=False)
-        #samples = arr[keep] #[i[keep_idxs] for i in posterior]
-
-        
-        #ksres = ks_2samp(samples, arr)[1]
-        #if ksres<pth:
-        #    raise ValueError('P-value of KS test between origina samples and full samples is <0.05. Use a larger number of samples')
-        
+            if nOrSamples<nSamples:
+                nans_to_fill = nSamples-nOrSamples
+                if verbose:
+                    print('Using all original samples and filling with %s nans' %nans_to_fill)
+                samples = []
+                for i,p in enumerate(posterior):
+                    #print(i)
+                    #print('p shape: %s' %str(p.shape))
+                    or_samples_position =  ~np.isnan(p)
+                    new_p = np.concatenate([p[or_samples_position], np.full( nans_to_fill, np.nan)])
+                    assert np.isnan(new_p).sum()==nans_to_fill
+                    samples.append(new_p)
+            else:
+                if verbose:
+                    print('Randomly choosing subset of samples')
+                keep_idxs = np.random.choice(nOrSamples, nSamples, replace=False)
+                #samples = [i[keep_idxs] for i in posterior]
+                samples=[]
+                for i, p in enumerate(posterior):
+                    or_samples_position =  ~np.isnan(p)
+                    or_samples = p[or_samples_position]
+                    #keep_idxs = np.random.choice(nOrSamples, nSamples, replace=False)
+                    assert ~np.any(np.isnan(or_samples[keep_idxs]))
+                    samples.append(or_samples[keep_idxs])
+                #print(len(samples))
+        #print(samples[0].shape)
         return samples
     
     
@@ -71,24 +153,35 @@ class Data(ABC):
     
 class LVCData(Data):
     
-    def __init__(self, fname, nObsUse=None, nSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='chiEff' ):
+    def __init__(self, fname, nObsUse=None, nSamplesUse=None, percSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='chiEff', SNR_th=8., FAR_th=1. ):
         
         Data.__init__(self)
+        
+        self.FAR_th = FAR_th
+        self.SNR_th = SNR_th
+        print('FAR th in LVC data: %s' %self.FAR_th)
         self.events_use=events_use
         self.which_spins=which_spins
         
-        if events_use['use'] is not None:
-            nObsUse=len(events_use['use'])
+        nObsUse=None
+        if events_use is not None:
+            if events_use['use'] is not None:
+                nObsUse=len(events_use['use'])
         
         self.dist_unit = dist_unit
         self.events = self._get_events(fname, events_use)
         
-        self.m1z, self.m2z, self.dL, self.spins, self.Nsamples = self._load_data(fname, nObsUse, nSamplesUse, which_spins=which_spins)  
+        self.m1z, self.m2z, self.dL, self.spins, self.Nsamples = self._load_data(fname, nObsUse, which_spins=which_spins)  
         self.Nobs=self.m1z.shape[0]
         #print('We have %s observations' %self.Nobs)
-        print('Number of samples used: %s' %self.Nsamples )
-        
+        print('Number of samples for each event: %s' %self.Nsamples )
         self.logNsamples = np.log(self.Nsamples)
+
+        if nSamplesUse is not None or percSamplesUse is not None:
+            self.downsample(nSamples=nSamplesUse, percSamples=percSamplesUse)
+            print('Number of samples for each event after downsamplng: %s' %self.Nsamples )
+            
+
         #assert (self.m1z >= 0).all()
         #assert (self.m2z >= 0).all()
         #assert (self.dL >= 0).all()
@@ -129,38 +222,57 @@ class LVCData(Data):
     
     def _get_events(self, fname, events_use, ):
         
-        #dirlist = [ item for item in os.listdir(fname) if os.path.isdir(os.path.join(fname, item)) ]        
-        #print(fname)
-        #print(os.listdir(fname))
-        #print(os.path.join(fname, '*.h5' ))
+        
         allFiles = [f for f in os.listdir(fname) if f.endswith(self.post_file_extension)] #glob.glob(os.path.join(fname, '*.h5' ))
         #print(allFiles)
-        #print([len(f.split('.')[0].split('_')) for f in allFiles])
-        #print([f.split('_')[0][:2] for f in allFiles])
         elist = [self._get_name_from_fname(f) for f in allFiles if self._name_conditions(f) ]
         
         
-        list_BBH = [x for x in elist if x not in self._get_not_BBHs() ]
-        print('In the O3a data we have the following BBH events, total %s (excluding %s):' %(len(list_BBH) ,str(self._get_not_BBHs())) )
-        print(list_BBH)
-        if events_use['use'] is not None and events_use['not_use'] is not None:
+        # Exclude events not identified as BBHs
+        list_BBH_or = [x for x in elist if x not in self._get_not_BBHs() ]
+        print('In the '+fname.split('/')[-1]+' data we have the following BBH events, total %s (excluding %s):' %(len(list_BBH_or) ,str(self._get_not_BBHs())) )
+        print(list_BBH_or)
+        
+        # Impose cut on SNR
+        print('Using only events with SNR>%s (round to 1 decimal digit)' %self.SNR_th)
+        list_BBH_0 = [x for x in list_BBH_or if np.round(self.metadata[self.metadata.commonName==x].network_matched_filter_snr.values, 1)>=self.SNR_th  ]
+        list_BBH_excluded_0 = [(x, np.round(self.metadata[self.metadata.commonName==x].network_matched_filter_snr.values), 1)[0] for x in list_BBH_or if np.round(self.metadata[self.metadata.commonName==x].network_matched_filter_snr.values, 1)<self.SNR_th  ]
+        print('Excluded the following events with SNR<%s: ' %self.SNR_th)
+        print(list_BBH_excluded_0)
+        print('%s events remaining.' %len(list_BBH_0))
+
+        # Impose cut on FAR
+        print('Using only events with FAR<%s' %self.FAR_th)
+        list_BBH = [x for x in list_BBH_0 if self.metadata[self.metadata.commonName==x].far.values<=self.FAR_th  ]
+        list_BBH_excluded = [(x, self.metadata[self.metadata.commonName==x].far.values) for x in list_BBH_0 if self.metadata[self.metadata.commonName==x].far.values>self.FAR_th  ]
+        print('Excluded the following events with FAR>%s: ' %self.FAR_th)
+        print(str(list_BBH_excluded))
+        print('%s events remaining.' %len(list_BBH))
+        
+
+        
+        # Exclude other events if this is required in the config file
+        if events_use is not None and events_use['use'] is not None and events_use['not_use'] is not None:
             raise ValueError('You passed options to both use and not_use. Please only provide the list of events that you want to use, or the list of events that you want to exclude. ')
-        elif events_use['use'] is not None:
+        elif events_use is not None and events_use['use'] is not None:
             # Use only events given in use
             print('Using only BBH events : ')
             print(events_use['use'])
             list_BBH_final = [x for x in list_BBH if x in events_use['use']]
-        elif events_use['not_use'] is not None:
+        elif events_use is not None and events_use['not_use'] is not None:
             print('Excluding BBH events : ')
             print(events_use['not_use'])
             list_BBH_final = [x for x in list_BBH if x not in events_use['not_use']]
         else:
             print('Using all BBH events')
             list_BBH_final=list_BBH
+        
+        
+
         return list_BBH_final
  
     
-    def _load_data(self, fname, nObsUse, nSamplesUse, which_spins='chiEff'):
+    def _load_data(self, fname, nObsUse, which_spins='chiEff'):
         print('Loading data...')
     
         
@@ -175,8 +287,8 @@ class LVCData(Data):
         for event in self.events[:nObsUse]:
                 print('Reading data from %s' %event)
             #with h5py.File(fname, 'r') as phi:
-                m1z_, m2z_, dL_, spins_  = self._load_data_event(fname, event, nSamplesUse, which_spins=which_spins)
-                print('Number of samples in LVC data: %s' %m1z_.shape[0])
+                m1z_, m2z_, dL_, spins_  = self._load_data_event(fname, event, nSamplesUse=None, which_spins=which_spins)
+                print('Number of samples in LVC data: %s' %m1z_.shape[0]) #%(~np.isnan(m1z_)).sum()) #%m1z_.shape[0])
                 m1s.append(m1z_)
                 m2s.append(m2z_)
                 dLs.append(dL_)

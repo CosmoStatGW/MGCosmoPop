@@ -24,71 +24,47 @@ from cosmology.cosmo import Cosmo
 
      
 
-class O3aData(LVCData):
+class O3bData(LVCData):
     
-    def __init__(self, fname, **kwargs): #nObsUse=None, nSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='skip' ):
+    def __init__(self, fname, suffix_name = 'nocosmo', **kwargs):#nObsUse=None, nSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='skip' ):
         
-        self.GWTC2_1 = ['GW190403_051519', 'GW190426_190642', 'GW190725_174728','GW190805_211137', 'GW190916_200658', 'GW190917_114630','GW190925_232845', 'GW190926_050336']
-        self.post_file_extension='.h5'
+        self.suffix_name = suffix_name
         import pandas as pd
-        self.metadata = pd.read_csv(os.path.join(fname, 'GWTC-2.csv'))
-        metadata_21 = pd.read_csv(os.path.join(fname, 'GWTC-2.1-confident.csv'))
-        self.metadata = self.metadata.append(metadata_21)
-        #print(self.metadata[[ 'commonName', 'catalog.shortName','mass_1_source',  'mass_2_source',  'network_matched_filter_snr','luminosity_distance','redshift','far' ]])
-        LVCData.__init__(self, fname, **kwargs) #nObsUse=nObsUse, nSamplesUse=nSamplesUse, dist_unit=dist_unit, events_use=events_use, which_spins=which_spins)
+        self.post_file_extension='.h5'
+        self.metadata = pd.read_csv(os.path.join(fname, 'GWTC-3-confident.csv'))
+        LVCData.__init__(self, fname, **kwargs)
         
         
     
     def _set_Tobs(self):
-        self.Tobs= 183.3/365.
-        # O3a data is taken between 1 April 2019 15:00 UTC and 1 October 2019 15:00 UTC.
-        # The duty cycle for the three detectors was 76% (139.5 days) for Virgo, 
-        # 71% (130.3 days) for LIGO Hanford, and 76% (138.5 days) for LIGO Livingston. 
-        # With these duty cycles, the full 3-detector network was in observing mode 
-        # for 44.5% of the time (81.4 days). 
-        # Moreover, for 96.9% of the time (177.3 days) at least one detector was
-        # observing and for 81.9% (149.9 days) at least two detectors were observing.
+        self.Tobs= 147.083/365.
+        # O3b dates: 1st November 2019 15:00 UTC (GPS 1256655618) to 27th March 2020 17:00 UTC (GPS 1269363618)
+        # 147.083
+        # 148 days in total
+        # 142.0 days with at least one detector for O3b
+        
+        # second half of the third observing run (O3b) between 1 November 2019, 15:00 UTC and 27 March 2020, 17:00 UTC
+        # for 96.6% of the time (142.0 days) at least one interferometer was observing,
+        # while for 85.3% (125.5 days) at least two interferometers were observing
     
     
     def _get_not_BBHs(self):
-        return ['GW190425', 'GW190426_152155', 'GW190814', 'GW190917_114630' ] #'GW190426_152155', 'GW190426']
+        return ['GW200115_042309','GW200105_162426', 'GW191219_163120', 'GW200210_092254', 'GW200210_092255', 'GW190917_114630' ]
+        # events in this line have secondary mass compatible with NS
+
+#+['GW190413_05954', 'GW190426_152155', 'GW190719_215514', 'GW190725_174728', 'GW190731_140936', 'GW190805_211137', 'GW190917_114630', 'GW191103_012549', 'GW200216_220804' ] 
+        # events in the second list are those with ifar>=1yr, table 1 of 2111.03634
     
     
     def _name_conditions(self, f ):
-        return ( ( 'prior' not in f.split('.')[0] ) & ('comoving' not in f.split('.')[0]) & (f.split('_')[0][:2]=='GW') ) or ('IGWN-GWTC2p1' in f) 
+        return self.suffix_name in f
     
     
     def _get_name_from_fname(self, fname):
-        if 'IGWN-GWTC2p1' not in fname:
-            return fname.split('.')[0]
-        else:
-            return '_'.join(fname.split('-')[-1].split('_')[:-1])
+        return ('_').join(fname.split('-')[-1].split('_')[:2] )
+    
     
     def _load_data_event(self, fname, event, nSamplesUse, which_spins='skip'):
-        if event in self.GWTC2_1:
-            return self._load_data_event_GWTC2_1(fname, event, nSamplesUse, which_spins=which_spins)
-        else:
-            return self._load_data_event_GWTC2(fname, event, nSamplesUse, which_spins=which_spins)
-
-    def _load_data_event_GWTC2_1(self, fname, event, nSamplesUse, which_spins='skip'):
-        data_path = os.path.join(fname, 'IGWN-GWTC2p1-v1-'+event+'_PEDataRelease.h5')
-        with h5py.File(data_path, 'r') as f:
-            dataset = f['IMRPhenomXPHM']
-            posterior_samples = dataset['posterior_samples']
-            m1z = posterior_samples['mass_1']
-            m2z = posterior_samples['mass_2']
-            dL = posterior_samples['luminosity_distance']
-            if which_spins=='skip':
-                spins=[]
-            elif which_spins=='chiEff':
-                chieff = posterior_samples['chi_eff']
-                chiP = posterior_samples['chi_p']
-                spins=[chieff, chiP]
-            else:
-                raise NotImplementedError()
-            return m1z, m2z, dL, spins
-
-    def _load_data_event_GWTC2(self, fname, event, nSamplesUse, which_spins='skip'):
         
         ### Using pesummary read function
         #data = read(os.path.join(fname,  event+self.post_file_extension))
@@ -98,9 +74,9 @@ class O3aData(LVCData):
 
         
         # By hand:
-        data_path = os.path.join(fname,  event+self.post_file_extension)
+        data_path = os.path.join(fname,  'IGWN-GWTC3p0-v1-'+event+'_PEDataRelease_mixed_'+self.suffix_name+self.post_file_extension)
         with h5py.File(data_path, 'r') as f:
-            dataset = f['PublicationSamples']
+            dataset = f['C01:IMRPhenomXPHM']
             posterior_samples = dataset['posterior_samples']
             
             m1z = posterior_samples['mass_1']
@@ -116,14 +92,14 @@ class O3aData(LVCData):
                 raise NotImplementedError()
         
         # Downsample if needed
-        #all_ds = self._downsample( [m1z, m2z, dL, *spins], nSamplesUse)
+        all_ds = self._downsample( [m1z, m2z, dL, *spins], nSamplesUse)
         
-        #m1z = all_ds[0]
-        #m2z= all_ds[1]
-        #dL =  all_ds[2]
-        #spins = all_ds[3:]
+        m1z = all_ds[0]
+        m2z= all_ds[1]
+        dL =  all_ds[2]
+        spins = all_ds[3:]
         
-        return m1z, m2z, dL, spins
+        return np.squeeze(m1z), np.squeeze(m2z), np.squeeze(dL), [np.squeeze(s) for s in spins]
               
     
     
@@ -134,7 +110,7 @@ class O3aData(LVCData):
     
 class O3InjectionsData(Data):
     
-    def __init__(self, fname, nInjUse=None,  dist_unit=u.Gpc, ifar_th=1., which_spins='skip', SNR_th=None ):
+    def __init__(self, fname, nInjUse=None,  dist_unit=u.Gpc, ifar_th=1., which_spins='skip' ):
         
         self.which_spins=which_spins
         self.dist_unit=dist_unit
