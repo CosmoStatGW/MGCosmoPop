@@ -4,10 +4,8 @@ This package implements a hierarchical bayesian framework for constraining the s
 
 Developed by [Michele Mancarella](<https://github.com/Mik3M4n>).
 
+If using this code, please cite the paper [Cosmology and modified gravitational wave propagation from binary black hole population models](<https://arxiv.org/abs/>)
 
-Here we show the analysis of the GWTC-2 catalog  with a BBH population model given by a broken power law mass distribution using MGCosmoPop, and compare to the result of the LVC. See [the LVC paper](https://arxiv.org/abs/2010.14533) for details. We compare the LVC result (blue) to the result obtained with this code using the LVC injections for computing selection effects (green) and using this code and our own injections (red).
-
-![alt text](https://github.com/CosmoStatGW/MGCosmoPop/blob/master/R0_lambda_alpha1_alpha2_beta_deltam_ml_mh_b_corner_local_LVC.png?raw=true)
 
 
 ## Summary
@@ -16,6 +14,7 @@ Here we show the analysis of the GWTC-2 catalog  with a BBH population model giv
 * [Overview and code organisation](https://github.com/CosmoStatGW/MGCosmoPop#Overview-and-code-organisation)
 * [Data](https://github.com/CosmoStatGW/MGCosmoPop#Data)
 * [Usage](https://github.com/CosmoStatGW/MGCosmoPop#Usage)
+* [Example](https://github.com/CosmoStatGW/MGCosmoPop#Example)
 
 
 
@@ -23,7 +22,7 @@ Here we show the analysis of the GWTC-2 catalog  with a BBH population model giv
 ## Overview and code organisation
 
 ### General structure
-The code implements the hierarchical framework in an object-oriented fashion. 
+The code implements the hierarchical framework in an object-oriented way. 
 For the moment, a single population of astrophysical BBHs is present. The code is however ready to support multiple populations, which should be implemented inheriting from the Abstract Base Class ```ABSpopulation```
 
 
@@ -104,15 +103,35 @@ To add populations, one should implement a new module (e.g. : PBHs )
 
 
 ## Data
-### GWTC-2
+### GWTC-3
 
-O1-O2 and O3a are supported. The corresponding posterior samples should be placed under data/O1O2 and data/O3a respectively.
+O1-O2 O3a, and O3b are supported. The corresponding posterior samples should be placed under data/O1O2, data/O3a, data/O3b respectively.
 
 ### Mock datasets
-Coming soon...
+Tools for generating mock datasets and injections are in mock/ . Examples of configuration files to generate injections for O3a/O3b are provided. After editing the config file, run:
+
+```
+python generateInjections.py --config=configInjections_O3b.py --fout=<name_of_output_folder> 
+```
+
+For mock datasets, edit the file configDataGen.py
+
+```
+python generateData.py --config=configDataGen.py --fout=<name_of_output_folder> --type='data' 
+```
+For mock injections,
+
+```
+python generateData.py --config=configInjections.py --fout=<name_of_output_folder> --type='inj' 
+```
 
 ## Usage
 
 An introductory notebook is available in notebooks/
 
+## Example
+
+Here we show the analysis of the GWTC-2 catalog  with a BBH population model given by a broken power law mass distribution using MGCosmoPop, and compare to the result of the LVC. See [the LVC paper](https://arxiv.org/abs/2010.14533) for details. We compare the LVC result (blue) to the result obtained with this code using the LVC injections for computing selection effects (green) and using this code and our own injections (red).
+
+![alt text](https://github.com/CosmoStatGW/MGCosmoPop/blob/master/R0_lambda_alpha1_alpha2_beta_deltam_ml_mh_b_corner_local_LVC.png?raw=true)
 
