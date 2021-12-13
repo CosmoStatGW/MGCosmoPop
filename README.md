@@ -4,7 +4,9 @@ This package implements a hierarchical bayesian framework for constraining the s
 
 Developed by [Michele Mancarella](<https://github.com/Mik3M4n>).
 
-If using this code, please cite the paper [Cosmology and modified gravitational wave propagation from binary black hole population models](<https://arxiv.org/abs/>)
+If using this code, please cite the paper [Cosmology and modified gravitational wave propagation from binary black hole population models](<https://arxiv.org/abs/2112.05728>).
+
+
 
 
 
