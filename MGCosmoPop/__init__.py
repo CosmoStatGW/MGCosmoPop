@@ -6,4 +6,4 @@ Created on Wed Mar  3 10:05:14 2021
 @author: Michi
 """
 
-import Globals
+from MGCosmoPop import Globals
