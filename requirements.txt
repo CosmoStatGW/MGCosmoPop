@@ -1,7 +1,6 @@
 scipy
 numpy
 astropy
-copy
 matplotlib
 emcee
 corner
