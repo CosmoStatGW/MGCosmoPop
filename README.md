@@ -26,13 +26,33 @@ and the paper [Cosmology and modified gravitational wave propagation from binary
 
 
 * [Overview and code organisation](https://github.com/CosmoStatGW/MGCosmoPop#Overview-and-code-organisation)
+* [Installation](https://github.com/CosmoStatGW/MGCosmoPop#Installation)
 * [Data](https://github.com/CosmoStatGW/MGCosmoPop#Data)
 * [Usage](https://github.com/CosmoStatGW/MGCosmoPop#Usage)
 * [Example](https://github.com/CosmoStatGW/MGCosmoPop#Example)
 
-
-
-
+## Installation
+ Follow the instructions (require the conda package manager, or else install manually the dependencies in requirements.txt)
+ 
+ Create the dedicated environment:
+ ```
+ conda create -y --name gwstat python=3.7
+ conda activate gwstat
+ ```
+ 
+ Clone the repo:
+ 
+ ```
+ git clone https://github.com/CosmoStatGW/MGCosmoPop.git
+ cd MGCosmoPop
+ ```
+ 
+ Install dependencies and package
+ 
+```
+conda install -y -c conda-forge --file requirements_conda.txt  
+pip install .
+```
 ## Overview and code organisation
 
 ### General structure
