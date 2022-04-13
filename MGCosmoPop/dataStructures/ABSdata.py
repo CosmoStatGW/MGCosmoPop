@@ -36,10 +36,10 @@ class Data(ABC):
 
     def _downsample_perc(self, percSamples, verbose=True):
         try:
-            samples = np.array([self.m1z, self.m2z, self.dL, *self.spins ])#self.Nsamples                                       
+            samples = np.array([self.m1z, self.m2z, self.dL,  *self.spins ])#self.Nsamples                                       
         except:
             print('No spins in this data')
-            samples = np.array([self.m1z, self.m2z, self.dL])
+            samples = np.array([self.m1z, self.m2z, self.dL, ])
         Npar = samples.shape[0]
         print('Npar: %s' %Npar)
         Nobs = samples.shape[1]
@@ -48,14 +48,14 @@ class Data(ABC):
         self.Nsamples = (np.array(self.Nsamples)*percSamples).astype(int)
         self.logNsamples=np.log(self.Nsamples)
         maxNsamples = self.Nsamples.max()
-        m1zD, m2zD, dLD,  = np.full((Nobs,maxNsamples), np.nan), np.full((Nobs,maxNsamples), np.nan), np.full((Nobs,maxNsamples), np.nan) #np.zeros((Nobs,maxNsamples)), np.zeros((Nobs,maxNsamples)), np.zeros((Nobs,maxNsamples))
+        m1zD, m2zD, dLD =  np.full((Nobs,maxNsamples), np.nan), np.full((Nobs,maxNsamples), np.nan), np.full((Nobs,maxNsamples), np.nan) #np.zeros((Nobs,maxNsamples)), np.zeros((Nobs,maxNsamples)), np.zeros((Nobs,maxNsamples))
         if Npar==5:
             s0D, s1D = np.full((Nobs,maxNsamples), np.nan), np.full((Nobs,maxNsamples), np.nan)#np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples))
         for o in range(Nobs):
             if Npar==5:
-                m1zD[o, :self.Nsamples[o]], m2zD[o, :self.Nsamples[o]], dLD[o, :self.Nsamples[o]], s0D[o, :self.Nsamples[o]], s1D[o, :self.Nsamples[o]] = self._downsample(samples[:,o, :], self.Nsamples[o], verbose=verbose)
+                m1zD[o, :self.Nsamples[o]], m2zD[o, :self.Nsamples[o]], dLD[o, :self.Nsamples[o]],  s0D[o, :self.Nsamples[o]], s1D[o, :self.Nsamples[o]] = self._downsample(samples[:,o, :], self.Nsamples[o], verbose=verbose)
             elif Npar==3:
-                m1zD[o, :self.Nsamples[o]], m2zD[o, :self.Nsamples[o]], dLD[o, :self.Nsamples[o]] = self._downsample(samples[:,o, :], self.Nsamples[o], verbose=verbose)
+                m1zD[o, :self.Nsamples[o]], m2zD[o, :self.Nsamples[o]], dLD[o, :self.Nsamples[o]], = self._downsample(samples[:,o, :], self.Nsamples[o], verbose=verbose)
         if Npar==5:
             self.spins = [s0D, s1D]
 
@@ -67,16 +67,16 @@ class Data(ABC):
     def _downsample_n(self, nSamples, verbose=True):
         
         try:
-            samples = np.array([self.m1z, self.m2z, self.dL, *self.spins ])#self.Nsamples
+            samples = np.array([self.m1z, self.m2z, self.dL,  *self.spins ]) #self.Nsamples
         except:
             print('No spins in this data')
-            samples = np.array([self.m1z, self.m2z, self.dL])
+            samples = np.array([self.m1z, self.m2z, self.dL,])
         Npar = samples.shape[0]
         print('Npar: %s' %Npar)
         Nobs = samples.shape[1]
         
         print('Nobs in downsample: %s' %Nobs)
-        m1zD, m2zD, dLD,  = np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), #np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples))
+        m1zD, m2zD, dLD  =  np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples))#np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples))
         if Npar==5:
             s0D, s1D = np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples))
         for o in range(Nobs):
@@ -171,8 +171,10 @@ class LVCData(Data):
         self.dist_unit = dist_unit
         self.events = self._get_events(fname, events_use)
         
-        self.m1z, self.m2z, self.dL, self.spins, self.Nsamples = self._load_data(fname, nObsUse, which_spins=which_spins)  
+        self.m1z, self.m2z, self.dL, self.spins, self.Nsamples, self.bin_weights = self._load_data(fname, nObsUse, which_spins=which_spins)  
         self.Nobs=self.m1z.shape[0]
+        assert len(self.bin_weights)==self.Nobs
+        #print(self.bin_weights)
         #print('We have %s observations' %self.Nobs)
         print('Number of samples for each event: %s' %self.Nsamples )
         self.logNsamples = np.log(self.Nsamples)
@@ -282,19 +284,21 @@ class LVCData(Data):
             
         
         #print('We have the following events: %s' %str(events))
-        m1s, m2s, dLs, spins = [], [], [], []
+        m1s, m2s, dLs, spins, weights = [], [], [], [], []
         allNsamples=[]
         for event in self.events[:nObsUse]:
                 print('Reading data from %s' %event)
             #with h5py.File(fname, 'r') as phi:
-                m1z_, m2z_, dL_, spins_  = self._load_data_event(fname, event, nSamplesUse=None, which_spins=which_spins)
+                m1z_, m2z_, dL_, spins_, weights_  = self._load_data_event(fname, event, nSamplesUse=None, which_spins=which_spins)
                 print('Number of samples in LVC data: %s' %m1z_.shape[0]) #%(~np.isnan(m1z_)).sum()) #%m1z_.shape[0])
                 m1s.append(m1z_)
                 m2s.append(m2z_)
                 dLs.append(dL_)
                 spins.append(spins_)
+                weights.append(weights_)
                 assert len(m1z_)==len(m2z_)
                 assert len(m2z_)==len(dL_)
+                #assert len(weights_)==len(dL_)
                 if which_spins!="skip":
                     assert len(spins_)==2
                     assert len(spins_[0])==len(dL_)
@@ -312,6 +316,7 @@ class LVCData(Data):
         m1det_samples= np.full(fin_shape, np.NaN)  #np.zeros((len(self.events),max_nsamples))
         m2det_samples=np.full(fin_shape, np.NaN)
         dl_samples= np.full(fin_shape, np.NaN)
+        #w_samples= np.full(fin_shape, np.NaN)
         if which_spins!="skip":
             spins_samples= [np.full(fin_shape, np.NaN), np.full(fin_shape, np.NaN) ]
         else: spins_samples=[]
@@ -321,6 +326,7 @@ class LVCData(Data):
             m1det_samples[i, :allNsamples[i]] = m1s[i]
             m2det_samples[i, :allNsamples[i]] = m2s[i]
             dl_samples[i, :allNsamples[i]] = dLs[i]
+            #w_samples[i, :allNsamples[i]] = weights[i]
             if which_spins!="skip":
                 spins_samples[0][i, :allNsamples[i]] = spins[i][0]
                 spins_samples[1][i, :allNsamples[i]] = spins[i][1]
@@ -329,7 +335,7 @@ class LVCData(Data):
             print('Using distances in Gpc')   
             dl_samples*=1e-03
         
-        return m1det_samples, m2det_samples, dl_samples, spins_samples, allNsamples
+        return m1det_samples, m2det_samples, dl_samples, spins_samples, allNsamples, np.squeeze(np.array(weights))
     
     
     def logOrMassPrior(self):

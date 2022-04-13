@@ -35,11 +35,14 @@ def logdiffexpvec(xs, ys):
 
 class SelectionBias(ABC):
     
-    def __init__(self, population, injData, params_inference ):
+    def __init__(self, population, injData, params_inference, normalized=False ):
         
         self.injData=injData
         self.population=population
         self.params_inference = params_inference 
+        self.normalized=normalized
+        if normalized :
+            print('This model will marginalize analytically over the overall normalization with a flat-in-log prior!')
 
 
     @abstractmethod
@@ -55,7 +58,7 @@ class SelectionBiasInjections(SelectionBias):
     Logic for computing the selection effects
     '''
     
-    def __init__(self, population, injData, params_inference, get_uncertainty=True ):
+    def __init__(self, population, injData, params_inference, get_uncertainty=True, normalized=False ):
         ''' 
 
         Parameters
@@ -73,7 +76,7 @@ class SelectionBiasInjections(SelectionBias):
         
         
         self.get_uncertainty=get_uncertainty
-        SelectionBias.__init__(self, population, injData, params_inference)
+        SelectionBias.__init__(self, population, injData, params_inference, normalized=normalized)
     
     
     def _get_mass_redshift(self, Lambda, injData):
@@ -101,7 +104,7 @@ class SelectionBiasInjections(SelectionBias):
         
         m1, m2, z = self._get_mass_redshift(Lambda, injData)
         spins = self._getSpins(injData)
-        Tobs = self._getTobs(injData)
+        
         
         #logdN=np.empty_like(m1)
         #logdN[~injData.condition]=np.NINF
@@ -111,8 +114,15 @@ class SelectionBiasInjections(SelectionBias):
         
         #logdN =  np.where( injData.condition, self.population.log_dN_dm1zdm2zddL(m1, m2, z, spins, Tobs, Lambda),  np.NINF) 
         #logdN -= injData.log_weights_sel
-        logdN=np.squeeze(self.population.log_dN_dm1zdm2zddL(m1, m2, z, spins, Tobs, Lambda, dL=injData.dL[injData.condition])-injData.log_weights_sel[injData.condition])
+        if not self.normalized :
+            Tobs = self._getTobs(injData)
+        else:
+            Tobs=1.
         
+        logdN = np.squeeze( self.population.log_dN_dm1zdm2zddL(m1, m2, z, spins, Lambda, Tobs, dL=injData.dL[injData.condition])-injData.log_weights_sel[injData.condition])
+        if self.normalized :
+           logdN -= np.log(self.population.Nperyear_expected(Lambda, zmax=20, verbose=False))
+
         
         logMu = np.logaddexp.reduce(logdN) - injData.logN_gen
         
@@ -141,7 +151,7 @@ class SelectionBiasInjections(SelectionBias):
         ## Effects of uncertainty on selection effect and/or marginalisation over total rate
         ## Adapted from 1904.10879
         
-        muSq = np.exp(2*logMu)
+        #muSq = np.exp(2*logMu)
         SigmaSq = np.exp(logSigmaSq)#.astype('float128')
         Sigma = np.sqrt(SigmaSq)
         

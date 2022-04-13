@@ -49,7 +49,9 @@ class O1O2Data(LVCData):
         # During O2, the individual LIGO detectors had duty factors of approximately 60% with a LIGO 
         # network duty factor of about 45%. Times with significant instrumental disturbances are flagged and removed, 
         # resulting in about 118 days of data suitable for coincident analysis
-        self.Tobs= (48.3+118)/365.  # yrs
+        
+        #self.Tobs= (48.3+118)/365.  # yrs
+        self.Tobs= (129+267)/365.  # yrs
     
     
     def _get_not_BBHs(self):
@@ -75,6 +77,12 @@ class O1O2Data(LVCData):
             m1z = posterior_samples['m1_detector_frame_Msun']
             m2z = posterior_samples['m2_detector_frame_Msun']
             dL = posterior_samples['luminosity_distance_Mpc']
+            try:
+                w = posterior_samples['weights_bin']
+            except Exception as e:
+                print(e)
+                w = np.ones(1)
+                
             if which_spins=='skip':
                 spins=[]
             elif which_spins=='chiEff':
@@ -100,14 +108,15 @@ class O1O2Data(LVCData):
                 spins=[s1,s2]
             
         # Downsample if needed
-        all_ds = self._downsample( [m1z, m2z, dL, *spins], nSamplesUse)
+        #all_ds = self._downsample( [m1z, m2z, dL, w, *spins,], nSamplesUse)
         
-        m1z = all_ds[0]
-        m2z= all_ds[1]
-        dL =  all_ds[2]
-        spins = all_ds[3:]
+        #m1z = all_ds[0]
+        #m2z= all_ds[1]
+        #dL =  all_ds[2]
+        #spins = all_ds[4:]
+        #ws = all_ds[3]
         
-        return m1z, m2z, dL, spins
+        return m1z, m2z, dL, spins, w
     
  
     

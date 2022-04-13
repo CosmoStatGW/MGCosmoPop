@@ -15,14 +15,11 @@ from copy import deepcopy
 class AllPopulations(object):
     
     
-    def __init__(self, cosmo, normalized=False):
+    def __init__(self, cosmo):
         
         self.cosmo = cosmo
         self._initialize(cosmo)
         self.nPops=0
-        self.normalized=normalized
-        if normalized:
-            print('The population function will be normalized to the total number of events! The overall rate will note be included.')
 	#self.zmax=50
     
     
@@ -54,7 +51,7 @@ class AllPopulations(object):
     #########################################################################
     # Differential Rate
     
-    def log_dN_dm1dm2dz(self, m1, m2, z, spins, Lambda, Tobs):
+    def log_dN_dm1dm2dz(self, m1, m2, z, spins, Tobs, Lambda):
         
         LambdaCosmo, LambdaAllPop = self._split_params(Lambda)
         
@@ -66,7 +63,6 @@ class AllPopulations(object):
         
         logN = -np.log1p(z) # differential of time between source and detector frame
         
-        #if Tobs is not None:
         logN += np.log(Tobs) # obs. time
         
         H0, Om0, w0 = self.cosmo._get_values(LambdaCosmo, ['H0', 'Om', 'w0'])
@@ -77,8 +73,7 @@ class AllPopulations(object):
         for i,pop in enumerate(self._pops):
             # Sum differential rate for every population
             LambdaPop = LambdaAllPop[prev:prev+self._allNParams[i]]
-            #logN += pop.log_dR_dm1dm2(m1, m2, z, spins, LambdaPop)
-            popRate += np.exp(pop.log_dR_dm1dm2(m1, m2, z, spins, LambdaPop))
+            popRate += pop.log_dR_dm1dm2(m1, m2, z, spins, LambdaPop)
             prev=self._allNParams[i]
             
         logN += np.log(popRate) #pop.log_dR_dm1dm2(m1, m2, z, spins, LambdaPop)
@@ -89,7 +84,7 @@ class AllPopulations(object):
         #return np.where( ~np.isnan(m1), logN, np.NINF)
     
     
-    def log_dN_dm1zdm2zddL(self, m1, m2, z, spins, Lambda, Tobs, dL=None):
+    def log_dN_dm1zdm2zddL(self, m1, m2, z, spins, Tobs, Lambda, dL=None):
         LambdaCosmo, LambdaAllPop = self._split_params(Lambda)
         H0, Om0, w0, Xi0, n = self.cosmo._get_values(LambdaCosmo, ['H0', 'Om', 'w0', 'Xi0', 'n'])
         where_compute=~np.isnan(m1)
@@ -99,7 +94,7 @@ class AllPopulations(object):
         m1, m2, z, spins = m1[where_compute], m2[where_compute], z[where_compute], [s[where_compute] for s in spins]
         if dL is not None:
             dL=dL[where_compute]
-        logdN = self.log_dN_dm1dm2dz(m1, m2, z, spins, Lambda, Tobs)-self._log_dMsourcedMdet(z) - self.cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n , dL=dL)
+        logdN = self.log_dN_dm1dm2dz(m1, m2, z, spins, Tobs, Lambda)-self._log_dMsourcedMdet(z) - self.cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n , dL=dL)
         
         res[where_compute] = logdN
         return res
@@ -150,7 +145,7 @@ class AllPopulations(object):
     # Sampling 
     
     
-    def sample(self, nSamples, zmax, Lambda, spins_kwargs={}):
+    def sample(self, nSamples, zmax, Lambda,):
         '''
         Returns samples m1, m2, z from all the populations. 
         The sampling assumes that the redshift and mass dependence 
@@ -172,26 +167,23 @@ class AllPopulations(object):
             DESCRIPTION.
 
         '''
-        #allSamples = np.empty( (nSamples, self.nPops, 5) )
+        allSamples = np.empty( (nSamples, self.nPops, 5) )
         
         redshiftSamples = self._sample_redshift( nSamples, zmax, Lambda,)
         massSamples = self._sample_masses( nSamples, Lambda,)
-        spinSamples = self._sample_spins( nSamples, Lambda, **spins_kwargs)
+        spinSamples = self._sample_spins( nSamples, Lambda,)
         
-        #allSamples[:,:, 0] = massSamples[:,:,0]
-        #allSamples[:,:, 1] = massSamples[:,:,1]
-        #allSamples[:,:, 2] = redshiftSamples
-        #allSamples[:,:, 3] = spinSamples[:,:,0]
-        #allSamples[:,:, 4] = spinSamples[:,:,1]
+        allSamples[:,:, 0] = massSamples[:,:,0]
+        allSamples[:,:, 1] = massSamples[:,:,1]
+        allSamples[:,:, 2] = redshiftSamples
+        allSamples[:,:, 3] = spinSamples[:,:,0]
+        allSamples[:,:, 4] = spinSamples[:,:,1]
         
-        return np.squeeze(massSamples), np.squeeze(redshiftSamples) , np.squeeze(spinSamples) 
+        return allSamples
     
     
-    def _sample_spins(self, nSamples, Lambda, **kwargs):
-        
-        nSpins = max([p.spinDist.nVars for p in self._pops ])
-        
-        allsamples = np.empty( (nSamples, self.nPops, nSpins) )
+    def _sample_spins(self, nSamples, Lambda,):
+        allsamples = np.empty( (nSamples, self.nPops, 2) )
         if self._pops[0].spinDist.__class__.__name__ =='DummySpinDist':
             return allsamples
         
@@ -202,10 +194,10 @@ class AllPopulations(object):
             #print('LambdaPop: %s' %str(LambdaPop))
             lambdaBBHrate, lambdaBBHmass, lambdaBBHspin = pop._split_lambdas(LambdaPop)
             #print('lambdaBBHmass: %s' %str(lambdaBBHmass))
-            spinSamples =  pop.spinDist.sample(nSamples, lambdaBBHspin, **kwargs)
+            s1, s2 =  pop.spinDist.sample(nSamples, lambdaBBHspin)
             
-            for k in range(len(spinSamples)):
-                allsamples[:, i, k] = spinSamples[k]
+            allsamples[:, i, 0] = s1
+            allsamples[:, i, 1] = s2
             prev=self._allNParams[i]
 
         return allsamples

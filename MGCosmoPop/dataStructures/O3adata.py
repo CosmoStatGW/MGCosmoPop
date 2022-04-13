@@ -78,6 +78,11 @@ class O3aData(LVCData):
             m1z = posterior_samples['mass_1']
             m2z = posterior_samples['mass_2']
             dL = posterior_samples['luminosity_distance']
+            try:
+                w = posterior_samples['weights_bin']
+            except Exception as e:
+                print(e)
+                w = np.ones(1)
             if which_spins=='skip':
                 spins=[]
             elif which_spins=='chiEff':
@@ -86,7 +91,7 @@ class O3aData(LVCData):
                 spins=[chieff, chiP]
             else:
                 raise NotImplementedError()
-            return m1z, m2z, dL, spins
+            return m1z, m2z, dL, spins, w
 
     def _load_data_event_GWTC2(self, fname, event, nSamplesUse, which_spins='skip'):
         
@@ -106,6 +111,11 @@ class O3aData(LVCData):
             m1z = posterior_samples['mass_1']
             m2z = posterior_samples['mass_2']
             dL = posterior_samples['luminosity_distance']
+            try:
+                w = posterior_samples['weights_bin']
+            except Exception as e:
+                print(e)
+                w = np.ones(1)
             if which_spins=='skip':
                 spins=[]
             elif which_spins=='chiEff':
@@ -116,14 +126,15 @@ class O3aData(LVCData):
                 raise NotImplementedError()
         
         # Downsample if needed
-        #all_ds = self._downsample( [m1z, m2z, dL, *spins], nSamplesUse)
+        #all_ds = self._downsample( [m1z, m2z, dL, w, *spins], nSamplesUse)
         
         #m1z = all_ds[0]
         #m2z= all_ds[1]
         #dL =  all_ds[2]
-        #spins = all_ds[3:]
+        #w = all_ds[3]
+        #spins = all_ds[4:]
         
-        return m1z, m2z, dL, spins
+        return m1z, m2z, dL, spins, w
               
     
     

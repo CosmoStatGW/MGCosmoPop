@@ -12,7 +12,7 @@ import astropy.units as u
 
 class PowerLawRateEvolution(RateEvolution):
     
-    def __init__(self, unit=u.Gpc):
+    def __init__(self, unit=u.Gpc, normalized=False):
         RateEvolution.__init__(self)
         
         self.params = ['R0', 'lambdaRedshift']
@@ -23,7 +23,19 @@ class PowerLawRateEvolution(RateEvolution):
         self.names = { 'R0':r'$R_0$', 
                            'lambdaRedshift':r'$\lambda$',}
         
-        self._set_rate_units(unit)
+        self.normalized=normalized
+        if normalized :
+            print('The rate evolution returned will not include the overall number of events!')
+            self._delete_R0()
+        else:
+            self._set_rate_units(unit)
+    
+    def _delete_R0(self):
+        
+        self.params.remove('R0')
+        _ = self.baseValues.pop('R0')
+        _ = self.names.pop('R0')
+        self.n_params -=1
     
     def _set_rate_units(self, unit):
         if unit==u.Mpc:
@@ -38,9 +50,14 @@ class PowerLawRateEvolution(RateEvolution):
         '''
         Evolution of total rate with redshift: R0*(1+z)**lambda
         '''
-        R0, lambdaRedshift = lambdaBBHrate
+        
         z=theta_rate
-        return np.log(R0)+lambdaRedshift*np.log1p(z)
+        if not self.normalized:
+            R0, lambdaRedshift = lambdaBBHrate
+            return np.log(R0)+lambdaRedshift*np.log1p(z)
+        else:
+            lambdaRedshift = lambdaBBHrate
+            return lambdaRedshift*np.log1p(z)
     
     
 
@@ -49,7 +66,7 @@ class PowerLawRateEvolution(RateEvolution):
 
 class AstroPhRateEvolution(RateEvolution):
     
-    def __init__(self, unit=u.Gpc):
+    def __init__(self, unit=u.Gpc, normalized=False):
         RateEvolution.__init__(self)
         
         self.params = ['R0', 'alphaRedshift', 'betaRedshift', 'zp']
@@ -65,7 +82,19 @@ class AstroPhRateEvolution(RateEvolution):
                            'betaRedshift':r'$\beta_z$',
                            'zp': r'$z_p$'}
         
-        self._set_rate_units(unit)
+        self.normalized=normalized
+        if normalized :
+            print('The rate evolution returned will not include the overall number of events!')
+            self._delete_R0()
+        else:
+            self._set_rate_units(unit)
+    
+    def _delete_R0(self):
+        
+        self.params.remove('R0')
+        _ = self.baseValues.pop('R0')
+        _ = self.names.pop('R0')
+        self.n_params -=1
     
     def _set_rate_units(self, unit):
         if unit==u.Mpc:
@@ -80,10 +109,14 @@ class AstroPhRateEvolution(RateEvolution):
         '''
         Evolution of total rate with redshift: R0*(1+z)**lambda
         '''
-        R0, alphaRedshift , betaRedshift, zp = lambdaBBHrate
+        
         z=theta_rate
-        return np.log(R0)+np.log(self._C0(alphaRedshift , betaRedshift, zp))+alphaRedshift*np.log1p(z)-np.log(1+((1+z)/(1+zp))**(alphaRedshift+betaRedshift))
-
+        if not self.normalized:
+            R0, alphaRedshift , betaRedshift, zp = lambdaBBHrate
+            return np.log(R0)+np.log(self._C0(alphaRedshift , betaRedshift, zp))+alphaRedshift*np.log1p(z)-np.log(1+((1+z)/(1+zp))**(alphaRedshift+betaRedshift))
+        else:
+            alphaRedshift , betaRedshift, zp = lambdaBBHrate
+            return alphaRedshift*np.log1p(z)-np.log(1+((1+z)/(1+zp))**(alphaRedshift+betaRedshift))#+np.log(self._C0(alphaRedshift , betaRedshift, zp))
 
     def _C0(self, alphaRedshift , betaRedshift, zp):
         
@@ -91,28 +124,4 @@ class AstroPhRateEvolution(RateEvolution):
 
 
 
-
-class DummyRateEvolution(RateEvolution):
-    
-    def __init__(self):
-        RateEvolution.__init__(self)
-        
-        self.params = ['R1', 'gamma']
-        self.baseValues = {'R1': 1, #60 , # Gpc^-3 yr^-1
-                           'gamma': -1 ,}
-        self.n_params = len(self.params)
-        
-        self.names = {
-                           'R1':r'$R_1$', 
-                           'gamma':r'$\gamma$',}
-        
-
-    def log_dNdVdt(self, theta_rate, lambdaBBHrate):
-        '''
-        Evolution of total rate with redshift: R0*(1+z)**lambda
-        '''
-        R1, gamma = lambdaBBHrate
-        z=theta_rate
-        return np.log(R1)+gamma*np.log1p(z)
-    
     

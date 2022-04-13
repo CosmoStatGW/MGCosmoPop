@@ -52,7 +52,7 @@ class O3bData(LVCData):
         return ['GW200115_042309','GW200105_162426', 'GW191219_163120', 'GW200210_092254', 'GW200210_092255', 'GW190917_114630' ]
         # events in this line have secondary mass compatible with NS
 
-#+['GW190413_05954', 'GW190426_152155', 'GW190719_215514', 'GW190725_174728', 'GW190731_140936', 'GW190805_211137', 'GW190917_114630', 'GW191103_012549', 'GW200216_220804' ] 
+        #+['GW190413_05954', 'GW190426_152155', 'GW190719_215514', 'GW190725_174728', 'GW190731_140936', 'GW190805_211137', 'GW190917_114630', 'GW191103_012549', 'GW200216_220804' ] 
         # events in the second list are those with ifar>=1yr, table 1 of 2111.03634
     
     
@@ -82,6 +82,11 @@ class O3bData(LVCData):
             m1z = posterior_samples['mass_1']
             m2z = posterior_samples['mass_2']
             dL = posterior_samples['luminosity_distance']
+            try:
+                w = posterior_samples['weights_bin']
+            except Exception as e:
+                print(e)
+                w = np.ones(1)
             if which_spins=='skip':
                 spins=[]
             elif which_spins=='chiEff':
@@ -92,14 +97,15 @@ class O3bData(LVCData):
                 raise NotImplementedError()
         
         # Downsample if needed
-        all_ds = self._downsample( [m1z, m2z, dL, *spins], nSamplesUse)
+        #all_ds = self._downsample( [m1z, m2z, dL, w, *spins], nSamplesUse)
         
-        m1z = all_ds[0]
-        m2z= all_ds[1]
-        dL =  all_ds[2]
-        spins = all_ds[3:]
+        #m1z = all_ds[0]
+        #m2z= all_ds[1]
+        #dL =  all_ds[2]
+        #spins = all_ds[4:]
+        #w = all_ds[3]
         
-        return np.squeeze(m1z), np.squeeze(m2z), np.squeeze(dL), [np.squeeze(s) for s in spins]
+        return np.squeeze(m1z), np.squeeze(m2z), np.squeeze(dL), [np.squeeze(s) for s in spins], w
               
     
     

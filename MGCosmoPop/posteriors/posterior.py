@@ -20,13 +20,18 @@ def logdiffexp(x, y):
 
 class Posterior(object):
     
-    def __init__(self, hyperLikelihood, prior, selectionBias, verbose=False, bias_safety_factor=10.):
+    def __init__(self, hyperLikelihood, prior, selectionBias, verbose=False, 
+                 bias_safety_factor=10., 
+                 normalized=False):
         
         self.hyperLikelihood = hyperLikelihood
         self.prior = prior
         self.selectionBias = selectionBias
         self.verbose=verbose
         self.bias_safety_factor=bias_safety_factor
+        self.normalized=normalized
+        if normalized :
+            print('This model will marginalize analytically over the overall normalization with a flat-in-log prior!')
         #self.params_inference = params_inference
 
         
@@ -45,17 +50,21 @@ class Posterior(object):
         
         #logll = np.log(ll)
         
-
         
         # Compute selection bias
         # Includes uncertainty on MC estimation of the selection effects if required. err is =zero if we required to ignore it.
         if self.selectionBias is not None:
             mus, errs, Neffs = self.selectionBias.Ndet(Lambda_test, )
         else:
-            Lambda = self.hyperLikelihood.population.get_Lambda(Lambda_test, self.hyperLikelihood.params_inference )
-            mus = [ self.hyperLikelihood.population.Nperyear_expected(Lambda)*self.hyperLikelihood._getTobs(self.hyperLikelihood.data[i]) for i in range(len(lls))]
-            errs = [0 for _ in range(len(lls))]
-            
+            # Test case: we see the full population.
+            if not self.normalized :
+                Lambda = self.hyperLikelihood.population.get_Lambda(Lambda_test, self.hyperLikelihood.params_inference )
+                mus = [ self.hyperLikelihood.population.Nperyear_expected(Lambda)*self.hyperLikelihood._getTobs(self.hyperLikelihood.data[i]) for i in range(len(lls))]
+                errs = [0 for _ in range(len(lls))]
+            else:
+                mus = np.ones(len(lls))
+                errs = np.zeros(len(lls))
+        
         #logNdet = logdiffexp(logMu, logErr )
         logPosts = np.zeros(len(lls))
         for i in range(len(lls)):
@@ -65,12 +74,24 @@ class Posterior(object):
                 # reject the sample
                 logPosts[i] = -np.inf
             else:
-                logPosts[i] = lls[i]-mus[i] #-np.exp(logNdet.astype('float128')) 
-                # Add uncertainty on MC estimation of the selection effects. err is =zero if we required to ignore it.
-                logPosts[i] += errs[i]
+                
+                if not self.normalized:
+                    logPosts[i] = lls[i]-mus[i] #-np.exp(logNdet.astype('float128')) 
+                    # Add uncertainty on MC estimation of the selection effects. err is =zero if we required to ignore it.
+                    logPosts[i] += errs[i]
+                else:
+                    logPosts[i] = lls[i]-self.hyperLikelihood.data[i].Nobs*np.log(mus[i])
+                    err = (3*self.hyperLikelihood.data[i].Nobs+(self.hyperLikelihood.data[i].Nobs)**2 )/(2*Neffs[i])
+                    logPosts[i] += err
         
         # sum log likelihood of different datasets
         logPost = logPosts.sum()
+        
+        #if not self.normalized :
+        #    Tobs = np.array([self.hyperLikelihood._getTobs(self.hyperLikelihood.data[i]) for i in range(len(lls)) ])#.sum()
+        #    Nobs = np.array([self.hyperLikelihood.data[i].Nobs for i in range(len(lls)) ])#.sum()
+            # Add observation time
+        #    logPost += (np.log(Tobs)*Nobs).sum()
         
         
         # Add prior

@@ -18,7 +18,7 @@ class GWMockData(Data):
     def __init__(self, fname, nObsUse=None, nSamplesUse=None, percSamplesUse=None, dist_unit=u.Gpc, Tobs=2.5 ):
         
         self.dist_unit = dist_unit
-        self.m1z, self.m2z, self.dL, self.snr, self.Nsamples = self._load_data(fname, nObsUse, ) #nSamplesUse, )  
+        self.m1z, self.m2z, self.dL, self.snr, self.Nsamples, self.bin_weights = self._load_data(fname, nObsUse, ) #nSamplesUse, )  
         self.Nobs=self.m1z.shape[0]
         self.logNsamples = np.log(self.Nsamples)
 
@@ -64,6 +64,12 @@ class GWMockData(Data):
                     print('SNRs not present for this dataset. Use the same SNR threshold as the original injections.')
                     snrs = np.zeros(dl_samples.shape)
 
+                try:
+                    bin_weights = np.array(phi['posteriors']['bin_weights'])[:nObsUse]
+                except Exception as e:
+                    print(e)
+                    print('No bin weights.')
+                    bin_weights = np.ones(dl_samples.shape[0])
         
         if self.dist_unit==u.Mpc:
             print('Using distances in Mpc')
@@ -82,7 +88,7 @@ class GWMockData(Data):
             
         #m1det_samples, m2det_samples, dl_samples = self.downsample([m1det_samples, m2det_samples, dl_samples], nSamplesUse)
         #return m1z, m2z, dL, np.count_nonzero(m1z, axis=-1)
-        return m1det_samples, m2det_samples, dl_samples, snrs, np.count_nonzero(m1det_samples, axis=-1) 
+        return m1det_samples, m2det_samples, dl_samples, snrs, np.count_nonzero(m1det_samples, axis=-1), bin_weights 
     
     def logOrMassPrior(self):
         return np.zeros(self.m1z.shape)
