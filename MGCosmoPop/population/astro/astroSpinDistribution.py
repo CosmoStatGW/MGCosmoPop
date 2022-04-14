@@ -37,7 +37,9 @@ def trunc_gaussian_logpdf(x, mu = 1, sigma = 1, lower = 0, upper=100):
 class DummySpinDist(BBHDistFunction):
     
     def __init__(self, ):
+        self.nVars=0
         BBHDistFunction.__init__(self)
+        
     
     def logpdf(theta, lambdaBBHmass):
         #chi1, chi2 =theta

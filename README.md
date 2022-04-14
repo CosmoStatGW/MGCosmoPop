@@ -6,6 +6,7 @@ Developed by [Michele Mancarella](<https://github.com/Mik3M4n>).
 
 If using this code, please cite this repository: [![DOI](https://zenodo.org/badge/425232654.svg)](https://zenodo.org/badge/latestdoi/425232654) , 
 and the paper [Cosmology and modified gravitational wave propagation from binary black hole population models](<https://arxiv.org/abs/2112.05728>). Bibtex:
+
 ```
 @article{Mancarella:2021ecn,
     author = "Mancarella, Michele and Genoud-Prachex, Edwin and Maggiore, Michele",
@@ -18,7 +19,7 @@ and the paper [Cosmology and modified gravitational wave propagation from binary
 }
 ```
 
-
+The data products associated to the paper (injections used for computation of the selection effects in GWTC-3, mock datasets and injections) are avaliable at [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6461447.svg)](https://doi.org/10.5281/zenodo.6461447)
 
 
 
@@ -32,7 +33,9 @@ and the paper [Cosmology and modified gravitational wave propagation from binary
 * [Example](https://github.com/CosmoStatGW/MGCosmoPop#Example)
 
 ## Installation
- Follow the instructions (require the conda package manager, or else install manually the dependencies in requirements.txt)
+
+ 
+### Using conda
  
  Create the dedicated environment:
  ```
@@ -53,6 +56,17 @@ and the paper [Cosmology and modified gravitational wave propagation from binary
 conda install -y -c conda-forge --file requirements_conda.txt  
 pip install .
 ```
+
+
+### Manually, without cloning
+Install manually the dependencies in requirements.txt
+
+Then
+
+ ```
+pip install git+https://github.com/CosmoStatGW/MGCosmoPop
+ ```
+
 ## Overview and code organisation
 
 ### General structure
@@ -118,10 +132,13 @@ The following models are implemented:
 
 The astrophysical BH population is defined by three base ingredients: mass distribution, spin distribution, and merger rate evolution. Each one is implemented in a specific object.
 
-#### Mass functions
+#### Mass functions (primary mass)
 * Truncated power law
 * Truncated power law with smoothed edges
 * Broken power law
+* (From v1.1) Power law + peak model 
+* (From v1.1) Neutron stars: uncorrelated gaussian
+* (From v1.1) Neutron stars: uncorrelated flat
 
 #### Rate evolution
 * Power law : R(z) = R_0 * (1+z)^\lambda
@@ -129,6 +146,8 @@ The astrophysical BH population is defined by three base ingredients: mass distr
 
 #### Spin distributions
 * (Uncorrelated) Gaussian model for chi\_1, chi\_2
+* (From v1.1) "Default" spin model
+
 
 ### Extensions
 
@@ -137,31 +156,50 @@ To add populations, one should implement a new module (e.g. : PBHs )
 
 
 ## Data
+
+Data for O1-O2, O3a, and O3b can be downloaded from the LVK data releases. The data products associated to the paper (injections used for computation of the selection effects in GWTC-3, mock adasets and injections) are avaliable at [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6461447.svg)](https://doi.org/10.5281/zenodo.6461447).
+
+All data can be downloaded running the script ```getData.sh```:
+
+```
+chmod +x getData
+./getData.sh
+```
+
+
+
 ### GWTC-3
 
 O1-O2 O3a, and O3b are supported. The corresponding posterior samples should be placed under data/O1O2, data/O3a, data/O3b respectively.
 
-### Mock datasets
-Tools for generating mock datasets and injections are in mock/ . Examples of configuration files to generate injections for O3a/O3b are provided. After editing the config file, run:
+### Injections
+Tools for generating injections are in mock/ . Examples of configuration files to generate injections for O3a/O3b are provided. After editing the config file, run:
 
 ```
 python generateInjections.py --config=configInjections_O3b.py --fout=<name_of_output_folder> 
 ```
 
-For mock datasets, edit the file configDataGen.py
+The corresponding file is saved in the output folder as ```selected.h5 ```. It can be loaded using the object ```GWMockInjectionsData ``` in ```dataStructures ```:
 
 ```
-python generateData.py --config=configDataGen.py --fout=<name_of_output_folder> --type='data' 
+file_name  = os.path.join(<name_of_output_folder> ,'selected.h5' )
+myInjections = GWMockInjectionsData(file_name ,  Tobs=Tobs )
 ```
-For mock injections,
 
-```
-python generateData.py --config=configInjections.py --fout=<name_of_output_folder> --type='inj' 
-```
+where ```Tobs ``` is the duration in years of the observing run.
 
 ## Usage
 
 An introductory notebook is available in notebooks/
+
+A module to run a MCMC analysis is available in ```sample/``` . To run on a cluster, edit the configuration file as in the template ```config_template.py``` (explanations in the file) with the option ```parallelization='mpi'```. Then:
+
+```
+fout = myMCMC
+mkdir $fout
+
+srun  python runMCMC.py --config=config_template --fout=$fout
+```
 
 ## Example
 
