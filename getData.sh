@@ -8,7 +8,7 @@ O1O2P="$P/O1O2"
 O3aP="$P/O3a"
 O3bP="$P/O3b"
 
-mkdir $P
+#mkdir $P
 
 
 echo "Download O1-O2 data (85.6 MB)? y/n"
@@ -16,14 +16,15 @@ read DLO1O2
 
 if [ $DLO1O2 == "y" ]; then 
     echo "Downloading O1-O2..."
-    if [ "$(ls -A $O1O2P)" ]; then 
-        	echo "Found O1-O2  data"
-    else
-        curl -o $P/GWTC-1_sample_release.tar.gz https://dcc.ligo.org/public/0157/P1800370/005/GWTC-1_sample_release.tar.gz
-        tar -xvf $P/GWTC-1_sample_release.tar.gz -C $P
-        mv $P/GWTC-1_sample_release $O1O2P
-        rm $P/GWTC-1_sample_release.tar.gz
-    fi
+    #if [ "$(ls -A $O1O2P)" ]; then 
+    #    	echo "Found O1-O2  data"
+    #else
+    curl -o $P/GWTC-1_sample_release.tar.gz https://dcc.ligo.org/public/0157/P1800370/005/GWTC-1_sample_release.tar.gz
+    tar -xvf $P/GWTC-1_sample_release.tar.gz -C $P
+    mv $P/GWTC-1_sample_release/* $O1O2P
+    rm $P/GWTC-1_sample_release.tar.gz
+    rm -r $P/GWTC-1_sample_release/
+#fi
 fi
 
 
@@ -32,14 +33,15 @@ read DLO1O3a
 
 if [ $DLO1O3a == "y" ]; then 
     echo "Downloading O3a..."
-    if [ "$(ls -A $O3aP)" ]; then 
-        	echo "Found O3a  data"
-    else
-        #curl -o $P/all_posterior_samples.tar https://dcc.ligo.org/public/0169/P2000223/007/all_posterior_samples.tar
-        tar -xvf $P/all_posterior_samples.tar -C $P
-        mv $P/all_posterior_samples $O3aP
-        rm $P/all_posterior_samples.tar
-    fi
+    #if [ "$(ls -A $O3aP)" ]; then 
+    #    	echo "Found O3a  data"
+    #else
+    curl -o $P/all_posterior_samples.tar https://dcc.ligo.org/public/0169/P2000223/007/all_posterior_samples.tar
+    tar -xvf $P/all_posterior_samples.tar -C $P
+    mv $P/all_posterior_samples/* $O3aP
+    rm $P/all_posterior_samples.tar
+    rm -r $P/all_posterior_samples/
+    #fi
 fi
 
 
@@ -62,12 +64,13 @@ read DLO1O3b
 
 if [ $DLO1O3b == "y" ]; then 
     echo "Downloading O3b. Warning: the files are very large and Zenodo can put bandwidth limit. If this script stalls, download the files by hand from https://zenodo.org/record/5546663#.YlghA9NBwlI and put them in data/O3b"
-    if [ "$(ls -A $O3bP)" ]; then 
-        	echo "Found O3b  data"
-    else
-        mkdir $O3bP; cd $O3bP
-        zenodo_get 5546663
-    fi
+    #if [ "$(ls -A $O3bP)" ]; then 
+    #    	echo "Found O3b  data"
+    #else
+    #mkdir $O3bP;
+    cd $O3bP
+    zenodo_get 5546663
+    #fi
 fi
 cd $cdir
 
