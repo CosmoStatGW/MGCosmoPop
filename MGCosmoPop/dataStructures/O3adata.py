@@ -51,7 +51,9 @@ class O3aData(LVCData):
     
     
     def _get_not_BBHs(self):
-        return ['GW190425', 'GW190426_152155', 'GW190814', 'GW190917_114630' ] #'GW190426_152155', 'GW190426']
+        # return ['GW190425', 'GW190426_152155', 'GW190814', 'GW190917_114630' ] #'GW190426_152155', 'GW190426']
+        return ['GW190425', 'GW190426_152155', 'GW190917_114630' ] #'GW190426_152155', 'GW190426']
+
     
     
     def _name_conditions(self, f ):
@@ -73,11 +75,9 @@ class O3aData(LVCData):
     def _load_data_event_GWTC2_1(self, fname, event, nSamplesUse, which_spins='skip'):
         data_path = os.path.join(fname, 'IGWN-GWTC2p1-v1-'+event+'_PEDataRelease.h5')
         with h5py.File(data_path, 'r') as f:
-            dataset = f['IMRPhenomXPHM']
-            posterior_samples = dataset['posterior_samples']
-            m1z = posterior_samples['mass_1']
-            m2z = posterior_samples['mass_2']
-            dL = posterior_samples['luminosity_distance']
+            posterior_samples = f['IMRPhenomXPHM']['posterior_samples']
+            _keys = ['mass_1', 'mass_2', 'luminosity_distance', 'right_ascension', 'declination']
+            m1z, m2z, dL, ra, dec = [posterior_samples[k] for k in _keys]
             try:
                 w = posterior_samples['weights_bin']
             except Exception as e:
@@ -91,7 +91,7 @@ class O3aData(LVCData):
                 spins=[chieff, chiP]
             else:
                 raise NotImplementedError()
-            return m1z, m2z, dL, spins, w
+            return m1z, m2z, dL, ra, dec, spins, w
 
     def _load_data_event_GWTC2(self, fname, event, nSamplesUse, which_spins='skip'):
         
@@ -105,15 +105,13 @@ class O3aData(LVCData):
         # By hand:
         data_path = os.path.join(fname,  event+self.post_file_extension)
         with h5py.File(data_path, 'r') as f:
-            dataset = f['PublicationSamples']
-            posterior_samples = dataset['posterior_samples']
-            
-            m1z = posterior_samples['mass_1']
-            m2z = posterior_samples['mass_2']
-            dL = posterior_samples['luminosity_distance']
+            posterior_samples = f['PublicationSamples']['posterior_samples']      
+            _keys = ['mass_1', 'mass_2', 'luminosity_distance', 'ra', 'dec']
+            m1z, m2z, dL, ra, dec = [posterior_samples[k] for k in _keys]
+            print(dL, ra, dec)
             try:
                 w = posterior_samples['weights_bin']
-            except Exception as e:
+            except Exception as e:O1O2Data
                 print(e)
                 w = np.ones(1)
             if which_spins=='skip':
@@ -134,7 +132,7 @@ class O3aData(LVCData):
         #w = all_ds[3]
         #spins = all_ds[4:]
         
-        return m1z, m2z, dL, spins, w
+        return m1z, m2z, dL, ra, dec, spins, w
               
     
     
