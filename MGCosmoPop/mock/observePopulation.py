@@ -84,11 +84,12 @@ class Observations(object):
         
         self._find_Nperyear_expected()
         
-        
-   
+    def _find_Nperyear_expected(self):  
+         self.Nperyear_expected = self.allPops.Nperyear_expected(self.lambdaBase, zmax=self.zmax, verbose=True)
+         print('Expected number per year between redshift 0 and %s: %s'%(self.zmax, self.Nperyear_expected) )
+
     
-    
-    def _find_Nperyear_expected(self):
+    def _find_Nperyear_expected_old(self):
         LambdaPop = self.LambdaAllPopBase[0:self.allPops._allNParams[0]]
         lambdaBBHrate, lambdaBBHmass, lambdaBBHspin = self.allPops._pops[0]._split_lambdas(LambdaPop)
         
@@ -108,8 +109,9 @@ class Observations(object):
             verbose=False
         if verbose:
             print('Parameters used to sample events: %s' %str(self.lambdaBase))
-        allSamples = self.allPops.sample(N, self.zmax, self.lambdaBase)
-        m1s, m2s, zs = allSamples[:, :, 0], allSamples[:, :, 1], allSamples[:, :, 2] 
+        massSamples, zs, spinSamples = self.allPops.sample(N, self.zmax, self.lambdaBase)
+        #m1s, m2s, zs = allSamples[:, :, 0], allSamples[:, :, 1], allSamples[:, :, 2] 
+        m1s, m2s = np.squeeze(massSamples)[:, 0], np.squeeze(massSamples)[:, 1]
     
         costhetas = 1.-2.*np.random.uniform(size=N)
         phis = 2.*np.pi*np.random.uniform(size=N)

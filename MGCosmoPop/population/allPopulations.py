@@ -192,17 +192,20 @@ class AllPopulations(object):
         nSpins = max([p.spinDist.nVars for p in self._pops ])
         
         allsamples = np.empty( (nSamples, self.nPops, nSpins) )
-        if self._pops[0].spinDist.__class__.__name__ =='DummySpinDist':
-            return allsamples
+        #if self._pops[0].spinDist.__class__.__name__ =='DummySpinDist':
+        #    return allsamples
         
         LambdaCosmo, LambdaAllPop = self._split_params(Lambda)
         prev=0
         for i,pop in enumerate(self._pops):
-            LambdaPop = LambdaAllPop[prev:prev+self._allNParams[i]]
+            if pop.spinDist.__class__.__name__ =='DummySpinDist':
+                continue
+            else:
+                LambdaPop = LambdaAllPop[prev:prev+self._allNParams[i]]
             #print('LambdaPop: %s' %str(LambdaPop))
-            lambdaBBHrate, lambdaBBHmass, lambdaBBHspin = pop._split_lambdas(LambdaPop)
-            #print('lambdaBBHmass: %s' %str(lambdaBBHmass))
-            spinSamples =  pop.spinDist.sample(nSamples, lambdaBBHspin, **kwargs)
+                lambdaBBHrate, lambdaBBHmass, lambdaBBHspin = pop._split_lambdas(LambdaPop)
+                #print('lambdaBBHmass: %s' %str(lambdaBBHmass))
+                spinSamples =  pop.spinDist.sample(nSamples, lambdaBBHspin, **kwargs)
             
             for k in range(len(spinSamples)):
                 allsamples[:, i, k] = spinSamples[k]
