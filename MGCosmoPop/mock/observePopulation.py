@@ -56,18 +56,15 @@ class Observations(object):
     ):        
         
         self.out_dir=out_dir
-        
-        #self.osnr = oSNR(**kwargs) 
-        #self.osnr.make_interpolator()
-        
+              
         
         ## Define detector network
-        self.detNet = detNet #NetworkSNR()
+        self.detNet = detNet 
         
         
         self.allPops=populations
         
-        self.zmax = zmax #self.find_max_z()
+        self.zmax = zmax 
         
         self.rho_th=rho_th
         self.eta_scatter=eta_scatter
@@ -80,7 +77,6 @@ class Observations(object):
         self.LambdaCosmoBase, self.LambdaAllPopBase = self.allPops._split_params(self.lambdaBase)
         self.H0base, self.Om0Base, self.w0Base, self.Xi0Base, self.nBase = self.allPops.cosmo._get_values(self.LambdaCosmoBase, [ 'H0', 'Om', 'w0', 'Xi0', 'n'])
     
-#        self._get_theta_cdf()
         
         self._find_Nperyear_expected()
         
@@ -88,20 +84,7 @@ class Observations(object):
          self.Nperyear_expected = self.allPops.Nperyear_expected(self.lambdaBase, zmax=self.zmax, verbose=True)
          print('Expected number per year between redshift 0 and %s: %s'%(self.zmax, self.Nperyear_expected) )
 
-    
-    def _find_Nperyear_expected_old(self):
-        LambdaPop = self.LambdaAllPopBase[0:self.allPops._allNParams[0]]
-        lambdaBBHrate, lambdaBBHmass, lambdaBBHspin = self.allPops._pops[0]._split_lambdas(LambdaPop)
-        
-        zz = np.linspace(0, self.zmax, 1000)
-        
-        print('rate parameters in _find_Nperyear_expected: %s' %str(lambdaBBHrate))
-        dNdz = np.exp(self.allPops.logdN_dz( zz, self.H0base, self.Om0Base, self.w0Base, lambdaBBHrate, self.allPops._pops[0]))
-        
-        self.Nperyear_expected = np.trapz(dNdz,zz)
-        
-        print('Expected number per year between redshift 0 and %s: %s'%(self.zmax, self.Nperyear_expected) )
-    
+       
     
     def  _generate_mergers(self, N, verbose=True):
         
@@ -110,7 +93,6 @@ class Observations(object):
         if verbose:
             print('Parameters used to sample events: %s' %str(self.lambdaBase))
         massSamples, zs, spinSamples = self.allPops.sample(N, self.zmax, self.lambdaBase)
-        #m1s, m2s, zs = allSamples[:, :, 0], allSamples[:, :, 1], allSamples[:, :, 2] 
         m1s, m2s = np.squeeze(massSamples)[:, 0], np.squeeze(massSamples)[:, 1]
     
         costhetas = 1.-2.*np.random.uniform(size=N)
@@ -129,12 +111,6 @@ class Observations(object):
         m1s, m2s, zs, costhetas,  phis, cosiotas, ts_det = self._generate_mergers(N)
         print('Generated %s events .' %str(m1s.shape))
         
-        #keep = np.random.rand(N)<duty_cycle
-            
-        #m1s, m2s, zs, thetas = m1sGen[keep], m2sGen[keep], zsGen[keep], thetasGen[keep]
-        
-        #print('%s events kept assuming %s duty cycle' %(m1s.shape[0], duty_cycle))
-        
         
         ## Get quantities in detector frame
         
@@ -142,8 +118,6 @@ class Observations(object):
         m1d, m2d, = m1s*(1+zs), m2s*(1+zs)
         
         ## Get SNR
-        #oSNRs = self.osnr.get_oSNR(m1d, m2d, dLs)
-        #SNR = oSNRs*thetas
         
         SNR = self.detNet.full_SNR(m1d, m2d, dLs, costhetas, phis, cosiotas, ts_det)
  
@@ -156,16 +130,8 @@ class Observations(object):
             out = rho_obs<0
         
         
-        # Get p_draw
-        #LambdaPop = self.LambdaAllPopBase[0:self.allPops._allNParams[0]]
-        #lambdaBBHrate, lambdaBBHmass, lambdaBBHspin = self.allPops._pops[0]._split_lambdas(LambdaPop)
-                
-        #logdNdz = self.allPops.logdN_dz( zs, self.H0base, self.Om0Base, self.w0Base, lambdaBBHrate, self.allPops._pops[0])-np.log(self.Nperyear_expected)
-        
-        #logpm1m2 = self.allPops._pops[0].massDist.logpdf([m1s, m2s], lambdaBBHmass)
-        
-
-        log_p_draw = self.allPops.log_dN_dm1zdm2zddL(m1s, m2s, zs, [], 1., self.lambdaBase, dL=dLs)-np.log(self.Nperyear_expected) #logdNdz+logpm1m2-2*np.log1p(zs)-self.allPops.cosmo.log_ddL_dz(zs, self.H0base, self.Om0Base, self.w0Base, self.Xi0Base, self.nBase )
+      
+        log_p_draw = self.allPops.log_dN_dm1zdm2zddL(m1s, m2s, zs, [], self.lambdaBase, 1., dL=dLs)-np.log(self.Nperyear_expected) #logdNdz+logpm1m2-2*np.log1p(zs)-self.allPops.cosmo.log_ddL_dz(zs, self.H0base, self.Om0Base, self.w0Base, self.Xi0Base, self.nBase )
         #p_draw=np.exp(log_p_draw)
         
         # Select
