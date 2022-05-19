@@ -11,6 +11,16 @@ from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
 import astropy.units as u
 import os
+import pandas as pd
+import sys
+
+PACKAGE_PARENT = '..'
+SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
+sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
+
+
+
+import Globals
 
 
 class Data(ABC):
@@ -157,6 +167,11 @@ class LVCData(Data):
         
         Data.__init__(self)
         
+        
+        
+        #self.metadata = pd.read_csv(os.path.join(Globals.dataPath, 'all_metadata_pipelines_best.csv'))
+        
+        
         self.FAR_th = FAR_th
         self.SNR_th = SNR_th
         print('FAR th in LVC data: %s' %self.FAR_th)
@@ -182,7 +197,8 @@ class LVCData(Data):
         if nSamplesUse is not None or percSamplesUse is not None:
             self.downsample(nSamples=nSamplesUse, percSamples=percSamplesUse)
             print('Number of samples for each event after downsamplng: %s' %self.Nsamples )
-            
+        
+        
 
         #assert (self.m1z >= 0).all()
         #assert (self.m2z >= 0).all()
@@ -348,4 +364,122 @@ class LVCData(Data):
   
   
 
-  
+class O3InjectionsData(Data):
+    
+    def __init__(self, fname, nInjUse=None, dist_unit=u.Gpc, ifar_th=1., snr_th=0.,  which_spins='skip', which_injections='GWTC-2' ):
+        
+        
+        self.which_injections = which_injections
+        self.which_spins=which_spins
+        self.dist_unit=dist_unit
+        self.m1z, self.m2z, self.dL, self.spins, self.log_weights_sel, self.N_gen, self.Tobs, self.snrs, conditions_arr = self._load_data(fname, nInjUse, which_spins=which_spins )        
+        self.logN_gen = np.log(self.N_gen)
+        #self.log_weights_sel = np.log(self.weights_sel)
+        assert (self.m1z > 0).all()
+        assert (self.m2z > 0).all()
+        assert (self.dL > 0).all()
+        assert(self.m2z<self.m1z).all()
+        
+        
+        
+        self.ifar_th=ifar_th
+        self.snr_th = snr_th
+        
+        
+        
+        
+        if which_injections=='GWTC-2':
+            gstlal_ifar, pycbc_ifar, pycbc_bbh_ifar = conditions_arr
+            self.condition = ((gstlal_ifar > ifar_th) | (pycbc_ifar > ifar_th) | (pycbc_bbh_ifar > ifar_th)) & (self.snrs > snr_th)
+        elif which_injections=='GWTC-3':
+            self.condition = (np.max(conditions_arr, axis=0) > ifar_th) & (self.snrs > snr_th)
+        
+
+        
+        
+    def get_theta(self):
+        return np.array( [self.m1z, self.m2z, self.dL, self.spins  ] )  
+    
+    
+    def _load_data(self, fname, nInjUse, which_spins='skip'):
+        
+        #import astropy.units as u
+        from astropy.cosmology import Planck15
+        from cosmology.cosmo import Cosmo
+        import h5py
+        
+        print('Reading injections from %s...' %fname)
+        
+        with h5py.File(fname, 'r') as f:
+        
+            Tobs = f.attrs['analysis_time_s']/(365.25*24*3600) # years
+            Ndraw = f.attrs['total_generated']
+    
+            m1 = np.array(f['injections/mass1_source'])
+            m2 = np.array(f['injections/mass2_source'])
+            z = np.array(f['injections/redshift'])
+            
+            if which_spins=='skip':
+                spins=[]
+            else:
+                chi1z = np.array(f['injections/spin1z'])
+                chi2z = np.array(f['injections/spin2z'])
+                if which_spins=='chiEff':
+                    q = m2/m1
+                    chiEff = (chi1z+q*chi2z)/(1+q)
+                    print('chi_p not available for O3 selection effects ! ')
+                    spins=[chiEff, np.full(chiEff.shape, np.NaN)]
+                elif which_spins=='s1s2':
+                    raise NotImplementedError()
+                    spins=[chi1z, chi2z]
+                
+            
+            
+        
+            if self.which_injections=='GWTC-2':
+                p_draw = np.array(f['injections/sampling_pdf'])
+                if which_spins=='skip':
+                    print('Removing factor of 1/2 for each spin dimension from p_draw...')
+                    p_draw *= 4
+                
+                gstlal_ifar = np.array(f['injections/ifar_gstlal'])
+                pycbc_ifar = np.array(f['injections/ifar_pycbc_full'])
+                pycbc_bbh_ifar = np.array(f['injections/ifar_pycbc_bbh'])
+                conditions_arr = (gstlal_ifar, pycbc_ifar, pycbc_bbh_ifar)
+                
+                snrs = np.sqrt(np.array(f['injections/optimal_snr_l'])**2 + np.array(f['injections/optimal_snr_h'])**2)
+                
+            elif self.which_injections=='GWTC-3':
+                
+                p_draw = np.array(f['injections/mass1_source_mass2_source_sampling_pdf'])*np.array(f['injections/redshift_sampling_pdf'])
+                if which_spins!='skip':
+                    p_draw *= (np.array(f['injections/spin1x_spin1y_spin1z_sampling_pdf'])*np.array(f['injections/spin2x_spin2y_spin2z_sampling_pdf']) )
+                
+                conditions_arr = np.array( [ np.array(f['injections/ifar_cwb']), np.array(f['injections/ifar_gstlal']), np.array(f['injections/ifar_mbta']), np.array(f['injections/ifar_pycbc_bbh']), np.array(f['injections/ifar_pycbc_hyperbank'])] )
+                snrs = np.array(f['injections/optimal_snr_net'])
+             
+            log_p_draw = np.log(p_draw)
+            m1z = m1*(1+z)
+            m2z = m2*(1+z)
+            dL = np.array(Planck15.luminosity_distance(z).to(self.dist_unit).value)
+            
+                
+            #dL = np.array(f['injections/distance']) #in Mpc for GWTC2 !
+            #if self.dist_unit==u.Gpc:
+            #    print('Converting original distance in Mpc to Gpc ...')
+            #    dL*=1e-03
+        
+            print('Re-weighting p_draw to go to detector frame quantities...')
+            myCosmo = Cosmo(dist_unit=self.dist_unit)
+            #p_draw /= (1+z)**2
+            #p_draw /= myCosmo.ddL_dz(z, Planck15.H0.value, Planck15.Om0, -1., 1., 0) #z, H0, Om, w0, Xi0, n
+            log_p_draw -=2*np.log1p(z)
+            log_p_draw -= myCosmo.log_ddL_dz(z, Planck15.H0.value, Planck15.Om0, -1., 1., 0. )
+        
+
+            print('Number of total injections: %s' %Ndraw)
+            print('Number of injections that pass first threshold: %s' %p_draw.shape[0])
+            
+            self.max_z = np.max(z)
+            print('Max redshift of injections: %s' %self.max_z)
+            return m1z, m2z, dL , spins, log_p_draw , Ndraw, Tobs, snrs, conditions_arr

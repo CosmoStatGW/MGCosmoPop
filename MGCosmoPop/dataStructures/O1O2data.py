@@ -22,16 +22,22 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 from astropy.cosmology import Planck15
 from cosmology.cosmo import Cosmo
 
-
+import Globals
 
      
 class O1O2Data(LVCData):
     
-    def __init__(self, fname, **kwargs):#nObsUse=None, nSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='skip' ):
+    def __init__(self, fname, which_metadata='GWOSC',  **kwargs):#nObsUse=None, nSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='skip' ):
         
         self.post_file_extension='.hdf5'
         import pandas as pd
-        self.metadata = pd.read_csv(os.path.join(fname, 'GWTC-1-confident.csv'))
+        if which_metadata=='GWOSC':
+            print('Using SNRS and far from the public version of the GWTC-3 catalog from the GWOSC')
+            self.metadata = pd.read_csv(os.path.join(fname, 'GWTC-1-confident.csv'))
+        else:
+            print('Using best SNRS and far from all pipelines as reported in the GWTC-3 catalog paper')
+            self.metadata = pd.read_csv(os.path.join(Globals.dataPath, 'all_metadata_pipelines_best.csv'))
+        
         LVCData.__init__(self, fname, **kwargs) #nObsUse=nObsUse, nSamplesUse=nSamplesUse, dist_unit=dist_unit, events_use=events_use, which_spins=which_spins)
         
         

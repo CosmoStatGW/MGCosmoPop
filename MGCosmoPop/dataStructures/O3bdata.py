@@ -4,10 +4,9 @@
 #    All rights reserved. Use of this source code is governed by a modified BSD
 #    license that can be found in the LICENSE file.
 
-from .ABSdata import Data, LVCData
+from .ABSdata import  LVCData, O3InjectionsData
 
 import numpy as np
-import astropy.units as u
 import h5py
 import os
 import sys
@@ -19,25 +18,33 @@ PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
-from astropy.cosmology import Planck15
-from cosmology.cosmo import Cosmo
+#import astropy.units as u
+#from astropy.cosmology import Planck15
+#from cosmology.cosmo import Cosmo
 
+
+import Globals
      
 
 class O3bData(LVCData):
     
-    def __init__(self, fname, suffix_name = 'nocosmo', **kwargs):#nObsUse=None, nSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='skip' ):
+    def __init__(self, fname, suffix_name = 'nocosmo', which_metadata = 'GWOSC', **kwargs):#nObsUse=None, nSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='skip' ):
         
         self.suffix_name = suffix_name
         import pandas as pd
         self.post_file_extension='.h5'
-        self.metadata = pd.read_csv(os.path.join(fname, 'GWTC-3-confident.csv'))
+        if which_metadata=='GWOSC':
+            print('Using SNRS and far from the public version of the GWTC-3 catalog from the GWOSC')
+            self.metadata = pd.read_csv(os.path.join(fname, 'GWTC-3-confident.csv'))
+        else:
+            print('Using best SNRS and far from all pipelines as reported in the GWTC-3 catalog paper')
+            self.metadata = pd.read_csv(os.path.join(Globals.dataPath, 'all_metadata_pipelines_best.csv'))
         LVCData.__init__(self, fname, **kwargs)
         
         
     
     def _set_Tobs(self):
-        self.Tobs= 147.083/365.
+        self.Tobs= 147.083/365. # difference between the two GPS times below, in sec
         # O3b dates: 1st November 2019 15:00 UTC (GPS 1256655618) to 27th March 2020 17:00 UTC (GPS 1269363618)
         # 147.083
         # 148 days in total
@@ -109,96 +116,13 @@ class O3bData(LVCData):
               
     
     
-
+class O3bInjectionsData(O3InjectionsData, ):
     
-    
-    
-    
-class O3InjectionsData(Data):
-    
-    def __init__(self, fname, nInjUse=None,  dist_unit=u.Gpc, ifar_th=1., which_spins='skip' ):
-        
-        self.which_spins=which_spins
-        self.dist_unit=dist_unit
-        self.m1z, self.m2z, self.dL, self.spins, self.log_weights_sel, self.N_gen, self.Tobs, conditions_arr = self._load_data(fname, nInjUse, which_spins=which_spins )        
-        self.logN_gen = np.log(self.N_gen)
-        #self.log_weights_sel = np.log(self.weights_sel)
-        assert (self.m1z > 0).all()
-        assert (self.m2z > 0).all()
-        assert (self.dL > 0).all()
-        assert(self.m2z<self.m1z).all()
-        
-        self.Tobs=183.3/365. #0.5
-        #self.chiEff = np.zeros(self.m1z.shape)
+    def __init__(self, fname, **kwargs):
+        self.Tobs=147.083/365.
         print('Obs time: %s yrs' %self.Tobs )
         
-        self.ifar_th=ifar_th
-        gstlal_ifar, pycbc_ifar, pycbc_bbh_ifar = conditions_arr
-        self.condition = (gstlal_ifar > ifar_th) | (pycbc_ifar > ifar_th) | (pycbc_bbh_ifar > ifar_th)
-        
-        
-    def get_theta(self):
-        return np.array( [self.m1z, self.m2z, self.dL, self.spins  ] )  
-    
-    
-    def _load_data(self, fname, nInjUse, which_spins='skip'):
-        
-        with h5py.File(fname, 'r') as f:
-        
-            Tobs = f.attrs['analysis_time_s']/(365.25*24*3600) # years
-            Ndraw = f.attrs['total_generated']
-    
-            m1 = np.array(f['injections/mass1_source'])
-            m2 = np.array(f['injections/mass2_source'])
-            z = np.array(f['injections/redshift'])
-            
-            if which_spins=='skip':
-                spins=[]
-            else:
-                chi1z = np.array(f['injections/spin1z'])
-                chi2z = np.array(f['injections/spin2z'])
-                if which_spins=='chiEff':
-                    q = m2/m1
-                    chiEff = (chi1z+q*chi2z)/(1+q)
-                    print('chi_p not available for O3 selection effects ! ')
-                    spins=[chiEff, np.full(chiEff.shape, np.NaN)]
-                elif which_spins=='s1s2':
-                    raise NotImplementedError()
-                    spins=[chi1z, chi2z]
-    
-            p_draw = np.array(f['injections/sampling_pdf'])
-            if which_spins=='skip':
-                print('Removing factor of 1/2 for each spin dimension from p_draw...')
-                p_draw *= 4
-            log_p_draw = np.log(p_draw)
-        
-            gstlal_ifar = np.array(f['injections/ifar_gstlal'])
-            pycbc_ifar = np.array(f['injections/ifar_pycbc_full'])
-            pycbc_bbh_ifar = np.array(f['injections/ifar_pycbc_bbh'])
-        
-            m1z = m1*(1+z)
-            m2z = m2*(1+z)
-            dL = np.array(Planck15.luminosity_distance(z).to(self.dist_unit).value)
-            
-                
-            #dL = np.array(f['injections/distance']) #in Mpc for GWTC2 !
-            #if self.dist_unit==u.Gpc:
-            #    print('Converting original distance in Mpc to Gpc ...')
-            #    dL*=1e-03
-        
-            print('Re-weighting p_draw to go to detector frame quantities...')
-            myCosmo = Cosmo(dist_unit=self.dist_unit)
-            #p_draw /= (1+z)**2
-            #p_draw /= myCosmo.ddL_dz(z, Planck15.H0.value, Planck15.Om0, -1., 1., 0) #z, H0, Om, w0, Xi0, n
-            log_p_draw -=2*np.log1p(z)
-            log_p_draw -= myCosmo.log_ddL_dz(z, Planck15.H0.value, Planck15.Om0, -1., 1., 0. )
-        
+        O3InjectionsData.__init__(self, fname, **kwargs)
 
-            print('Number of total injections: %s' %Ndraw)
-            print('Number of injections that pass first threshold: %s' %p_draw.shape[0])
-            
-            self.max_z = np.max(z)
-            print('Max redshift of injections: %s' %self.max_z)
-            return m1z, m2z, dL , spins, log_p_draw , Ndraw, Tobs, (gstlal_ifar, pycbc_ifar, pycbc_bbh_ifar)
       
   
