@@ -503,6 +503,11 @@ class BrokenPowerLawMass(BBHDistFunction):
         return m1, m2
 
 
+    
+    
+    
+##############################################################################
+# Power law + Gaussian peak
 
 
 class PowerLawPlusPeakMass(BBHDistFunction):
@@ -698,7 +703,227 @@ class PowerLawPlusPeakMass(BBHDistFunction):
         assert(m1<=mh).all() 
             
         return m1, m2
+    
+    
+       
+    
+#######################################################
+###################    MULTIPEAK    ###################
+#######################################################
+    
+    
+class MultiPeakMass(BBHDistFunction):
+    
+    '''
+    Mass distribution  - Multipeak Power Law
+    '''
 
+    def __init__(self):
+        
+        BBHDistFunction.__init__(self)
+        
+        self.params = ['lambdaPeak', 'lambda1', 'alpha', 'beta', 'ml', 'mh', 'mu1', 'sigma1', 'mu2', 'sigma2', 'deltam' ]
+        
+        self.baseValues = {
+                           'lambdaPeak':0.05,
+                           'lambda1':0.5,
+                           'alpha': 2.9,
+                           'beta':0.9,
+                           'ml':4.6,
+                           'mh':87.,
+                           'mu1': 33.,
+                           'sigma1':3.,
+                           'mu2': 68.,
+                           'sigma2':3.,                          
+                           'deltam':4.8
+                           }
+        
+        self.names = { 'lambdaPeak': r'$\lambda$',
+                       'lambda1': r'$\lambda_1$',
+                       'alpha': r'$\alpha$',
+                       'beta':  r'$\beta_q$',
+                       'ml': r'$m_{\rm min}$',
+                       'mh':r'$m_{\rm max}$',
+                       'mu1':r'$\mu_1$',
+                       'sigma1':r'$\sigma_1$',
+                       'mu2':r'$\mu_2$',
+                       'sigma2':r'$\sigma_2$',
+                       'deltam': r'$\delta_{\rm m}$'
+                       }
+         
+        self.n_params = len(self.params)
+        
+        print(' Multi peak mass function base values: %s' %self.baseValues)
+        
+        
+    def _logS(self, m, deltam, ml,):
+        maskL = m <= ml #- eps
+        maskU = m >= (ml + deltam) #+ eps
+        s = np.empty_like(m)
+        s[maskL] = np.NINF
+        s[maskU] = 0
+        maskM = ~(maskL | maskU)
+        s[maskM] = -np.logaddexp( 0, (deltam/(m[maskM]-ml) + deltam/(m[maskM]-ml - deltam) ) ) #1/(np.exp(deltam/(m[maskM]-ml) + deltam/(m[maskM]-ml - deltam))+1)
+        return s
+    
+    
+    def _logpdfm1(self, m, lambdaPeak, lambda1, alpha, ml, mh, mu1, sigma1, mu2, sigma2, deltam):
+        '''
+        Marginal distribution p(m1), not normalised
+        '''
+
+        where_nan = np.isnan(m)
+        result = np.empty_like(m)
+        
+        result[where_nan]=np.NINF
+        
+        max_compute = max(mh, mu2+10*sigma2)
+        
+        where_compute = (m <= max_compute) & (m >= ml) & (~where_nan)
+        result[~where_compute] = np.NINF
+        
+        m = m[where_compute]
+        trunc_component = np.exp(truncated_power_law(m, alpha, ml, mh)-norm_truncated_pl(alpha, ml, mh))
+        gauss_component1 = np.exp(-(m-mu1)**2/(2*sigma1**2))/(np.sqrt(2*np.pi)*sigma1)
+        gauss_component2 = np.exp(-(m-mu2)**2/(2*sigma2**2))/(np.sqrt(2*np.pi)*sigma2)
+        
+        result[where_compute] = np.log((1-lambdaPeak)*trunc_component+lambdaPeak*lambda1*gauss_component1 + lambdaPeak*(1-lambda1)*gauss_component2  ) + self._logS(m, deltam, ml)  #np.where(m < mBreak, np.log(m)*(-alpha1)+self._logS(m, deltam, ml), np.log(mBreak)*(-alpha1+alpha2)+np.log(m)*(-alpha2)+self._logS(m, deltam, ml) )
+        
+        return result
+        
+    
+    
+    def _logpdfm2(self, m2, beta, deltam, ml):
+        '''
+        Conditional distribution p(m2 | m1)
+        '''
+        where_nan = np.isnan(m2)
+        result = np.empty_like(m2)
+
+        result[where_nan]=np.NINF
+        
+        where_compute = (ml<= m2) & (~where_nan)
+        result[~where_compute] = np.NINF
+        
+        m2 = m2[where_compute]
+        result[where_compute] = np.log(m2)*(beta)+self._logS(m2, deltam, ml)
+        return result
+        
+    
+    
+    def logpdf(self, theta, lambdaBBHmass):
+        
+        '''p(m1, m2 | Lambda ), normalized to one'''
+        
+        m1, m2 = theta
+        lambdaPeak, lambda1, alpha, beta, ml, mh, mu1, sigma1, mu2, sigma2, deltam = lambdaBBHmass
+        
+        where_nan = np.isnan(m1)
+        assert (where_nan==np.isnan(m2)).all()
+        result = np.empty_like(m1)
+
+        result[where_nan]=np.NINF
+        
+        max_compute = max(mh, mu2+10*sigma2)
+        where_compute = (m2 < m1) & (ml< m2) & (m1 < max_compute ) & (~where_nan)
+        result[~where_compute] = np.NINF
+        
+        m1 = m1[where_compute]
+        m2 = m2[where_compute]
+        
+        result[where_compute] = self._logpdfm1(m1, lambdaPeak, lambda1, alpha, ml, mh, mu1, sigma1, mu2, sigma2, deltam) + self._logpdfm2(m2, beta, deltam, ml) + self._logC(m1, beta, deltam,  ml) - self._logNorm(lambdaPeak, lambda1, alpha, ml, mh, mu1, sigma1, mu2, sigma2, deltam)
+        
+        return result
+        
+        
+        
+    
+    
+    def _logC(self, m, beta, deltam, ml):
+        '''
+        Gives inverse log integral of  p(m1, m2) dm2 (i.e. log C(m1) in the LVC notation )
+        '''
+        res = 200
+        exact_th=0.
+        
+        xlow=np.linspace(ml, ml+deltam+deltam/10, 200)
+        xup=np.linspace(ml+deltam+deltam/10+1e-01, m[~np.isnan(m)].max(), res)
+        xx=np.sort(np.concatenate([xlow,xup], ))
+  
+        p2 = np.exp(self._logpdfm2( xx , beta, deltam, ml))
+        cdf = cumtrapz(p2, xx)
+        
+        where_compute = ~np.isnan(m)
+        #where_exact = m <exact_th*ml
+        
+        #where_approx = (~where_exact) & (where_compute)
+        
+        result = np.empty_like(m)
+        
+        result[~where_compute]=np.NINF
+        #result[where_exact]=self._logCexact(m[where_exact], beta, deltam, ml,) #np.NINF
+        
+        result[where_compute] = -np.log( np.interp(m[where_compute], xx[1:], cdf) )
+        
+        return result
+    
+        
+
+
+    def _logNorm(self, lambdaPeak, lambda1, alpha, ml, mh, mu1, sigma1, mu2, sigma2, deltam ):
+        '''
+        Gives log integral of  p(m1, m2) dm1 dm2 (i.e. total normalization of mass function )
+
+        '''
+        res=200
+        
+        if lambdaPeak==0 and lambda1==0:
+            ms = np.linspace(ml, mh, res) 
+        else:
+            max_compute = max(mh, mu2+10*sigma2)
+            
+            # lower edge
+            ms1 = np.linspace(1., ml+deltam+deltam/10, 200)
+            
+            # before first gaussian peak
+            ms2 = np.linspace( ml+deltam+deltam/10+1e-01, mu1-5*sigma1, int(res/2) )
+            
+            # around first gaussian peak
+            ms3 = np.linspace( mu1-5*sigma1+1e-01, mu1+5*sigma1, int(res/2) )
+            
+            # after first gaussian peak, before second gaussian peak
+            ms4 = np.linspace( mu1+5*sigma1+1e-01, mu2-5*sigma2, int(res/2) )
+            
+            # around second gaussian peak
+            ms5 = np.linspace( mu2-5*sigma2+1e-01, mu2+5*sigma2, int(res/2) )
+            
+            # after second gaussian peak
+            ms6 = np.linspace(mu2+5*sigma2+1e-01, max_compute+max_compute/2, int(res/2) )
+            
+            ms=np.sort(np.concatenate([ms1,ms2, ms3, ms4, ms5, ms6], ))
+        
+        p1 = np.exp(self._logpdfm1( ms , lambdaPeak, lambda1, alpha, ml, mh, mu1, sigma1, mu2, sigma2, deltam  ))
+        return np.log(np.trapz(p1,ms))
+    
+    
+    def sample(self, nSamples, lambdaBBHmass, mMin=2., mMax=200.):
+        
+        lambdaPeak, lambda1, alpha, beta, ml, mh, mu1, sigma1, mu2, sigma2, deltam = lambdaBBHmass
+        
+        pm1 = lambda x: np.exp(self._logpdfm1(x, lambdaPeak, lambda1, alpha, ml, mh, mu1, sigma1, mu2, sigma2, deltam ))
+        pm2 = lambda x: np.exp(self._logpdfm2(x,  beta, deltam, ml ))
+        
+        mMax = max(mh, mu2+10*sigma2)
+        m1 = self._sample_pdf(nSamples, pm1, ml, mMax)
+        m2 = self._sample_vector_upper(pm2, ml, m1)
+        assert(m2<=m1).all() 
+        assert(m2>=ml).all() 
+        assert(m1<=mh).all() 
+            
+        return m1, m2
+
+    
+    
 
 ##############################################################################
 ##############################################################################
