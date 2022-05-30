@@ -345,7 +345,7 @@ def main():
                                       nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, percSamplesUse=config.percSamplesUse, nInjUse=config.nInjUse, 
                                       dist_unit=units[config.dist_unit], 
                                       data_args={'events_use':O3_use, 'which_spins':which_spins[spindist], 'SNR_th':SNR_th, 'FAR_th': FAR_th }, 
-                                      inj_args={'which_spins':which_spins[spindist], 'SNR_th':SNR_th },
+                                      inj_args={'which_spins':which_spins[spindist], 'snr_th':SNR_th },
                                       Tobs=config.Tobs)
             allData.append(Data)
             allInjData.append(injData)

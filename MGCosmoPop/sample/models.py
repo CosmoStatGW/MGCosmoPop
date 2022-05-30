@@ -18,7 +18,7 @@ import Globals
 
 import astropy.units as u
 
-from population.astro.astroMassDistribution import AstroSmoothPowerLawMass, BrokenPowerLawMass, TruncPowerLawMass, PowerLawPlusPeakMass
+from population.astro.astroMassDistribution import AstroSmoothPowerLawMass, BrokenPowerLawMass, TruncPowerLawMass, PowerLawPlusPeakMass, MultiPeakMass
 from population.astro.astroSpinDistribution import DummySpinDist, GaussSpinDist
 from population.astro.rateEvolution import PowerLawRateEvolution, AstroPhRateEvolution
 from population.astro.astroPopulation import AstroPopulation
@@ -43,6 +43,7 @@ mass_functions = {  'smooth_pow_law': AstroSmoothPowerLawMass,
                       'broken_pow_law': BrokenPowerLawMass,
                       'trunc_pow_law': TruncPowerLawMass,
                       'pow_law_peak': PowerLawPlusPeakMass,
+                      'multi_peak': MultiPeakMass,
     
      }
 
