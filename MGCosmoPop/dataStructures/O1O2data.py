@@ -11,9 +11,7 @@ import astropy.units as u
 import h5py
 import os
 import sys
-#from pesummary.io import read
-#import glob
-   
+
 
 PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
@@ -77,12 +75,11 @@ class O1O2Data(LVCData):
         data_path = os.path.join(fname,  event+'_GWTC-1'+self.post_file_extension)
         
         with h5py.File(data_path, 'r') as f:
-            
+
             posterior_samples = f['Overall_posterior']
-            
-            m1z = posterior_samples['m1_detector_frame_Msun']
-            m2z = posterior_samples['m2_detector_frame_Msun']
-            dL = posterior_samples['luminosity_distance_Mpc']
+            _keys = ['m1_detector_frame_Msun', 'm2_detector_frame_Msun', 'luminosity_distance_Mpc', 
+                     'right_ascension', 'declination']
+            m1z, m2z, dL, ra, dec = [posterior_samples[k] for k in _keys]
             try:
                 w = posterior_samples['weights_bin']
             except Exception as e:
@@ -122,7 +119,7 @@ class O1O2Data(LVCData):
         #spins = all_ds[4:]
         #ws = all_ds[3]
         
-        return m1z, m2z, dL, spins, w
+        return m1z, m2z, dL, ra, dec, spins, w
     
  
     
