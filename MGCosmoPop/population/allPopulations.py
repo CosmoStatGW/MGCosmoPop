@@ -58,11 +58,15 @@ class AllPopulations(object):
         
         LambdaCosmo, LambdaAllPop = self._split_params(Lambda)
         
-        where_compute=~np.isnan(m1)
-        res = np.empty_like(m1)
-        res[~where_compute]=np.NINF
+        #where_compute=~np.isnan(m1)
+        #res = np.empty_like(m1)
+        #res[~where_compute]=np.NINF
+        #res = np.where(where_compute, res, np.NINF)
+        #m1 = np.where(where_compute, m1, np.NINF)
+        #m2 = np.where(where_compute, m2, np.NINF)
+        #z = np.where(where_compute, z, np.NINF)
         
-        m1, m2, z = m1[where_compute], m2[where_compute], z[where_compute]
+        #m1, m2, z = m1[where_compute], m2[where_compute], z[where_compute]
         
         logN = -np.log1p(z) # differential of time between source and detector frame
         
@@ -82,28 +86,36 @@ class AllPopulations(object):
             prev=self._allNParams[i]
             
         logN += np.log(popRate) #pop.log_dR_dm1dm2(m1, m2, z, spins, LambdaPop)
+        #print('log_dN_dm1dm2dz: %s' %logN)
+        #res[where_compute]=logN
+        #np.where(where_compute, logN, )
         
-        res[where_compute]=logN
-        
-        return res
+        return logN
         #return np.where( ~np.isnan(m1), logN, np.NINF)
     
     
     def log_dN_dm1zdm2zddL(self, m1, m2, z, spins, Lambda, Tobs, dL=None):
+        
         LambdaCosmo, LambdaAllPop = self._split_params(Lambda)
         H0, Om0, w0, Xi0, n = self.cosmo._get_values(LambdaCosmo, ['H0', 'Om', 'w0', 'Xi0', 'n'])
-        where_compute=~np.isnan(m1)
-        res = np.empty_like(m1)
-        res[~where_compute]=np.NINF
         
-        m1, m2, z, spins = m1[where_compute], m2[where_compute], z[where_compute], [s[where_compute] for s in spins]
-        if dL is not None:
-            dL=dL[where_compute]
-        logdN = self.log_dN_dm1dm2dz(m1, m2, z, spins, Lambda, Tobs)-self._log_dMsourcedMdet(z) - self.cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n , dL=dL)
+        #where_compute=~np.isnan(m1)
+        #res = np.empty_like(m1)
+        #res[~where_compute]=np.NINF
+        #res = np.where(where_compute, res, np.NINF)
+        #m1 = np.where(where_compute, m1, np.NINF)
+        #m2 = np.where(where_compute, m2, np.NINF)
+        #z = np.where(where_compute, z, np.NINF)
+        #spins = [np.where(where_compute, s, np.NINF) for s in spins]
+        #m1, m2, z, spins = m1[where_compute], m2[where_compute], z[where_compute], [s[where_compute] for s in spins]
+        #if dL is not None:
+            #dL=dL[where_compute]
+        #    dL=np.where(where_compute, dL, np.NINF)
+        #logdN = self.log_dN_dm1dm2dz(m1, m2, z, spins, Lambda, Tobs)-self._log_dMsourcedMdet(z) - self.cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n , dL=dL)
         
-        res[where_compute] = logdN
-        return res
-        #return np.where( ~np.isnan(m1), self.log_dN_dm1dm2dz(m1, m2, z, spins, Tobs, Lambda)-self._log_dMsourcedMdet(z) - self.cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n ) , np.NINF)
+        #res[where_compute] = logdN
+        #return logdN
+        return np.where( ~np.isnan(m1), self.log_dN_dm1dm2dz(m1, m2, z, spins, Lambda, Tobs)-self._log_dMsourcedMdet(z) - self.cosmo.log_ddL_dz(z, H0, Om0, w0, Xi0, n , dL=dL) , np.NINF)
     
     
     
@@ -119,7 +131,7 @@ class AllPopulations(object):
         #pop=self._pops[npop]
         #LambdaPop = LambdaAllPop[npop:npop+self._allNParams[npop]]
         #lambdaBBHrate, lambdaBBHmass, lambdaBBHspin = pop._split_lambdas(LambdaPop)
-        res = pop.rateEvol.log_dNdVdt(z, lambdaBBHrate)+ self.cosmo.log_dV_dz(z, H0, Om0, w0)-np.log1p(z)
+        res = pop.rateEvol.log_dNdVdt(z, lambdaBBHrate) + self.cosmo.log_dV_dz(z, H0, Om0, w0)-np.log1p(z)
         #prev=self._allNParams[i]
             
         return res # shape n_pops x len(z)

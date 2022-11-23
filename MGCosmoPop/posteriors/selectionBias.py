@@ -78,28 +78,11 @@ class SelectionBiasInjections(SelectionBias):
         self.get_uncertainty=get_uncertainty
         SelectionBias.__init__(self, population, injData, params_inference, normalized=normalized)
     
-    
-    def _get_mass_redshift(self, Lambda, injData):
+    def get_likelihood(self, Lambda_test):
+        pass
         
-        LambdaCosmo, LambdaAllPop = self.population._split_params(Lambda)
-        H0, Om0, w0,  Xi0, n = self.population.cosmo._get_values(LambdaCosmo, ['H0', 'Om', 'w0','Xi0', 'n'])
-        
-        z = self.population.cosmo.z_from_dLGW_fast(injData.dL, H0, Om0, w0, Xi0, n)
-        m1 = injData.m1z / (1 + z)    
-        m2 = injData.m2z / (1 + z)
-        
-        return m1, m2, z
     
-    
-    def _getSpins(self, injData):
-        return injData.spins
-    
-    def _getTobs(self, injData):
-        return injData.Tobs
-    
-    
-    def _Ndet(self, Lambda_test, injData, verbose=False, ):
-        
+    def _get_likelihood(self, Lambda_test, injData):
         Lambda = self.population.get_Lambda(Lambda_test, self.params_inference )
         
         m1, m2, z = self._get_mass_redshift(Lambda, injData)
@@ -122,12 +105,39 @@ class SelectionBiasInjections(SelectionBias):
         logdN = np.squeeze( self.population.log_dN_dm1zdm2zddL(m1, m2, z, spins, Lambda, Tobs, dL=injData.dL[injData.condition])-injData.log_weights_sel[injData.condition])
         if self.normalized :
            logdN -= np.log(self.population.Nperyear_expected(Lambda, zmax=20, verbose=False))
-
+        
+        return logdN
+        
+    
+    
+    def _get_mass_redshift(self, Lambda, injData):
+        
+        LambdaCosmo, LambdaAllPop = self.population._split_params(Lambda)
+        H0, Om0, w0,  Xi0, n = self.population.cosmo._get_values(LambdaCosmo, ['H0', 'Om', 'w0','Xi0', 'n'])
+        
+        z = self.population.cosmo.z_from_dLGW_fast(injData.dL, H0, Om0, w0, Xi0, n)
+        m1 = injData.m1z / (1 + z)    
+        m2 = injData.m2z / (1 + z)
+        
+        return m1, m2, z
+    
+    
+    def _getSpins(self, injData):
+        return injData.spins
+    
+    def _getTobs(self, injData):
+        return injData.Tobs
+    
+    
+    def _Ndet(self, Lambda_test, injData, verbose=False, ):
+        
+        
+        logdN = self._get_likelihood(Lambda_test, injData)
         
         logMu = np.logaddexp.reduce(logdN) - injData.logN_gen
         
         if np.isnan(logMu):
-            raise ValueError('NaN value for logMu. Values of Lambda: %s' %( str(Lambda) ) )
+            raise ValueError('NaN value for logMu. Values of Lambda: %s' %( str(Lambda_test) ) )
         
         mu = np.exp(logMu)#.astype('float128')
         

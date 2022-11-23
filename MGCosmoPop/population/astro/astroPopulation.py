@@ -62,11 +62,8 @@ class AstroPopulation(Population):
         lambdaBBHrate, lambdaBBHmass, lambdaBBHspin = self._split_lambdas(lambdaBBH)
         theta_rate, theta_mass, theta_spin = self._get_thetas( m1, m2, z, spins)
         logdR =  self.rateEvol.log_dNdVdt(theta_rate, lambdaBBHrate)+self.massDist.logpdf(theta_mass, lambdaBBHmass)
-        if self.spinDist.__class__.__name__ =='DummySpinDist':
+        if self.spinDist.__class__.__name__ =='DummySpinDist' or spins==[]:
             return logdR
-        #print(theta_spin[:2])
-        #print(lambdaBBHspin)
-        #print(self.spinDist.logpdf(theta_spin, lambdaBBHspin))
         return logdR+self.spinDist.logpdf(theta_spin, lambdaBBHspin)
         
     

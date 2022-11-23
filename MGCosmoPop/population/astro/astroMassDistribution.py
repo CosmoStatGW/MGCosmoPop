@@ -374,6 +374,7 @@ class BrokenPowerLawMass(BBHDistFunction):
         m1, m2 = theta
         alpha1, alpha2, beta, deltam, ml, mh, b = lambdaBBHmass
         
+        
         where_nan = np.isnan(m1)
         assert (where_nan==np.isnan(m2)).all()
         result = np.empty_like(m1)
@@ -385,6 +386,7 @@ class BrokenPowerLawMass(BBHDistFunction):
         
         m1 = m1[where_compute]
         m2 = m2[where_compute]
+        
         
         result[where_compute] = self._logpdfm1(m1,  alpha1, alpha2, deltam, ml, mh, b ) + self._logpdfm2(m2, beta, deltam, ml) + self._logC(m1, beta, deltam,  ml, **kwargs)-  self._logNorm( alpha1, alpha2, deltam, ml, mh, b,)
         return result
@@ -398,7 +400,7 @@ class BrokenPowerLawMass(BBHDistFunction):
         Gives inverse log integral of  p(m1, m2) dm2 (i.e. log C(m1) in the LVC notation )
         '''
         xlow=np.linspace(ml, ml+deltam+deltam/10, 200)
-        xup=np.linspace(ml+deltam+deltam/10+1e-01, m[~np.isnan(m)].max(), res)
+        xup=np.linspace(ml+deltam+deltam/10+deltam/100, m[~np.isnan(m)].max(), res)
         xx=np.sort(np.concatenate([xlow,xup], ))
   
         p2 = np.exp(self._logpdfm2( xx , beta, deltam, ml))
@@ -549,21 +551,26 @@ class PowerLawPlusPeakMass(BBHDistFunction):
         
         
     def _logS(self, m, deltam, ml,):
-        maskL = m <= ml #- eps
-        maskU = m >= (ml + deltam) #+ eps
+        #print('_logS call')
+        #print('Input m shape: %s' %str(m.shape))
+        maskL = m <= ml 
+        maskU = m >= (ml + deltam) 
         s = np.empty_like(m)
         s[maskL] = np.NINF
         s[maskU] = 0
         maskM = ~(maskL | maskU)
         s[maskM] = -np.logaddexp( 0, (deltam/(m[maskM]-ml) + deltam/(m[maskM]-ml - deltam) ) ) #1/(np.exp(deltam/(m[maskM]-ml) + deltam/(m[maskM]-ml - deltam))+1)
+        #return np.where( maskM, -np.logaddexp( 0, (deltam/(m-ml) + deltam/(m-ml - deltam) ) ), np.NINF)
+        #print('Output s shape: %s' %str(s.shape))
         return s
-    
     
     def _logpdfm1(self, m, lambdaPeak, alpha, deltam, ml, mh, muMass, sigmaMass):
         '''
         Marginal distribution p(m1), not normalised
         '''
 
+        #print('_logpdfm1 call')
+        #print('Input m shape: %s' %str(m.shape))
         
         where_nan = np.isnan(m)
         result = np.empty_like(m)
@@ -579,8 +586,12 @@ class PowerLawPlusPeakMass(BBHDistFunction):
         trunc_component = np.exp(truncated_power_law(m, alpha, ml, mh)-norm_truncated_pl(alpha, ml, mh))
         gauss_component = np.exp(-(m-muMass)**2/(2*sigmaMass**2))/(np.sqrt(2*np.pi)*sigmaMass)
         
-        result[where_compute] = np.log((1-lambdaPeak)*trunc_component+lambdaPeak*gauss_component )+self._logS(m, deltam, ml)  #np.where(m < mBreak, np.log(m)*(-alpha1)+self._logS(m, deltam, ml), np.log(mBreak)*(-alpha1+alpha2)+np.log(m)*(-alpha2)+self._logS(m, deltam, ml) )
+        result[where_compute] = np.log( (1-lambdaPeak)*trunc_component+lambdaPeak*gauss_component )+self._logS(m, deltam, ml)  #np.where(m < mBreak, np.log(m)*(-alpha1)+self._logS(m, deltam, ml), np.log(mBreak)*(-alpha1+alpha2)+np.log(m)*(-alpha2)+self._logS(m, deltam, ml) )
         
+        #result = np.where( where_compute, np.log( (1-lambdaPeak)*( np.exp(truncated_power_law(m, alpha, ml, mh)-norm_truncated_pl(alpha, ml, mh))  ) +lambdaPeak*( np.exp(-(m-muMass)**2/(2*sigmaMass**2))/(np.sqrt(2*np.pi)*sigmaMass) ) )+self._logS(m, deltam, ml) , np.NINF)
+        
+        #print('_logpdfm1 call')
+        #print('Output result shape: %s' %str(result.shape))
         return result
         
     
@@ -589,6 +600,10 @@ class PowerLawPlusPeakMass(BBHDistFunction):
         '''
         Conditional distribution p(m2 | m1)
         '''
+        
+        #print('_logpdfm2 call')
+        #print('Input m shape: %s' %str(m2.shape))
+        
         where_nan = np.isnan(m2)
         result = np.empty_like(m2)
 
@@ -599,6 +614,8 @@ class PowerLawPlusPeakMass(BBHDistFunction):
         
         m2 = m2[where_compute]
         result[where_compute] = np.log(m2)*(beta)+self._logS(m2, deltam, ml)
+        #print('Out res shape: %s' %str(result.shape))
+        #result = np.where( where_compute, np.log(m2)*(beta)+self._logS(m2, deltam, ml), np.NINF)
         return result
         
     
@@ -607,8 +624,13 @@ class PowerLawPlusPeakMass(BBHDistFunction):
         
         '''p(m1, m2 | Lambda ), normalized to one'''
         
+        
+        
         m1, m2 = theta
         lambdaPeak, alpha, beta, deltam, ml, mh, muMass, sigmaMass = lambdaBBHmass
+        
+        #print('logpdf call')
+        #print('Input m1 shape: %s' %str(m1.shape))
         
         where_nan = np.isnan(m1)
         assert (where_nan==np.isnan(m2)).all()
@@ -618,12 +640,23 @@ class PowerLawPlusPeakMass(BBHDistFunction):
         
         max_compute = max(mh, muMass+10*sigmaMass)
         where_compute = (m2 < m1) & (ml< m2) & (m1 < max_compute ) & (~where_nan)
+        
+        #print('m1 logp(m1, m2): %s' %m1)
+        #print('m2 logp(m1, m2): %s' %m2)
+        #print('where_compute logp(m1, m2): %s' %where_compute)
+        
+        
         result[~where_compute] = np.NINF
         
         m1 = m1[where_compute]
         m2 = m2[where_compute]
         
         result[where_compute] = self._logpdfm1(m1,  lambdaPeak, alpha, deltam, ml, mh, muMass, sigmaMass ) + self._logpdfm2(m2, beta, deltam, ml) + self._logC(m1, beta, deltam,  ml, **kwargs)-  self._logNorm( lambdaPeak, alpha, deltam, ml, mh, muMass, sigmaMass )
+        
+        #result = np.where( where_compute, self._logpdfm1(m1,  lambdaPeak, alpha, deltam, ml, mh, muMass, sigmaMass ), np.NINF)
+        
+        #print('Out res shape logpdf: %s\n' %str(result.shape))
+        
         return result
         
         
@@ -634,6 +667,15 @@ class PowerLawPlusPeakMass(BBHDistFunction):
         '''
         Gives inverse log integral of  p(m1, m2) dm2 (i.e. log C(m1) in the LVC notation )
         '''
+        
+        #print('_logC call')
+        #print('Input m1 shape: %s' %str(m.shape))
+        
+        #print(m)
+        #print(ml+deltam+deltam/10+1e-01)
+        #print(m[~np.isnan(m)].max())
+        
+        
         xlow=np.linspace(ml, ml+deltam+deltam/10, 200)
         xup=np.linspace(ml+deltam+deltam/10+1e-01, m[~np.isnan(m)].max(), res)
         xx=np.sort(np.concatenate([xlow,xup], ))
@@ -650,10 +692,10 @@ class PowerLawPlusPeakMass(BBHDistFunction):
         result = np.empty_like(m)
         
         result[~where_compute]=np.NINF
-        #result[where_exact]=self._logCexact(m[where_exact], beta, deltam, ml,) #np.NINF
-        
         result[where_compute] = -np.log( np.interp(m[where_compute], xx[1:], cdf) )
         
+        #result = np.where(where_compute, -np.log( np.interp(m, xx[1:], cdf) ) , np.NINF)
+        #print('Out res shape: %s' %str(result.shape))
         return result
     
         
@@ -970,18 +1012,54 @@ class BNSGaussMass(BBHDistFunction):
         #if not condition:
         #    return np.NINF
     
-        logpdfMass = -2*np.log(sigmaMass)-(m1-meanMass)**2/(2*sigmaMass**2)-np.log(2*np.pi)-(m2-meanMass)**2/(2*sigmaMass**2)
+        #logpdfMass = -2*np.log(sigmaMass)-(m1-meanMass)**2/(2*sigmaMass**2)-np.log(2*np.pi)-(m2-meanMass)**2/(2*sigmaMass**2)
         
-        return logpdfMass
+        logpdfm1 = np.log(truncGausslower(m1, 0., loc=meanMass, scale=sigmaMass))
+        logpdfm2 = np.log(truncGausslower(m2, 0., loc=meanMass, scale=sigmaMass))
+        
+        return logpdfm1+logpdfm2
     
     
     def sample(self, nSamples, lambdaBBHmass, ):
         
         mu, sig = lambdaBBHmass
         
-        m1 = np.random.normal(loc=mu, scale=sig, size=nSamples)
-        m2 = np.random.normal(loc=mu, scale=sig, size=nSamples)
+        #m1s = np.random.normal(loc=mu, scale=sig, size=nSamples)
+        #m2s = np.random.normal(loc=mu, scale=sig, size=nSamples)
+        
+        m1s = sample1d(nSamples, lambda x: truncGausslower(x, 0., loc=mu, scale=sig), max(0, mu-10*sig), mu+10*sig, )
+        m2s = sample1d(nSamples, lambda x: truncGausslower(x, 0., loc=mu, scale=sig), max(0, mu-10*sig), mu+10*sig, )
+        
+        m1 = np.where(m1s>m2s, m1s, m2s)
+        m2 = np.where(m1s>m2s, m2s, m1s)
+        
         return m1, m2
+
+
+def sample1d(nSamples, pdf, lower, upper, res = 100000):
+
+    ''' Sample from continuous pdf within bounds ''' 
+
+    # this is about 15% faster than using a sample_discrete like approach to sample the grid, and allows for returning continuous samples 
+    x = np.linspace(lower, upper, res)
+    cdf = np.cumsum(pdf(x))
+    cdf = cdf / cdf[-1]
+    return np.interp(np.random.uniform(size=nSamples), cdf, x)
+
+def sampleMultipleTruncGaussLow(locs, scales, lowers):
+    from scipy.special import erf, erfinv
+    
+    Phialphas = 0.5*(1.+erf((lowers-locs)/(np.sqrt(2.)*scales)))
+    unifSam = np.random.uniform(size=len(locs))
+    arg = Phialphas + unifSam*(1.-Phialphas)
+    return np.sqrt(2)*erfinv(2.*arg - 1.)*scales + locs
+
+
+def truncGausslower(x, xmin, loc=0., scale=1.):
+    from scipy.special import erf
+
+    Phialpha = 0.5*(1.+erf((xmin-loc)/(np.sqrt(2.)*scale)))
+    return np.where(x>xmin, 1./(np.sqrt(2.*np.pi)*scale)/(1.-Phialpha) * np.exp(-(x-loc)**2/(2*scale**2)) ,0.)
 
 
 
@@ -1036,9 +1114,166 @@ class BNSFlatMass(BBHDistFunction):
         
         ml, mh = lambdaBBHmass
         
-        m1 = np.random.uniform(low=ml, high=mh, size=nSamples)
-        m2 = np.random.uniform(low=ml, high=mh, size=nSamples)
+        m1s = np.random.uniform(low=ml, high=mh, size=nSamples)
+        m2s = np.random.uniform(low=ml, high=mh, size=nSamples)
+        
+        m1 = np.where(m1s>m2s, m1s, m2s)
+        m2 = np.where(m1s>m2s, m2s, m1s)
+        
         return m1, m2
+
+
+
+
+
+##############################################################################
+# Broken power law for BNS
+
+
+class BrokenPowerLawMassBNS(BBHDistFunction):
+    
+    '''
+    Mass distribution  - Broken Power Law
+    '''
+
+    def __init__(self):
+        
+        BBHDistFunction.__init__(self)
+        
+        self.params = ['alpha1', 'alpha2',  'deltam', 'ml',  'mh', 'b' ]
+        
+        self.baseValues = {
+                           'alpha1':1.6,
+                           'alpha2': 5.6 , 
+                           #'beta': 1.4,
+                           'deltam':4.8,
+                           'ml':4,
+                           'mh':87,
+                           'b': 0.43,
+                           }
+        
+        self.names = { 'alpha1': r'$\alpha_1$',
+                           'alpha2':  r'$\alpha_2$' , 
+                           #'beta':  r'$\beta_q$',
+                           'deltam': r'$\delta_{\rm m}$',
+                           'ml': r'$m_{\rm min}$',
+                           'mh':r'$m_{\rm max}$',
+                           'b': r'$b$',
+                           
+                           }
+         
+        self.n_params = len(self.params)
+        
+        print('Broken power law mass function base values: %s' %self.baseValues)
+    
+    
+    def _get_Mbreak(self, mMin, mMax, b):
+        return  mMin + b*(mMax - mMin)
+    
+    
+    def _logS(self, m, deltam, ml,):
+        maskL = m <= ml #- eps
+        maskU = m >= (ml + deltam) #+ eps
+        s = np.empty_like(m)
+        s[maskL] = np.NINF
+        s[maskU] = 0
+        maskM = ~(maskL | maskU)
+        s[maskM] = -np.logaddexp( 0, (deltam/(m[maskM]-ml) + deltam/(m[maskM]-ml - deltam) ) ) #1/(np.exp(deltam/(m[maskM]-ml) + deltam/(m[maskM]-ml - deltam))+1)
+        return s
+    
+    
+    def _logpdfm1(self, m,  alpha1, alpha2, deltam, ml, mh, b):
+        '''
+        Marginal distribution p(m1), not normalised
+        '''
+
+        mBreak = self._get_Mbreak( ml, mh, b)
+        
+        where_nan = np.isnan(m)
+        result = np.empty_like(m)
+        
+        result[where_nan]=np.NINF
+        
+        where_compute = (m <= mh) & (m >= ml) & (~where_nan)
+        result[~where_compute] = np.NINF
+        
+        m = m[where_compute]
+        result[where_compute] = np.where(m < mBreak, np.log(m)*(-alpha1)+self._logS(m, deltam, ml), np.log(mBreak)*(-alpha1+alpha2)+np.log(m)*(-alpha2)+self._logS(m, deltam, ml) )
+        
+        return result
+        
+    
+
+        
+    
+    
+    def logpdf(self, theta, lambdaBBHmass, **kwargs):
+        
+        '''p(m1, m2 | Lambda ), normalized to one'''
+        
+        m1, m2 = theta
+        alpha1, alpha2,  deltam, ml, mh, b = lambdaBBHmass
+        where_nan = np.isnan(m1)
+        
+        logpdf1 = np.full(m1.shape, np.NINF)
+        mask1 = (m1>ml) & (m1<mh) & (~where_nan)
+        logpdf1[mask1] = self._logpdfm1(m1[mask1],  alpha1, alpha2, deltam, ml, mh, b )
+        
+        logpdf2 = np.full(m2.shape, np.NINF)
+        mask2 = (m2>ml) & (m2<mh) & (~where_nan)
+        logpdf2[mask2] = self._logpdfm1(m2[mask2],  alpha1, alpha2, deltam, ml, mh, b )
+
+        return logpdf1+logpdf2-2*self._logNorm( alpha1, alpha2, deltam, ml, mh, b,)
+        
+        
+        #result[where_compute] = self._logpdfm1(m1,  alpha1, alpha2, deltam, ml, mh, b ) + self._logpdfm2(m2, beta, deltam, ml) + self._logC(m1, beta, deltam,  ml, **kwargs)-  self._logNorm( alpha1, alpha2, deltam, ml, mh, b,)
+        #return result
+        
+
+
+    def _logNorm(self, alpha1, alpha2, deltam, ml, mh, b , res=200):
+        '''
+        Gives log integral of  p(m1, m2) dm1 dm2 (i.e. total normalization of mass function )
+
+        '''
+        
+        mbr = self._get_Mbreak( ml, mh, b)
+        
+
+        ms1 = np.linspace(1., ml+deltam+deltam/10, 200)
+        ms2 = np.linspace( ml+deltam+deltam/10+1e-01, mbr-mbr/10, int(res/2) )
+        ms3= np.linspace( mbr-mbr/10+1e-01, mbr+mbr/10, 50 )
+        ms4 = np.linspace(mbr+mbr/10+1e-01, mh+mh/10, int(res/2) )
+        
+        ms=np.sort(np.concatenate([ms1,ms2, ms3, ms4], ))
+        
+        p1 = np.exp(self._logpdfm1( ms ,alpha1, alpha2, deltam, ml, mh, b ))
+        return np.log(np.trapz(p1,ms))
+        
+
+        
+    
+    
+    def sample(self, nSamples, lambdaBBHmass, mMin=5, mMax=100):
+        alpha1, alpha2, deltam, ml, mh, b = lambdaBBHmass
+        
+        
+        pm1 = lambda x: np.exp(self._logpdfm1(x, alpha1, alpha2, deltam, ml, mh, b ))
+        
+        mMax = mh*(1+1/10)
+        m1s = self._sample_pdf(nSamples, pm1, ml, mMax)
+        m2s = self._sample_pdf(nSamples, pm1, ml, mMax)
+        
+        m1 = np.where(m1s>m2s, m1s, m2s)
+        m2 = np.where(m1s>m2s, m2s, m1s)
+        
+        assert(m2<=m1).all() 
+        assert(m2>=ml).all() 
+        assert(m1<=mh).all() 
+            
+        return m1, m2
+
+
 
 ##############################################################################
 # Dummy class; for testing

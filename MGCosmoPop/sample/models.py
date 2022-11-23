@@ -18,9 +18,9 @@ import Globals
 
 import astropy.units as u
 
-from population.astro.astroMassDistribution import AstroSmoothPowerLawMass, BrokenPowerLawMass, TruncPowerLawMass, PowerLawPlusPeakMass, MultiPeakMass
-from population.astro.astroSpinDistribution import DummySpinDist, GaussSpinDist
-from population.astro.rateEvolution import PowerLawRateEvolution, AstroPhRateEvolution
+from population.astro.astroMassDistribution import AstroSmoothPowerLawMass, BrokenPowerLawMass, TruncPowerLawMass, PowerLawPlusPeakMass, MultiPeakMass, BNSGaussMass, BNSFlatMass, BrokenPowerLawMassBNS
+from population.astro.astroSpinDistribution import DummySpinDist, GaussSpinDist, UniformSpinDistChiz
+from population.astro.rateEvolution import PowerLawRateEvolution, AstroPhRateEvolution, RateEvolutionCOBA
 from population.astro.astroPopulation import AstroPopulation
 from cosmology.cosmo import Cosmo
 from population.allPopulations import AllPopulations
@@ -44,11 +44,15 @@ mass_functions = {  'smooth_pow_law': AstroSmoothPowerLawMass,
                       'trunc_pow_law': TruncPowerLawMass,
                       'pow_law_peak': PowerLawPlusPeakMass,
                       'multi_peak': MultiPeakMass,
+                      'flat_BNS':BNSFlatMass,
+                      'gauss_BNS':BNSGaussMass,
+                      'broken_BNS':BrokenPowerLawMassBNS
     
      }
 
 spin_functions = {  'gauss': GaussSpinDist,
-                      'skip': DummySpinDist
+                      'skip': DummySpinDist,
+                      'flat':UniformSpinDistChiz
      }
 
 
@@ -56,6 +60,7 @@ rate_functions = { # 'gauss': AstroSmoothPowerLawMass(),
                   
                       'simple_pow_law': PowerLawRateEvolution, 
                                'astro-ph'       : AstroPhRateEvolution, 
+                               'COBA_BNS':RateEvolutionCOBA
      }
 
 
@@ -200,7 +205,7 @@ def load_data(dataset_name, injections_name=None, nObsUse=None, nSamplesUse=None
         elif dataset_name=='O3a':
             Data = O3aData(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, percSamplesUse=percSamplesUse, dist_unit=dist_unit, **data_args)
             if injections_name is None:
-                injData = O3aInjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit, **inj_args)
+                injData = O3aInjectionsData(fnameInj ,  nInjUse=nInjUse, dist_unit=dist_unit, **inj_args)
             else:
                 fnameInj = os.path.join(Globals.dataPath, dataset_name, injections_name, 'selected.h5') #fnames_inj[dataset_key] )
                 if 'SNR_th' in inj_args.keys():
