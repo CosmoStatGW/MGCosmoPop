@@ -12,13 +12,18 @@ from scipy import interpolate
 from astropy import constants as const
 import astropy.units as u
 from scipy.optimize import fsolve
+from scipy.interpolate import interp2d
 
+import sys
+import os
 
+SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
+#sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 
 class Cosmo(object):
     
-    def __init__(self, dist_unit = u.Gpc, baseValues=None):
+    def __init__(self, dist_unit = u.Gpc, baseValues=None, use_interpolators=False):
         
         self.dist_unit=dist_unit
         self.params = ['H0', 'Om', 'w0', 'Xi0', 'n']
@@ -42,12 +47,31 @@ class Cosmo(object):
             self.cosmoGlobals = FlatwCDM( H0=self.baseValues['H0'], Om0=self.baseValues['Om'], w0=self.baseValues['w0'])
         else:
             self.cosmoGlobals = FlatLambdaCDM( H0=self.baseValues['H0'], Om0=self.baseValues['Om'],)
-        self.zGridGlobals = np.concatenate([ np.logspace(start=-15, stop=np.log10(9.99e-09), base=10, num=10), np.logspace(start=-8, stop=np.log10(7.99), base=10, num=1000), np.logspace(start=np.log10(8), stop=5, base=10, num=100)])
+        self.zGridGlobals = np.concatenate([ np.logspace(start=-15, stop=np.log10(9.99e-09), base=10, num=10), np.logspace(start=-8, stop=np.log10(7.99), base=10, num=1000), np.logspace(start=np.log10(8), stop=20, base=10, num=100)])
         self.dLGridGlobals = self.cosmoGlobals.luminosity_distance(self.zGridGlobals).to(dist_unit).value
 
         self.clight=const.c.value*1e-03 # c in km/s
         
-    
+        # make interpolators
+        if use_interpolators:
+            try:
+                base_dir = SCRIPT_DIR #os.getcwd()
+                zgrid = np.load(base_dir+'/zgrid_uu.npy')
+                Omgrid = np.load(base_dir+'/Omgrid_uu.npy')
+                uuvals = np.load(base_dir+'/vals_grid_uu.npy')
+                self.uu_interp = interp2d(zgrid, Omgrid, uuvals.T, kind='cubic', copy=True, bounds_error=False, fill_value=None)
+                print('Built interpolator for dimensioneless comoving distance in LCDM')
+                #Evals = np.load(base_dir+'/vals_grid_E.npy')
+                #self.E_interp = interp2d(zgrid, Omgrid, Evals.T, kind='cubic', copy=True, bounds_error=False, fill_value=None, assume_sorted=False)
+                #print('Built interpolator for E(z) in LCDM')
+                self.use_interpolators=True
+            except Exception as e:
+                print(e)
+                print('No data for interpolators found for dimensioneless comoving distance and E(z) !')
+                self.use_interpolators=False
+                pass
+        else:
+            self.use_interpolators=False
     
     def _set_values(self, values_dict):
             print('cosmo basevalues: %s' %str(self.baseValues))
@@ -78,6 +102,7 @@ class Cosmo(object):
     
     
     
+    
 
     ######################
     # FUNCTIONS FOR COSMOLOGY
@@ -90,7 +115,16 @@ class Cosmo(object):
         if w0!=-1:
             return 70/self.clight*FlatwCDM(H0=70, Om0=Om, w0=w0).comoving_distance(z).to(u.Mpc).value
         else:
-            return 70/self.clight*FlatLambdaCDM(H0=70, Om0=Om).comoving_distance(z).to(u.Mpc).value
+            if self.use_interpolators:
+                or_shape = z.shape
+                myzs = z.flatten()
+                idxs_sort = np.argsort(myzs)
+                idxs_sort_inv = np.empty_like(idxs_sort)
+                idxs_sort_inv[idxs_sort] = np.arange(idxs_sort.size)
+                res = self.uu_interp(myzs[idxs_sort], Om, assume_sorted=True)[idxs_sort_inv].reshape(or_shape)
+                return res
+            else:
+                return 70/self.clight*FlatLambdaCDM(H0=70, Om0=Om).comoving_distance(z).to(u.Mpc).value
 
     def E(self,z, Om, w0):
         '''
@@ -99,7 +133,10 @@ class Cosmo(object):
         if w0!=-1:
             return FlatwCDM(H0=70, Om0=Om, w0=w0).efunc(z)
         else:
-            return FlatLambdaCDM(H0=70, Om0=Om).efunc(z)
+            #if self.use_interpolators:
+            #    return self.E_interp(z, Om, assume_sorted=True)
+            #else:
+            return np.sqrt( Om*(1+z)**3+(1-Om) )#FlatLambdaCDM(H0=70, Om0=Om).efunc(z)
 
 
 
@@ -117,7 +154,10 @@ class Cosmo(object):
         if self.dist_unit==u.Gpc:
             res -=9*np.log(10)
         return res
-
+    
+    def log_j(self, z, Om0, w0):
+        res =  np.log(4*np.pi)+2*np.log(self.uu(z, Om0, w0))-np.log(self.E(z, Om0, w0))
+        return res
 
     def s(self, z, Xi0, n):
         return (1+z)*self.Xi(z, Xi0, n)
@@ -188,6 +228,7 @@ class Cosmo(object):
         '''
         Returns redshift for a given luminosity distance r (in Mpc by default). Vectorized
         '''
+        #print('z_from_dLGW_fast call' )
         if (Om==self.baseValues['Om']) & (w0==-1.):
             dLGrid = self.dLGridGlobals/H0*self.baseValues['H0']
         else:
@@ -197,6 +238,7 @@ class Cosmo(object):
                 cosmo = FlatwCDM(H0=H0, Om0=Om, w0=w0, )
             dLGrid = cosmo.luminosity_distance(self.zGridGlobals).to(self.dist_unit).value
         z2dL = interpolate.interp1d( dLGrid*self.Xi(self.zGridGlobals, Xi0, n), self.zGridGlobals, kind='cubic', bounds_error=False, fill_value=(0,np.NaN), assume_sorted=False)
+        #print( z2dL(1) )
         return z2dL(r)
 
     def z_from_dLGW(self, dL_GW_val, H0, Om, w0, Xi0, n):
