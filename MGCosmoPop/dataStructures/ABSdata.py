@@ -77,33 +77,49 @@ class Data(ABC):
     def _downsample_n(self, nSamples, verbose=True):
         
         try:
+            
             samples = np.array([self.m1z, self.m2z, self.dL, self.ra, self.dec, *self.spins ]) #self.Nsamples
-        except:
+            #print(self.spins)
+            Npar = samples.shape[0]
+            if len(self.spins)>0:
+                spins=True
+                print('Spins in this data')
+            else:
+                spins=False
+                print('No spins in this data')
+        except Exception as e:
+            print(e)
             print('No spins in this data')
             samples = np.array([self.m1z, self.m2z, self.dL, self.ra, self.dec,])
-        Npar = samples.shape[0]
+            Npar = 5
+            spins=False
         print('Npar: %s' %Npar)
         Nobs = samples.shape[1]
         
         print('Nobs in downsample: %s' %Nobs)
-        m1zD, m2zD, dLD, ra, dec  =  np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples))#np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples))
-        if Npar==5:
-            s0D, s1D = np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples))
+        m1zD, m2zD, dLD, raD, decD  =  np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples))#np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples))
+        #if not spins:
+            # no spins
+        s0D, s1D = np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples))
         for o in range(Nobs):
+            print('Samples shape is %s' %str(samples.shape))
             if Nobs>200:
                 if o>0:
                     verbose=False
-            if Npar==5:
-                m1zD[o], m2zD[o], dLD[o], s0D[o], s1D[o] = self._downsample(samples[:,o, :], nSamples, verbose=verbose)
-            elif Npar==3:
-                m1zD[o], m2zD[o], dLD[o] = self._downsample(samples[:,o, :], nSamples, verbose=verbose)
-        if Npar==5:
-            self.spins = [s0D, s1D]
-                
+            if not spins:
+                m1zD[o], m2zD[o], dLD[o], raD[o], decD[o] = self._downsample(samples[:,o, :], nSamples, verbose=verbose)
+
+            else:
+                m1zD[o], m2zD[o], dLD[o], raD[o], decD[o], s0D[o], s1D[o] = self._downsample(samples[:,o, :], nSamples, verbose=verbose)
+            #elif Npar==3:
+            #    m1zD[o], m2zD[o], dLD[o] = self._downsample(samples[:,o, :], nSamples, verbose=verbose)
+        #if Npar==5:
+        self.spins = [s0D, s1D]
         self.m1z = m1zD
         self.m2z = m2zD
         self.dL = dLD
-
+        self.ra = raD
+        self.dec = decD
         self.logNsamples=np.where(self.logNsamples<np.log(nSamples), self.logNsamples, np.log(nSamples)) #np.full(Nobs, np.log(nSamples))
         self.Nsamples=np.where(np.array(self.Nsamples)<nSamples, self.Nsamples, nSamples)
 
@@ -151,6 +167,7 @@ class Data(ABC):
                 for i, p in enumerate(posterior):
                     or_samples_position =  ~np.isnan(p)
                     or_samples = p[or_samples_position]
+                    print('or_samples shape: %s' %str(or_samples.shape))
                     #keep_idxs = np.random.choice(nOrSamples, nSamples, replace=False)
                     assert ~np.any(np.isnan(or_samples[keep_idxs]))
                     samples.append(or_samples[keep_idxs])
@@ -385,6 +402,9 @@ class O3InjectionsData(Data):
         assert (self.m2z > 0).all()
         assert (self.dL > 0).all()
         assert(self.m2z<self.m1z).all()
+        
+        print('Loaded data shape: %s' %str(self.m1z.shape))
+        print('Loaded weights shape: %s' %str(self.log_weights_sel.shape))
         
         
         

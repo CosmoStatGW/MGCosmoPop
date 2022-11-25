@@ -15,18 +15,23 @@ from astropy.cosmology import Planck15, z_at_value
         
 class GWMockData(Data):
     
-    def __init__(self, fname, nObsUse=None, nSamplesUse=None, percSamplesUse=None, dist_unit=u.Gpc, Tobs=2.5 ):
+    def __init__(self, fname, nObsUse=None, nSamplesUse=None, percSamplesUse=None, 
+                 dist_unit=u.Gpc, Tobs=2.5,  SNR_th=8., events_use_idxs = None, events_not_use_idxs=None, ):
         
+        
+        self.SNR_th= SNR_th
         self.dist_unit = dist_unit
-        self.m1z, self.m2z, self.dL, self.snr, self.Nsamples, self.bin_weights = self._load_data(fname, nObsUse, ) #nSamplesUse, )  
-        self.Nobs=self.m1z.shape[0]
+        self.m1z, self.m2z, self.dL, self.ra, self.dec, self.snr, self.Nsamples, self.bin_weights = self._load_data(fname, nObsUse, events_use_idxs=events_use_idxs, events_not_use_idxs=events_not_use_idxs ) #nSamplesUse, )  
+        print('snr shape: %s' %str(self.snr.shape))
+        
         self.logNsamples = np.log(self.Nsamples)
 
         if nSamplesUse is not None or percSamplesUse is not None:
             self.downsample(nSamples=nSamplesUse, percSamples=percSamplesUse)
             print('Number of samples for each event after downsamplng: %s' %self.Nsamples )
-        print('We have %s observations' %self.Nobs)
-        print('Number of samples: %s' %self.Nsamples )
+        
+        # Impose cut on SNR
+        self.set_snr_threshold(SNR_th)
         
 
         assert (self.m1z > 0).all()
@@ -39,37 +44,79 @@ class GWMockData(Data):
         self.spins = []
         print('Obs time: %s' %self.Tobs )
         
+    
+    def set_snr_threshold(self, snr_th):
+        if self.snr.sum()==0.:
+            print('Snrs not present in this dataset.')
+            return
+        if snr_th<self.SNR_th:
+            #raise ValueError('New snr threshold is lower than original one !')
+            print('warning: New snr threshold is lower than original one ! Using original')
+            return
+        
+        print('Setting snr threshold to %s' %snr_th)
+        self.SNR_th=snr_th
+        keep = self.snr >= snr_th
+        
+        self.m1z, self.m2z, self.dL, self.ra, self.dec, self.snr, self.bin_weights = self.m1z[keep, :], self.m2z[keep, :], self.dL[ keep, :], self.ra[keep, :], self.dec[keep, :], self.snr[keep], self.bin_weights[keep]
+        self.logNsamples = self.logNsamples[keep]
+        self.Nsamples = self.Nsamples[keep]
+    
         self.Nobs=self.m1z.shape[0]
         
-    
-            
+        print('We have %s observations with SNR>%s' %(self.Nobs, self.SNR_th))
+        print('Number of samples: %s' %self.Nsamples )
+        
 
     def get_theta(self):
         return np.array( [self.m1z, self.m2z, self.dL  ] )  
     
     
-    def _load_data(self, fname, nObsUse, nSamplesUse=None):
+    def _load_data(self, fname, nObsUse, nSamplesUse=None, events_use_idxs=None, events_not_use_idxs=None):
+        
+        if events_not_use_idxs is not None and events_use_idxs is not None:
+            raise ValueError('You cannot pass events_not_use_idxs and events_use_idxs at the same time !')
+        
         print('Loading data...')
-        if nObsUse is None:
-            nObsUse=-1
+        #if nObsUse is None:
+        #    nObsUse=None
         with h5py.File(fname, 'r') as phi: #observations.h5 has to be in the same folder as this code
-               
+                
+                print('List of available entries:')
+                for pn in phi['posteriors'].keys():
+                    print(pn)
+            
                 m1det_samples = np.array(phi['posteriors']['m1det'])[:nObsUse, :]# m1
                 m2det_samples = np.array(phi['posteriors']['m2det'])[:nObsUse, :] # m2
                 dl_samples = np.array(phi['posteriors']['dl'])[:nObsUse, :]
+                print('dl samples loaded shape: %s' %str(dl_samples.shape))
                 try:
-                    snrs = np.array(phi['posteriors']['rho'])[:nObsUse, :]
+                    snrs = np.array(phi['posteriors']['rho'])[:nObsUse]
                 #print(dl_samples.shape)
-                except:
+                except Exception as e:
+                    print(e)
                     print('SNRs not present for this dataset. Use the same SNR threshold as the original injections.')
-                    snrs = np.zeros(dl_samples.shape)
-
+                    snrs = np.zeros(dl_samples.shape[0])
+                print('snrs loaded shape: %s' %str(snrs.shape))
                 try:
                     bin_weights = np.array(phi['posteriors']['bin_weights'])[:nObsUse]
                 except Exception as e:
                     print(e)
                     print('No bin weights.')
                     bin_weights = np.ones(dl_samples.shape[0])
+                    
+                try:
+                    ra = np.array(phi['posteriors']['ra'])[:nObsUse, :]# m1
+                    dec = np.array(phi['posteriors']['dec'])[:nObsUse, :] 
+                except:
+                    try:
+                        ra = np.array(phi['posteriors']['phi'])[:nObsUse, :]# m1
+                        dec = np.pi/2-np.array(phi['posteriors']['theta'])[:nObsUse, :]
+                    except:
+                        print('No ra, dec')
+                        ra=np.zeros(m1det_samples.shape)
+                        dec=np.zeros(m1det_samples.shape)
+                    
         
         if self.dist_unit==u.Mpc:
             print('Using distances in Mpc')
@@ -88,7 +135,15 @@ class GWMockData(Data):
             
         #m1det_samples, m2det_samples, dl_samples = self.downsample([m1det_samples, m2det_samples, dl_samples], nSamplesUse)
         #return m1z, m2z, dL, np.count_nonzero(m1z, axis=-1)
-        return m1det_samples, m2det_samples, dl_samples, snrs, np.count_nonzero(m1det_samples, axis=-1), bin_weights 
+        
+        if  events_not_use_idxs is not None and events_use_idxs is None:
+            events_use_idxs = np.array([i for i in np.arange(m1det_samples.shape[0]) if i not in  events_not_use_idxs]) #np.where( np.arange(m1det_samples.shape[0])!=events_not_use_idxs)[0]
+        elif events_not_use_idxs is None and events_use_idxs is None:
+            events_use_idxs = np.arange(m1det_samples.shape[0])
+        
+        print('Excluding events %s' %str(events_not_use_idxs))
+        print('We finally use %s events '%len(events_use_idxs))
+        return m1det_samples[events_use_idxs, :], m2det_samples[events_use_idxs, :], dl_samples[events_use_idxs, :], ra[events_use_idxs, :], dec[events_use_idxs, :], snrs[events_use_idxs], np.count_nonzero(m1det_samples[events_use_idxs, :], axis=-1), bin_weights[events_use_idxs] 
     
     def logOrMassPrior(self):
         return np.zeros(self.m1z.shape)
@@ -111,7 +166,7 @@ class GWMockInjectionsData(Data):
         assert (self.m2z > 0).all()
         assert (self.dL > 0).all()
         assert(self.m2z<=self.m1z).all()
-        self.condition=True
+        
         
         self.Tobs=Tobs
         self.spins = []# np.zeros(self.m1z.shape)
@@ -119,6 +174,7 @@ class GWMockInjectionsData(Data):
         
         if snr_th is not None:
             self.set_snr_threshold(snr_th)
+        self.condition=np.full(self.m1z.shape, True)
         
     def set_snr_threshold(self, snr_th):
         if self.snr_sel.sum()==0.:
@@ -128,10 +184,11 @@ class GWMockInjectionsData(Data):
             #raise ValueError('New snr threshold is lower than original one !')
             print('warning: New snr threshold is lower than original one ! Using original')
             return
-
+        
         print('Updating snr threshold to %s' %snr_th)
         self.snr_th=snr_th
         keep = self.snr_sel >= snr_th
+        
         self.m1z = self.m1z[keep]
         self.m2z = self.m2z[keep]
         self.dL = self.dL[keep]
@@ -141,7 +198,6 @@ class GWMockInjectionsData(Data):
             pass
         self.log_weights_sel = self.log_weights_sel[keep]
         self.snr_sel = self.snr_sel[keep]
-        
         print('New number of detected injections with snr>%s :  %s' %(self.snr_th, self.dL.shape[0]))
 
         
@@ -194,7 +250,9 @@ class GWMockInjectionsData(Data):
         self.max_z=z_at_value(Planck15.luminosity_distance, dl_sel.max()*self.dist_unit)
         
         # Drop points in the unlikely case of m1==m2, to avoid crashes
-        keep = m1_sel!=m2_sel
+        
+        
+        keep = np.full(m1_sel.shape, True) #m1_sel!=m2_sel
         throw = ~keep
         print('Dropping %s points with exactly equal masses' %str(throw.sum()) )
         N_gen -= throw.sum()

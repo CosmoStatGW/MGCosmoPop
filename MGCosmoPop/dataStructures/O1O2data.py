@@ -157,8 +157,8 @@ class O1O2InjectionsData(Data):
     def _load_data(self, fname, nInjUse, which_spins='skip'):
         
         with h5py.File(fname, 'r') as f:
-        
-            Tobs = (48.3+118)/365. #f.attrs['analysis_time_s']/(365.25*24*3600) # years
+            print(f.attrs)
+            Tobs = 1.084931506849315 #f.attrs['analysis_time_s']/(365.25*24*3600) # years  (48.3+118)/365. #
             Ndraw = 7.1e07 #f.attrs['total_generated']
     
             m1 = np.array(f['mass1_source'])

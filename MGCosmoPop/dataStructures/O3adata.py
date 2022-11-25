@@ -82,13 +82,21 @@ class O3aData(LVCData):
         data_path = os.path.join(fname, 'IGWN-GWTC2p1-v1-'+event+'_PEDataRelease.h5')
         with h5py.File(data_path, 'r') as f:
             posterior_samples = f['IMRPhenomXPHM']['posterior_samples']
-            _keys = ['mass_1', 'mass_2', 'luminosity_distance', 'right_ascension', 'declination']
-            m1z, m2z, dL, ra, dec = [posterior_samples[k] for k in _keys]
+            _keys = ['mass_1', 'mass_2', 'luminosity_distance', ]
+            m1z, m2z, dL, = [posterior_samples[k] for k in _keys]
             try:
                 w = posterior_samples['weights_bin']
             except Exception as e:
                 print(e)
                 w = np.ones(1)
+            try:
+                ra, dec = [posterior_samples[k] for k in ('right_ascension', 'declination')]
+            except Exception as e:
+                print(e)
+                ra = np.full( m1z.shape[0], 0.)
+                dec = np.full( m1z.shape[0], 0.)
+                print('ra shape: %s'%str(ra.shape))
+                
             if which_spins=='skip':
                 spins=[]
             elif which_spins=='chiEff':
@@ -112,14 +120,22 @@ class O3aData(LVCData):
         data_path = os.path.join(fname,  event+self.post_file_extension)
         with h5py.File(data_path, 'r') as f:
             posterior_samples = f['PublicationSamples']['posterior_samples']      
-            _keys = ['mass_1', 'mass_2', 'luminosity_distance', 'ra', 'dec']
-            m1z, m2z, dL, ra, dec = [posterior_samples[k] for k in _keys]
-            print(dL, ra, dec)
+            _keys = ['mass_1', 'mass_2', 'luminosity_distance', ]
+            m1z, m2z, dL = [posterior_samples[k] for k in _keys]
+            #print(dL, ra, dec)
             try:
                 w = posterior_samples['weights_bin']
-            except Exception as e:O1O2Data
+            except Exception as e:
                 print(e)
                 w = np.ones(1)
+            try:
+                ra, dec  = [posterior_samples[k] for k in ('right_ascension', 'declination')]
+            except Exception as e:
+                print(e)
+                ra = np.full( m1z.shape[0], 0.)
+                dec = np.full( m1z.shape[0], 0.)
+                print('ra shape: %s'%str(ra.shape))
+                
             if which_spins=='skip':
                 spins=[]
             elif which_spins=='chiEff':

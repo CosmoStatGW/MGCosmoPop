@@ -86,9 +86,12 @@ class O3bData(LVCData):
             dataset = f['C01:IMRPhenomXPHM']
             posterior_samples = dataset['posterior_samples']
             
-            m1z = posterior_samples['mass_1']
-            m2z = posterior_samples['mass_2']
-            dL = posterior_samples['luminosity_distance']
+            _keys = ['mass_1', 'mass_2', 'luminosity_distance', ]
+            m1z, m2z, dL = [posterior_samples[k] for k in _keys]
+            
+            #m1z = posterior_samples['mass_1']
+            #m2z = posterior_samples['mass_2']
+            #dL = posterior_samples['luminosity_distance']
             try:
                 w = posterior_samples['weights_bin']
             except Exception as e:
@@ -102,6 +105,13 @@ class O3bData(LVCData):
                 spins = [chieff, chiP]
             else:
                 raise NotImplementedError()
+            try:
+                ra, dec  = posterior_samples['right_ascension'], posterior_samples['declination']
+            except Exception as e:
+                print(e)
+                #ra, dec = np.empty(dL.shape), np.empty(dL.shape)
+                ra = np.full( m1z.shape[0], 0.)
+                dec = np.full( m1z.shape[0], 0.)
         
         # Downsample if needed
         #all_ds = self._downsample( [m1z, m2z, dL, w, *spins], nSamplesUse)
@@ -112,7 +122,7 @@ class O3bData(LVCData):
         #spins = all_ds[4:]
         #w = all_ds[3]
         
-        return np.squeeze(m1z), np.squeeze(m2z), np.squeeze(dL), [np.squeeze(s) for s in spins], w
+        return np.squeeze(m1z), np.squeeze(m2z), np.squeeze(dL), np.squeeze(ra), np.squeeze(dec), [np.squeeze(s) for s in spins], w
               
     
     
