@@ -229,7 +229,7 @@ class Cosmo(object):
         Returns redshift for a given luminosity distance r (in Mpc by default). Vectorized
         '''
         #print('z_from_dLGW_fast call' )
-        if (Om==self.baseValues['Om']) & (w0==-1.):
+        if False: #(Om==self.baseValues['Om']) & (w0==-1.):
             dLGrid = self.dLGridGlobals/H0*self.baseValues['H0']
         else:
             if w0==-1:
