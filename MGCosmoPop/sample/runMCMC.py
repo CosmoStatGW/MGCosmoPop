@@ -66,7 +66,30 @@ params_O3_GW190814 = {   'R0': 24. ,  # Gpc^-3 yr^-1
     }
 
 
-
+params_mock_CHIMERA = {
+    
+    'alpha': 3.4,
+ 'beta': 1.1,
+ 'mh': 87,
+ 'ml': 5.1,
+ 'lambdaPeak': 0.039,
+ 'muMass': 34,
+ 'sigmaMass': 3.6,
+ 'deltam': 4.8,
+    
+    'chiMin':-1, 'chiMax':1,
+  
+ 
+  'alphaRedshift':2.7,    
+'betaRedshift':3., 'zp':2.,
+   
+   'R0':17, 
+ 
+                  
+    'H0': 70., #Planck18.H0.value,
+     'Om': 0.25 , # Planck18.Om0
+                  
+                 }
 
 params_mock_BPL_5yr_aLIGOdesignSensitivity = {'H0':67.74, 'Om':0.3075, 'w0':-1., 'Xi0':1., 'n':1.91, 'R0':25.0,
                   'lambdaRedshift':2., 'alpha1':1.6, 'alpha2':5.6, 'beta':1.4, 'deltam':5.0, 'ml':4., 'mh':90.0, 'b':0.4}
@@ -287,6 +310,8 @@ def main():
                 params_MCMC_start= params_mock
             elif ('mock_BPL_5yr_GR'==config.dataset_names[0]) or ('mock_BPL_5yr_GR_1511'==config.dataset_names[0]):
                 params_MCMC_start= params_mock_BPL_5yr_GR
+            elif 'CHIMERA' in config.data[0]:
+                params_MCMC_start=params_mock_CHIMERA
 
         if config.normalized and 'R0' in params_MCMC_start.values():
             print('Removing R0 from parameters')
@@ -320,11 +345,11 @@ def main():
         for i,dataset_name in enumerate(config.dataset_names):
 
 
-	    # This is a hack because the code does not yes support the option of different populations with different spin models
+            # This is a hack because the code does not yes support the option of different populations with different spin models
             # To be fixed in case is needed
             spindist = config.populations[list(config.populations.keys())[0]]['spin_distribution']
-	    
-	    try:
+            
+            try:
                 SNR_th = config.SNR_th
             except:
                 SNR_th = 8.
@@ -335,27 +360,27 @@ def main():
                 FAR_th = 1.
                 print('FAR_th not found in config. Using 1/yr ')
             
-	    inj_args={'which_spins':which_spins[spindist], 'snr_th':SNR_th, }
+            inj_args={'which_spins':which_spins[spindist], 'snr_th':SNR_th, }
 
             if dataset_name in ('O3a', 'O1O2', 'O3b'):
                 O3_use=config.O3_use
-		if dataset_name in ('O3a', 'O3b'):
-			inj_args['which_injections'] = 'GWTC-3'
+            if dataset_name in ('O3a', 'O3b'):
+                inj_args['which_injections'] = 'GWTC-3'
             elif 'mock' in dataset_name:
                 O3_use=None
         
             print('\nLoading data from %s catalogue...' %dataset_name) 
             
             if config.injections_names is None:
-		iname=None
-	    else:
-		iname=config.injections_names[i]
+                iname=None
+            else:
+                iname=config.injections_names[i]
         
 
             Data, injData = load_data(dataset_name, injections_name=iname,
                                       nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, percSamplesUse=config.percSamplesUse, nInjUse=config.nInjUse, 
                                       dist_unit=units[config.dist_unit], 
-                                      data_args={'events_use':O3_use, 'which_spins':which_spins[spindist], 'SNR_th':SNR_th, 'FAR_th': FAR_th }, 
+                                      data_args={'events_use':O3_use, 'which_spins':which_spins[spindist], 'SNR_th':SNR_th, 'FAR_th': FAR_th, 'dLprior':config.dLpriordata }, 
                                       inj_args=inj_args,
                                       Tobs=config.Tobs)
             allData.append(Data)
@@ -376,11 +401,14 @@ def main():
         
         myPrior = Prior(config.priorLimits, config.params_inference, config.priorNames, config.priorParams)
         
-        myLik = HyperLikelihood(allPops, allData, config.params_inference, verbose=config.verbose_lik, safety_factor=config.safety_factor )
+        myLik = HyperLikelihood(allPops, allData, config.params_inference, verbose=config.verbose_lik, safety_factor=config.safety_factor, zmax=config.zmax, normalized=config.normalized,  )
         
-        selBias = SelectionBiasInjections( allPops, allInjData, config.params_inference, get_uncertainty=config.include_sel_uncertainty, normalized=config.normalized ) 
+        selBias = SelectionBiasInjections( allPops, allInjData, config.params_inference, get_uncertainty=config.include_sel_uncertainty, normalized=config.normalized , zmax=config.zmax) 
         
-        myPost = Posterior(myLik, myPrior, selBias, verbose=config.verbose_inj, normalized=config.normalized)
+        myPost = Posterior(myLik, myPrior, selBias, verbose=config.verbose_inj, normalized=config.normalized,
+                          bias_safety_factor = config.bias_safety_factor,
+                          
+                          )
     
 
 
