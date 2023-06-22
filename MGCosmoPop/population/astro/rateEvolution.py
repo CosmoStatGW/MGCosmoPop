@@ -66,7 +66,7 @@ class PowerLawRateEvolution(RateEvolution):
 
 class AstroPhRateEvolution(RateEvolution):
     
-    def __init__(self, unit=u.Gpc, normalized=False):
+    def __init__(self, unit=u.Gpc, normalized=False, zmax=20):
         RateEvolution.__init__(self)
         
         self.params = ['R0', 'alphaRedshift', 'betaRedshift', 'zp']
@@ -83,6 +83,10 @@ class AstroPhRateEvolution(RateEvolution):
                            'zp': r'$z_p$'}
         
         self.normalized=normalized
+        self.zmax = zmax
+        
+        print('The rate will be zero after z=%s'%self.zmax)
+        
         if normalized :
             print('The rate evolution returned will not include the overall number of events!')
             self._delete_R0()
@@ -113,10 +117,12 @@ class AstroPhRateEvolution(RateEvolution):
         z=theta_rate
         if not self.normalized:
             R0, alphaRedshift , betaRedshift, zp = lambdaBBHrate
-            return np.log(R0)+np.log(self._C0(alphaRedshift , betaRedshift, zp))+alphaRedshift*np.log1p(z)-np.log(1+((1+z)/(1+zp))**(alphaRedshift+betaRedshift))
+            pz =  np.log(R0)+np.log(self._C0(alphaRedshift , betaRedshift, zp))+alphaRedshift*np.log1p(z)-np.log(1+((1+z)/(1+zp))**(alphaRedshift+betaRedshift))
         else:
             alphaRedshift , betaRedshift, zp = lambdaBBHrate
-            return alphaRedshift*np.log1p(z)-np.log(1+((1+z)/(1+zp))**(alphaRedshift+betaRedshift))#+np.log(self._C0(alphaRedshift , betaRedshift, zp))
+            pz =  alphaRedshift*np.log1p(z)-np.log(1+((1+z)/(1+zp))**(alphaRedshift+betaRedshift))#+np.log(self._C0(alphaRedshift , betaRedshift, zp))
+            
+        return np.where( z<self.zmax, pz, 0 )
 
     def _C0(self, alphaRedshift , betaRedshift, zp):
         

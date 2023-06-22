@@ -137,10 +137,11 @@ class AllPopulations(object):
         return res # shape n_pops x len(z)
         
 
-    def Nperyear_expected(self, Lambda, zmax=20, verbose=False):
+    def Nperyear_expected(self, Lambda, zmax=20, verbose=False, res=1000):
+        #print("zmax in Nperyear_expected is %s"%zmax)
         LambdaCosmo, LambdaAllPop = self._split_params(Lambda)
         H0, Om0, w0, Xi0, n = self.cosmo._get_values(LambdaCosmo, ['H0', 'Om', 'w0', 'Xi0', 'n'])
-        zz = np.linspace(0, zmax, 1000)
+        zz = np.linspace(0., zmax, res)
         Ntot = 0.
         for i,pop in enumerate(self._pops):
 
@@ -257,7 +258,7 @@ class AllPopulations(object):
         
         LambdaCosmo, LambdaAllPop = self._split_params(Lambda)
         H0, Om0, w0 = self.cosmo._get_values(LambdaCosmo, ['H0', 'Om', 'w0'])
-        print('Cosmo params in _sample_redshift: %s' %(str([H0, Om0, w0])))
+        #print('Cosmo params in _sample_redshift: %s' %(str([H0, Om0, w0])))
         prev=0
         for i,pop in enumerate(self._pops):
             LambdaPop = LambdaAllPop[prev:prev+self._allNParams[i]]

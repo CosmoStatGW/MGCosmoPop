@@ -35,12 +35,13 @@ def logdiffexpvec(xs, ys):
 
 class SelectionBias(ABC):
     
-    def __init__(self, population, injData, params_inference, normalized=False ):
+    def __init__(self, population, injData, params_inference, normalized=False,  ):
         
         self.injData=injData
         self.population=population
         self.params_inference = params_inference 
         self.normalized=normalized
+        
         if normalized :
             print('This model will marginalize analytically over the overall normalization with a flat-in-log prior!')
 
@@ -58,7 +59,7 @@ class SelectionBiasInjections(SelectionBias):
     Logic for computing the selection effects
     '''
     
-    def __init__(self, population, injData, params_inference, get_uncertainty=True, normalized=False ):
+    def __init__(self, population, injData, params_inference, get_uncertainty=True, normalized=False, zmax=20 ):
         ''' 
 
         Parameters
@@ -76,6 +77,8 @@ class SelectionBiasInjections(SelectionBias):
         
         
         self.get_uncertainty=get_uncertainty
+        self.zmax=zmax
+        print("z max in bias is %s "%self.zmax)
         SelectionBias.__init__(self, population, injData, params_inference, normalized=normalized)
     
     def get_likelihood(self, Lambda_test):
@@ -103,8 +106,7 @@ class SelectionBiasInjections(SelectionBias):
             Tobs=1.
         
         logdN = np.squeeze( self.population.log_dN_dm1zdm2zddL(m1, m2, z, spins, Lambda, Tobs, dL=injData.dL[injData.condition])-injData.log_weights_sel[injData.condition])
-        if self.normalized :
-           logdN -= np.log(self.population.Nperyear_expected(Lambda, zmax=20, verbose=False))
+        
         
         return logdN
         
@@ -132,11 +134,20 @@ class SelectionBiasInjections(SelectionBias):
     def _Ndet(self, Lambda_test, injData, verbose=False, ):
         
         
-        logdN = self._get_likelihood(Lambda_test, injData)
+        logdN = np.nan_to_num(self._get_likelihood(Lambda_test, injData))
         
         logMu = np.logaddexp.reduce(logdN) - injData.logN_gen
         
+        #if self.normalized :
+        #    Lambda = self.population.get_Lambda(Lambda_test, self.params_inference )
+        #    logMu -= np.log(self.population.Nperyear_expected(Lambda, zmax=self.zmax, verbose=False, res=1000))
+        
         if np.isnan(logMu):
+            
+            print(logdN)
+            print(np.logaddexp.reduce(logdN))
+            print(injData.logN_gen)
+            
             raise ValueError('NaN value for logMu. Values of Lambda: %s' %( str(Lambda_test) ) )
         
         mu = np.exp(logMu)#.astype('float128')

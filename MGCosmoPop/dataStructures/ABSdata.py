@@ -78,7 +78,7 @@ class Data(ABC):
         
         try:
             
-            samples = np.array([self.m1z, self.m2z, self.dL, self.ra, self.dec, *self.spins ]) #self.Nsamples
+            samples = np.array([self.m1z, self.m2z, self.dL, self.ra, self.dec, self.iota, *self.spins ]) #self.Nsamples
             #print(self.spins)
             Npar = samples.shape[0]
             if len(self.spins)>0:
@@ -97,7 +97,7 @@ class Data(ABC):
         Nobs = samples.shape[1]
         
         print('Nobs in downsample: %s' %Nobs)
-        m1zD, m2zD, dLD, raD, decD  =  np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples))#np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples))
+        m1zD, m2zD, dLD, raD, decD, iotaD  =  np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples))
         #if not spins:
             # no spins
         s0D, s1D = np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples))
@@ -107,10 +107,10 @@ class Data(ABC):
                 if o>0:
                     verbose=False
             if not spins:
-                m1zD[o], m2zD[o], dLD[o], raD[o], decD[o] = self._downsample(samples[:,o, :], nSamples, verbose=verbose)
+                m1zD[o], m2zD[o], dLD[o], raD[o], decD[o], iotaD[o] = self._downsample(samples[:,o, :], nSamples, verbose=verbose)
 
             else:
-                m1zD[o], m2zD[o], dLD[o], raD[o], decD[o], s0D[o], s1D[o] = self._downsample(samples[:,o, :], nSamples, verbose=verbose)
+                m1zD[o], m2zD[o], dLD[o], raD[o], decD[o], iotaD[o], s0D[o], s1D[o] = self._downsample(samples[:,o, :], nSamples, verbose=verbose)
             #elif Npar==3:
             #    m1zD[o], m2zD[o], dLD[o] = self._downsample(samples[:,o, :], nSamples, verbose=verbose)
         #if Npar==5:
@@ -120,8 +120,11 @@ class Data(ABC):
         self.dL = dLD
         self.ra = raD
         self.dec = decD
+        self.iota = iotaD
         self.logNsamples=np.where(self.logNsamples<np.log(nSamples), self.logNsamples, np.log(nSamples)) #np.full(Nobs, np.log(nSamples))
         self.Nsamples=np.where(np.array(self.Nsamples)<nSamples, self.Nsamples, nSamples)
+        
+        
 
     def _downsample(self, posterior, nSamples,  verbose=True):
         
@@ -203,7 +206,7 @@ class LVCData(Data):
         self.dist_unit = dist_unit
         self.events = self._get_events(fname, events_use)
         
-        self.m1z, self.m2z, self.dL, self.ra, self.dec, self.spins, self.Nsamples, self.bin_weights = self._load_data(fname, nObsUse, which_spins=which_spins)  
+        self.m1z, self.m2z, self.dL, self.ra, self.dec, self.iota, self.spins, self.Nsamples, self.bin_weights = self._load_data(fname, nObsUse, which_spins=which_spins)  
         self.Nobs=self.m1z.shape[0]
         # assert len(self.bin_weights)==self.Nobs
         #print(self.bin_weights)
@@ -317,18 +320,19 @@ class LVCData(Data):
             
         
         #print('We have the following events: %s' %str(events))
-        m1s, m2s, dLs, ra, dec, spins, weights = [], [], [], [], [], [], []
+        m1s, m2s, dLs, ra, dec, iota, spins, weights = [], [], [], [], [], [], [], []
         allNsamples=[]
         for event in self.events[:nObsUse]:
                 print('Reading data from %s' %event)
             #with h5py.File(fname, 'r') as phi:
-                m1z_, m2z_, dL_, ra_, dec_, spins_, weights_  = self._load_data_event(fname, event, nSamplesUse=None, which_spins=which_spins)
+                m1z_, m2z_, dL_, ra_, dec_, iota_, spins_, weights_  = self._load_data_event(fname, event, nSamplesUse=None, which_spins=which_spins)
                 print('Number of samples in LVC data: %s' %m1z_.shape[0]) #%(~np.isnan(m1z_)).sum()) #%m1z_.shape[0])
                 m1s.append(m1z_)
                 m2s.append(m2z_)
                 dLs.append(dL_)
                 ra.append(ra_)
                 dec.append(dec_)
+                iota.append(iota_)
                 spins.append(spins_)
                 weights.append(weights_)
                 assert len(m1z_)==len(m2z_)
@@ -353,7 +357,7 @@ class LVCData(Data):
         dl_samples= np.full(fin_shape, np.NaN)
         ra_samples= np.full(fin_shape, np.NaN)
         dec_samples= np.full(fin_shape, np.NaN)
-        #w_samples= np.full(fin_shape, np.NaN)
+        iota_samples= np.full(fin_shape, np.NaN)
         if which_spins!="skip":
             spins_samples= [np.full(fin_shape, np.NaN), np.full(fin_shape, np.NaN) ]
         else: spins_samples=[]
@@ -365,7 +369,7 @@ class LVCData(Data):
             dl_samples[i, :allNsamples[i]] = dLs[i]
             ra_samples[i, :allNsamples[i]] = ra[i]
             dec_samples[i, :allNsamples[i]] = dec[i]
-            #w_samples[i, :allNsamples[i]] = weights[i]
+            iota_samples[i, :allNsamples[i]] = iota[i]
             if which_spins!="skip":
                 spins_samples[0][i, :allNsamples[i]] = spins[i][0]
                 spins_samples[1][i, :allNsamples[i]] = spins[i][1]
@@ -374,7 +378,7 @@ class LVCData(Data):
             print('Using distances in Gpc')   
             dl_samples*=1e-03
         
-        return m1det_samples, m2det_samples, dl_samples, ra_samples, dec_samples, spins_samples, allNsamples, np.squeeze(np.array(weights))
+        return m1det_samples, m2det_samples, dl_samples, ra_samples, dec_samples, iota_samples, spins_samples, allNsamples, np.squeeze(np.array(weights))
     
     
     def logOrMassPrior(self):

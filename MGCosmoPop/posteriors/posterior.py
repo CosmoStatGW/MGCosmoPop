@@ -33,13 +33,13 @@ class Posterior(object):
         if normalized :
             print('This model will marginalize analytically over the overall normalization with a flat-in-log prior!')
         #self.params_inference = params_inference
-
+        print('Bias sefety factor is %s'%self.bias_safety_factor)
         
     def logPosterior(self, Lambda_test, return_all=False,):
         
         # Compute prior
         lp = self.prior.logPrior(Lambda_test)
-        if not np.isfinite(lp):
+        if (not np.isfinite(lp)) and (not return_all):
             return -np.inf
         
         # Get all parameters in case we are fixing some of them
@@ -55,6 +55,7 @@ class Posterior(object):
         # Includes uncertainty on MC estimation of the selection effects if required. err is =zero if we required to ignore it.
         if self.selectionBias is not None:
             mus, errs, Neffs = self.selectionBias.Ndet(Lambda_test, )
+            
         else:
             # Test case: we see the full population.
             if not self.normalized :
@@ -71,6 +72,8 @@ class Posterior(object):
             if Neffs[i] < self.bias_safety_factor * self.hyperLikelihood.data[i].Nobs:
                 if self.verbose:
                     print('NEED MORE SAMPLES FOR SELECTION EFFECTS! Nobs = %s, Neff = %s, Values of Lambda: %s' %(self.hyperLikelihood.data[i].Nobs, Neffs[i], str(Lambda_test)))
+                print( "Safety factor is %s"%self.bias_safety_factor )
+                #print( "Nobs is %s"%self.hyperLikelihood.data[i].Nobs )
                 # reject the sample
                 logPosts[i] = -np.inf
             else:
@@ -81,11 +84,18 @@ class Posterior(object):
                     logPosts[i] += errs[i]
                 else:
                     logPosts[i] = lls[i]-self.hyperLikelihood.data[i].Nobs*np.log(mus[i])
-                    err = (3*self.hyperLikelihood.data[i].Nobs+(self.hyperLikelihood.data[i].Nobs)**2 )/(2*Neffs[i])
+                    if self.selectionBias.get_uncertainty:
+                        err = (3*self.hyperLikelihood.data[i].Nobs+(self.hyperLikelihood.data[i].Nobs)**2 )/(2*Neffs[i])
+                    else:
+                        err = 0.
                     logPosts[i] += err
         
         # sum log likelihood of different datasets
         logPost = logPosts.sum()
+        
+        lls = np.asarray(lls).sum()
+        mus = np.asarray(mus).sum()
+        errs= np.asarray(errs).sum()
         
         #if not self.normalized :
         #    Tobs = np.array([self.hyperLikelihood._getTobs(self.hyperLikelihood.data[i]) for i in range(len(lls)) ])#.sum()

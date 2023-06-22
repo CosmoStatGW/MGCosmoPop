@@ -78,8 +78,8 @@ class O1O2Data(LVCData):
 
             posterior_samples = f['Overall_posterior']
             _keys = ['m1_detector_frame_Msun', 'm2_detector_frame_Msun', 'luminosity_distance_Mpc', 
-                     'right_ascension', 'declination']
-            m1z, m2z, dL, ra, dec = [posterior_samples[k] for k in _keys]
+                     'right_ascension', 'declination', 'costheta_jn']
+            m1z, m2z, dL, ra, dec, costh = [posterior_samples[k] for k in _keys]
             try:
                 w = posterior_samples['weights_bin']
             except Exception as e:
@@ -109,7 +109,14 @@ class O1O2Data(LVCData):
                 s1 = posterior_samples['spin1']
                 s2 = posterior_samples['spin2']
                 spins=[s1,s2]
-            
+            elif which_spins=='chi1zchi2z':
+                s1 = posterior_samples['spin1']*posterior_samples['costilt1']
+                s2 = posterior_samples['spin2']*posterior_samples['costilt2']
+                spins=[s1,s2]
+                
+         
+        
+        iota = np.arccos(costh)
         # Downsample if needed
         #all_ds = self._downsample( [m1z, m2z, dL, w, *spins,], nSamplesUse)
         
@@ -119,7 +126,7 @@ class O1O2Data(LVCData):
         #spins = all_ds[4:]
         #ws = all_ds[3]
         
-        return m1z, m2z, dL, ra, dec, spins, w
+        return m1z, m2z, dL, ra, dec, iota, spins, w
     
  
     

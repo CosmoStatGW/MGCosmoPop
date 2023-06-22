@@ -151,8 +151,13 @@ def build_model( populations, cosmo_args={}, mass_args={}, spin_args={}, rate_ar
     # Create cosmology
     myCosmo = Cosmo(**cosmo_args)
         
+    try:
+        n = rate_args['normalized']
+    except:
+        n = False
+        
     # Collector of all populations
-    allPops = AllPopulations(myCosmo)
+    allPops = AllPopulations(myCosmo, normalized=n)
     
     
     for population in populations.keys():
@@ -196,12 +201,20 @@ def load_data(dataset_name, injections_name=None, nObsUse=None, nSamplesUse=None
         fnameInj = os.path.join(Globals.dataPath, dataset_name, fnames_inj[dataset_key] )
         
         if dataset_key=='mock':
-            Data = GWMockData(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, percSamplesUse=percSamplesUse, dist_unit=dist_unit, Tobs=Tobs)
+            
+            if 'dLprior' in data_args.keys():
+                dLp = data_args['dLprior']
+            else:
+                dLp=None
+                
+            
+            Data = GWMockData(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, percSamplesUse=percSamplesUse, dist_unit=dist_unit, Tobs=Tobs, dLprior=dLp)
             if 'SNR_th' in inj_args.keys():
                 snr_th = inj_args['SNR_th']
             else: snr_th=None
             fnameInj = os.path.join(Globals.dataPath, injections_name, fnames_inj[dataset_key] )
             injData = GWMockInjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit, Tobs=Tobs, snr_th=snr_th)
+        
         elif dataset_name=='O3a':
             Data = O3aData(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, percSamplesUse=percSamplesUse, dist_unit=dist_unit, **data_args)
             if injections_name is None:

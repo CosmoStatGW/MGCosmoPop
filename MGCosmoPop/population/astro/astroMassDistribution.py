@@ -27,7 +27,7 @@ import utils
 
 def truncated_power_law(m, alpha, ml, mh):
         where_nan = np.isnan(m)
-        result = np.empty_like(m)
+        result = np.zeros(m.shape)
         
 
         result[where_nan]=np.NINF
@@ -204,7 +204,7 @@ class TruncPowerLawMass(BBHDistFunction):
         Conditional distribution p(m2 | m1)
         '''
         where_nan = np.isnan(m)
-        result = np.empty_like(m)
+        result = np.zeros(m.shape)
         
 
         result[where_nan]=np.NINF
@@ -555,7 +555,7 @@ class PowerLawPlusPeakMass(BBHDistFunction):
         #print('Input m shape: %s' %str(m.shape))
         maskL = m <= ml 
         maskU = m >= (ml + deltam) 
-        s = np.empty_like(m)
+        s = np.zeros(m.shape)
         s[maskL] = np.NINF
         s[maskU] = 0
         maskM = ~(maskL | maskU)
@@ -573,7 +573,7 @@ class PowerLawPlusPeakMass(BBHDistFunction):
         #print('Input m shape: %s' %str(m.shape))
         
         where_nan = np.isnan(m)
-        result = np.empty_like(m)
+        result = np.zeros(m.shape)
         
         result[where_nan]=np.NINF
         
@@ -605,7 +605,7 @@ class PowerLawPlusPeakMass(BBHDistFunction):
         #print('Input m shape: %s' %str(m2.shape))
         
         where_nan = np.isnan(m2)
-        result = np.empty_like(m2)
+        result = np.zeros(m2.shape)
 
         result[where_nan]=np.NINF
         
@@ -634,7 +634,7 @@ class PowerLawPlusPeakMass(BBHDistFunction):
         
         where_nan = np.isnan(m1)
         assert (where_nan==np.isnan(m2)).all()
-        result = np.empty_like(m1)
+        result = np.zeros(m1.shape)
 
         result[where_nan]=np.NINF
         
@@ -689,7 +689,7 @@ class PowerLawPlusPeakMass(BBHDistFunction):
         #where_approx = (~where_exact) & (where_compute)
         
         
-        result = np.empty_like(m)
+        result = np.zeros(m.shape)
         
         result[~where_compute]=np.NINF
         result[where_compute] = -np.log( np.interp(m[where_compute], xx[1:], cdf) )
@@ -801,7 +801,7 @@ class MultiPeakMass(BBHDistFunction):
     def _logS(self, m, deltam, ml,):
         maskL = m <= ml #- eps
         maskU = m >= (ml + deltam) #+ eps
-        s = np.empty_like(m)
+        s = np.zeros(m.shape)
         s[maskL] = np.NINF
         s[maskU] = 0
         maskM = ~(maskL | maskU)

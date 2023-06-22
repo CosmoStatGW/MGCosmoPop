@@ -16,8 +16,14 @@ from astropy.cosmology import Planck15, z_at_value
 class GWMockData(Data):
     
     def __init__(self, fname, nObsUse=None, nSamplesUse=None, percSamplesUse=None, 
-                 dist_unit=u.Gpc, Tobs=2.5,  SNR_th=8., events_use_idxs = None, events_not_use_idxs=None, ):
+                 dist_unit=u.Gpc, Tobs=2.5,  SNR_th=8., events_use_idxs = None, events_not_use_idxs=None, 
+                dLprior = None
+                
+                ):
         
+        
+        self.dLprior=dLprior
+        print("dL prior is %s"%dLprior)
         
         self.SNR_th= SNR_th
         self.dist_unit = dist_unit
@@ -48,19 +54,20 @@ class GWMockData(Data):
     def set_snr_threshold(self, snr_th):
         if self.snr.sum()==0.:
             print('Snrs not present in this dataset.')
-            return
+            setsnr = False
         if snr_th<self.SNR_th:
             #raise ValueError('New snr threshold is lower than original one !')
             print('warning: New snr threshold is lower than original one ! Using original')
-            return
+            setsnr = False
         
-        print('Setting snr threshold to %s' %snr_th)
-        self.SNR_th=snr_th
-        keep = self.snr >= snr_th
-        
-        self.m1z, self.m2z, self.dL, self.ra, self.dec, self.snr, self.bin_weights = self.m1z[keep, :], self.m2z[keep, :], self.dL[ keep, :], self.ra[keep, :], self.dec[keep, :], self.snr[keep], self.bin_weights[keep]
-        self.logNsamples = self.logNsamples[keep]
-        self.Nsamples = self.Nsamples[keep]
+        if setsnr:
+            print('Setting snr threshold to %s' %snr_th)
+            self.SNR_th=snr_th
+            keep = self.snr >= snr_th
+
+            self.m1z, self.m2z, self.dL, self.ra, self.dec, self.snr, self.bin_weights = self.m1z[keep, :], self.m2z[keep, :], self.dL[ keep, :], self.ra[keep, :], self.dec[keep, :], self.snr[keep], self.bin_weights[keep]
+            self.logNsamples = self.logNsamples[keep]
+            self.Nsamples = self.Nsamples[keep]
     
         self.Nobs=self.m1z.shape[0]
         
@@ -88,7 +95,15 @@ class GWMockData(Data):
             
                 m1det_samples = np.array(phi['posteriors']['m1det'])[:nObsUse, :]# m1
                 m2det_samples = np.array(phi['posteriors']['m2det'])[:nObsUse, :] # m2
-                dl_samples = np.array(phi['posteriors']['dl'])[:nObsUse, :]
+                
+                try:
+                    dl_samples = np.array(phi['posteriors']['dl'])[:nObsUse, :]
+                except:
+                    try:
+                        dl_samples = np.array(phi['posteriors']['dL'])[:nObsUse, :]
+                    except:
+                        raise ValueError('Neither dL nor dl present as key in this dataset')
+                
                 print('dl samples loaded shape: %s' %str(dl_samples.shape))
                 try:
                     snrs = np.array(phi['posteriors']['rho'])[:nObsUse]
@@ -149,7 +164,12 @@ class GWMockData(Data):
         return np.zeros(self.m1z.shape)
 
     def logOrDistPrior(self):
-        return np.zeros(self.dL.shape)
+        if self.dLprior==None:
+            return np.zeros(self.dL.shape)
+        elif self.dLprior=='dLsq':
+            return 2*np.log(self.dL)
+        else:
+            raise ValueError()
     
 
 
@@ -174,6 +194,7 @@ class GWMockInjectionsData(Data):
         
         if snr_th is not None:
             self.set_snr_threshold(snr_th)
+
         self.condition=np.full(self.m1z.shape, True)
         
     def set_snr_threshold(self, snr_th):
@@ -211,7 +232,17 @@ class GWMockInjectionsData(Data):
             if nInjUse is not None:
                 m1_sel = np.array(f['m1det'])[:nInjUse]
                 m2_sel = np.array(f['m2det'])[:nInjUse]
-                dl_sel = np.array(f['dl'])[:nInjUse]
+                
+                try:
+                    dl_sel = np.array(f['dl'])[:nInjUse]
+                except:
+                    try:
+                        dl_sel = np.array(f['dL'])[:nInjUse]
+                    except:
+                        raise ValueError('Neither dL nor dl present as key in this dataset')
+                
+                
+                
                 try:
                     weights_sel = np.array(f['wt'])[:nInjUse]
                     log_weights_sel = np.log(weights_sel)
@@ -225,12 +256,22 @@ class GWMockInjectionsData(Data):
             else:
                 m1_sel = np.array(f['m1det'])
                 m2_sel = np.array(f['m2det'])
-                dl_sel = np.array(f['dl'])
+                
+                
+                try:
+                    dl_sel = np.array(f['dl'])
+                except:
+                    try:
+                        dl_sel = np.array(f['dL'])
+                    except:
+                        raise ValueError('Neither dL nor dl present as key in this dataset')
+                
+                
                 try:
                     weights_sel = np.array(f['wt'])
                     log_weights_sel = np.log(weights_sel)
                 except KeyError:
-                    log_weights_sel = np.array(f['logwt'])[:nInjUse]
+                    log_weights_sel = np.array(f['logwt'])#[:nInjUse]
                     weights_sel = None
                 try:
                     snr_sel = np.array(f['snr'])
@@ -243,11 +284,16 @@ class GWMockInjectionsData(Data):
             except:
                 print('Threshold snr not saved in this dataset. Assuming 8.')
                 snr_th=8.
+            print('Threshold snr is %s'%snr_th)
         if self.dist_unit==u.Mpc:
             dl_sel*=1e03
             
         #self.max_z = np.max(z)
-        self.max_z=z_at_value(Planck15.luminosity_distance, dl_sel.max()*self.dist_unit)
+        try:
+            self.max_z=z_at_value(Planck15.luminosity_distance, dl_sel.max()*self.dist_unit)
+            print('Max redshift of injections assuming Planck 15 cosmology: %s' %self.max_z)
+        except:
+            pass
         
         # Drop points in the unlikely case of m1==m2, to avoid crashes
         
@@ -259,7 +305,7 @@ class GWMockInjectionsData(Data):
         if weights_sel is not None:
             weights_sel=weights_sel[keep]
         
-        print('Max redshift of injections assuming Planck 15 cosmology: %s' %self.max_z)
+        
         print('Number of total injections: %s' %N_gen)
         print('Number of detected injections: %s' %dl_sel[keep].shape[0])
         

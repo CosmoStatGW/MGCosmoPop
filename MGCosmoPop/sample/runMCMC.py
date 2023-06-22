@@ -318,19 +318,13 @@ def main():
         allData=[]
         allInjData=[]
         for i,dataset_name in enumerate(config.dataset_names):
-            
-            if dataset_name in ('O3a', 'O1O2', 'O3b'):
-                O3_use=config.O3_use
-            elif 'mock' in dataset_name:
-                O3_use=None
-        
-            print('\nLoading data from %s catalogue...' %dataset_name) 
-            
-            # This is a hack because the code does not yes support the option of different populations with different spin models
+
+
+	    # This is a hack because the code does not yes support the option of different populations with different spin models
             # To be fixed in case is needed
             spindist = config.populations[list(config.populations.keys())[0]]['spin_distribution']
-            
-            try:
+	    
+	    try:
                 SNR_th = config.SNR_th
             except:
                 SNR_th = 8.
@@ -340,12 +334,29 @@ def main():
             except:
                 FAR_th = 1.
                 print('FAR_th not found in config. Using 1/yr ')
+            
+	    inj_args={'which_spins':which_spins[spindist], 'snr_th':SNR_th, }
 
-            Data, injData = load_data(dataset_name, injections_name=config.injections_names[i],
+            if dataset_name in ('O3a', 'O1O2', 'O3b'):
+                O3_use=config.O3_use
+		if dataset_name in ('O3a', 'O3b'):
+			inj_args['which_injections'] = 'GWTC-3'
+            elif 'mock' in dataset_name:
+                O3_use=None
+        
+            print('\nLoading data from %s catalogue...' %dataset_name) 
+            
+            if config.injections_names is None:
+		iname=None
+	    else:
+		iname=config.injections_names[i]
+        
+
+            Data, injData = load_data(dataset_name, injections_name=iname,
                                       nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, percSamplesUse=config.percSamplesUse, nInjUse=config.nInjUse, 
                                       dist_unit=units[config.dist_unit], 
                                       data_args={'events_use':O3_use, 'which_spins':which_spins[spindist], 'SNR_th':SNR_th, 'FAR_th': FAR_th }, 
-                                      inj_args={'which_spins':which_spins[spindist], 'snr_th':SNR_th },
+                                      inj_args=inj_args,
                                       Tobs=config.Tobs)
             allData.append(Data)
             allInjData.append(injData)

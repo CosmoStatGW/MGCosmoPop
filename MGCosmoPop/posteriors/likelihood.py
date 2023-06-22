@@ -23,7 +23,7 @@ class HyperLikelihood(object):
     marginalised over the GW parameters
     
     '''
-    def __init__(self, population, data, params_inference, safety_factor=100, verbose=False, normalized=False):
+    def __init__(self, population, data, params_inference, safety_factor=10, verbose=False, normalized=False, zmax=20):
         '''
         
 
@@ -40,6 +40,8 @@ class HyperLikelihood(object):
         self.safety_factor = safety_factor
         self.verbose=verbose
         self.normalized=normalized
+        self.zmax = zmax
+        print("zmax in lik is %s"%self.zmax)
         if normalized :
             print('This model will marginalize analytically over the overall normalization with a flat-in-log prior!')
 
@@ -109,15 +111,13 @@ class HyperLikelihood(object):
         logLik_ = np.where(where_compute,  self.population.log_dN_dm1zdm2zddL( m1, m2, z, spins, Lambda, Tobs, dL=data.dL), np.NINF)
         #print('logLik_  shape: %s' %str(logLik_.shape))
         
-        if self.normalized :
-            logLik_ -= np.log(self.population.Nperyear_expected(Lambda, zmax=20, verbose=False))
         
         #if not self.normalized :
         #    logLik_[where_compute] += np.log(Tobs)
         
         # Remove original prior from posterior samples to get the likelihood        
         logLik_ -= data.logOrMassPrior()
-        logLik_ -= data.logOrDistPrior()
+        logLik_ -=  data.logOrDistPrior()
         
         #print('logLik_  shape after mask and dNdz: %s' %str(ll.shape))
         
@@ -142,6 +142,7 @@ class HyperLikelihood(object):
         else:
             allLogLiks = logLik_
             Neff = np.full( allLogLiks.shape, np.inf)
+    
         
         #print('allLogLiks  shape after marginalization of logLik_ (i.e. sum over samples for each event): %s' %str(allLogLiks.shape))
         
@@ -167,6 +168,9 @@ class HyperLikelihood(object):
                 ll=allLogLiks
             #if self.normalized :
             #    ll -= np.log(self.population.Nperyear_expected(Lambda, zmax=20, verbose=False))*data.Nobs
+            
+            #if self.normalized :
+            #    ll -= data.Nobs*np.log(self.population.Nperyear_expected(Lambda, zmax=self.zmax, verbose=False))
             
             if np.any(np.isnan(ll)):
                 raise ValueError('NaN value for logLik. Values of Lambda: %s' %(str(Lambda) ) )
