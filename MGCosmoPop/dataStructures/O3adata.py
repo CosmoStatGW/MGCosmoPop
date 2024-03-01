@@ -26,22 +26,39 @@ import Globals
 
 class O3aData(LVCData):
     
-    def __init__(self, fname,  which_metadata='GWOSC', **kwargs): #nObsUse=None, nSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='skip' ):
+    def __init__(self, fname,  which_metadata='GWOSC', 
+                 GWTC2_1 = ['GW190403_051519', 'GW190426_190642', 'GW190725_174728','GW190805_211137', 'GW190916_200658', 'GW190917_114630','GW190925_232845', 'GW190926_050336'], 
+                 suffix_name = 'nocosmo',
+                 **kwargs): #nObsUse=None, nSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='skip' ):
         
-        self.GWTC2_1 = ['GW190403_051519', 'GW190426_190642', 'GW190725_174728','GW190805_211137', 'GW190916_200658', 'GW190917_114630','GW190925_232845', 'GW190926_050336']
+        self.GWTC2_1 = GWTC2_1
         self.post_file_extension='.h5'
+        self.suffix_name = suffix_name
         import pandas as pd
         if which_metadata=='GWOSC':
-            print('Using SNRS and far from the public version of the GWTC-2 and GWTC-2.1- catalog from the GWOSC')
-            self.metadata = pd.read_csv(os.path.join(fname, 'GWTC-2.csv'))
-            metadata_21 = pd.read_csv(os.path.join(fname, 'GWTC-2.1-confident.csv'))
-            self.metadata = self.metadata.append(metadata_21)
+            if self.GWTC2_1 is not None:
+                print('Using SNRS and far from the public version of the GWTC-2 and GWTC-2.1- catalog from the GWOSC')
+                self.metadata = pd.read_csv(os.path.join(fname, 'GWTC-2.csv'))
+                #print(self.metadata.network_matched_filter_snr)
+                metadata_21 = pd.read_csv(os.path.join(fname, 'GWTC-2.1-confident.csv'))
+                #self.metadata = self.metadata.append(metadata_21)
+                self.metadata = pd.concat([self.metadata, metadata_21], ignore_index=True)
+                #print(self.metadata.head(5))
+            #    print(metadata_21.network_matched_filter_snr)
+            else:
+                print('Using SNRS and far from the public version of the GWTC-2.1-confident catalog from the GWOSC')
+                self.metadata = pd.read_csv(os.path.join(fname, 'GWTC-2.1-confident.csv'))
+                # reneme commonname with the full string, to avoid ambiguities
+                self.metadata = self.metadata.rename(columns={"commonName": "commonName_old"})
+                self.metadata.insert(2, "commonName", [ s.split('-')[0] for s in self.metadata['id'].values]  , True)
+                #print(self.metadata.head(3))
+                
         else:
             print('Using best SNRS and far from all pipelines as reported in the GWTC-3 catalog paper')
             self.metadata = pd.read_csv(os.path.join(Globals.dataPath, 'all_metadata_pipelines_best.csv'))
         
-        #print(self.metadata[[ 'commonName', 'catalog.shortName','mass_1_source',  'mass_2_source',  'network_matched_filter_snr','luminosity_distance','redshift','far' ]])
-        LVCData.__init__(self, fname, **kwargs) #nObsUse=nObsUse, nSamplesUse=nSamplesUse, dist_unit=dist_unit, events_use=events_use, which_spins=which_spins)
+
+        LVCData.__init__(self, fname, **kwargs) 
         
         
     
@@ -58,6 +75,7 @@ class O3aData(LVCData):
     
     def _get_not_BBHs(self):
         # return ['GW190425', 'GW190426_152155', 'GW190814', 'GW190917_114630' ] #'GW190426_152155', 'GW190426']
+        # at least one mass is compatible with a Neutron Star
         return ['GW190425', 'GW190426_152155', 'GW190917_114630' ] #'GW190426_152155', 'GW190426']
 
     
@@ -70,20 +88,36 @@ class O3aData(LVCData):
         if 'IGWN-GWTC2p1' not in fname:
             return fname.split('.')[0]
         else:
-            return '_'.join(fname.split('-')[-1].split('_')[:-1])
+            if 'v1' in fname:
+                return '_'.join(fname.split('-')[-1].split('_')[:-1])
+            elif 'v2' in fname :
+                return '_'.join(fname.split('-')[-1].split('_')[:2])
+                
     
     def _load_data_event(self, fname, event, nSamplesUse, which_spins='skip'):
-        if event in self.GWTC2_1:
-            return self._load_data_event_GWTC2_1(fname, event, nSamplesUse, which_spins=which_spins)
-        else:
-            return self._load_data_event_GWTC2(fname, event, nSamplesUse, which_spins=which_spins)
 
-    def _load_data_event_GWTC2_1(self, fname, event, nSamplesUse, which_spins='skip'):
-        data_path = os.path.join(fname, 'IGWN-GWTC2p1-v1-'+event+'_PEDataRelease.h5')
+        if self.GWTC2_1 is None:
+
+            return self._load_data_event_GWTC2_1_v2(fname, event, nSamplesUse, which_spins=which_spins)
+
+        else:
+        
+            if event in self.GWTC2_1:
+                return self._load_data_event_GWTC2_1(fname, event, nSamplesUse, which_spins=which_spins)
+            else:
+                return self._load_data_event_GWTC2(fname, event, nSamplesUse, which_spins=which_spins)
+
+    
+    def _load_data_event_GWTC2_1_v2(self, fname, event, nSamplesUse, which_spins='skip'):
+        data_path = os.path.join(fname, 'IGWN-GWTC2p1-v2-'+event+'_PEDataRelease_mixed_'+self.suffix_name+self.post_file_extension)
         with h5py.File(data_path, 'r') as f:
-            posterior_samples = f['IMRPhenomXPHM']['posterior_samples']
-            _keys = ['mass_1', 'mass_2', 'luminosity_distance', ]
-            m1z, m2z, dL, = [posterior_samples[k] for k in _keys]
+            try:
+                posterior_samples = f['C01:Mixed']['posterior_samples']
+            except Exception as e:
+                print(e)
+                print( f.keys() )
+            _keys = ['mass_1', 'mass_2', 'luminosity_distance', 'iota']
+            m1z, m2z, dL, iota = [posterior_samples[k] for k in _keys]
             try:
                 w = posterior_samples['weights_bin']
             except Exception as e:
@@ -103,9 +137,64 @@ class O3aData(LVCData):
                 chieff = posterior_samples['chi_eff']
                 chiP = posterior_samples['chi_p']
                 spins=[chieff, chiP]
+            elif which_spins=='default':
+                try:
+                    s1x = posterior_samples['spin_1x']
+                    s2x = posterior_samples['spin_2x']
+                    s1y = posterior_samples['spin_1y']
+                    s2y = posterior_samples['spin_2y']
+                    s1z = posterior_samples['spin_1z']
+                    s2z = posterior_samples['spin_2z']
+                    s1 = np.sqrt(s1x**2+s1y**2+s1z**2)
+                    s2 = np.sqrt(s2x**2+s2y**2+s2z**2)
+                    cost1 = posterior_samples['cos_tilt_1']
+                    cost2 = posterior_samples['cos_tilt_2']
+                    spins = [s1, s2, cost1, cost2]
+                except Exception as e:
+                    print(e)
+                    print(posterior_samples.dtype.fields.keys())
+                    raise ValueError()
+                    
             else:
                 raise NotImplementedError()
-            return m1z, m2z, dL, ra, dec, spins, w
+            return m1z, m2z, dL, ra, dec, iota, spins, w
+    
+    
+    def _load_data_event_GWTC2_1(self, fname, event, nSamplesUse, which_spins='skip'):
+        data_path = os.path.join(fname, 'IGWN-GWTC2p1-v1-'+event+'_PEDataRelease.h5')
+        with h5py.File(data_path, 'r') as f:
+            posterior_samples = f['IMRPhenomXPHM']['posterior_samples']
+            _keys = ['mass_1', 'mass_2', 'luminosity_distance', 'iota']
+            m1z, m2z, dL,iota = [posterior_samples[k] for k in _keys]
+            try:
+                w = posterior_samples['weights_bin']
+            except Exception as e:
+                print(e)
+                w = np.ones(1)
+            try:
+                ra, dec = [posterior_samples[k] for k in ('right_ascension', 'declination')]
+            except Exception as e:
+                print(e)
+                ra = np.full( m1z.shape[0], 0.)
+                dec = np.full( m1z.shape[0], 0.)
+                print('ra shape: %s'%str(ra.shape))
+                
+            if which_spins=='skip':
+                spins=[]
+            elif which_spins=='chiEff':
+                chieff = posterior_samples['chi_eff']
+                chiP = posterior_samples['chi_p']
+                spins=[chieff, chiP]
+            elif which_spins=='default':
+                s1 = posterior_samples['spin1']
+                s2 = posterior_samples['spin2']
+                cost1 = posterior_samples['costilt1']
+                cost2 = posterior_samples['costilt2']
+                spins = [s1, s2, cost1, cost2]
+                
+            else:
+                raise NotImplementedError()
+            return m1z, m2z, dL, ra, dec, iota, spins, w
 
     def _load_data_event_GWTC2(self, fname, event, nSamplesUse, which_spins='skip'):
         
@@ -120,8 +209,8 @@ class O3aData(LVCData):
         data_path = os.path.join(fname,  event+self.post_file_extension)
         with h5py.File(data_path, 'r') as f:
             posterior_samples = f['PublicationSamples']['posterior_samples']      
-            _keys = ['mass_1', 'mass_2', 'luminosity_distance', ]
-            m1z, m2z, dL = [posterior_samples[k] for k in _keys]
+            _keys = ['mass_1', 'mass_2', 'luminosity_distance', 'iota']
+            m1z, m2z, dL, iota = [posterior_samples[k] for k in _keys]
             #print(dL, ra, dec)
             try:
                 w = posterior_samples['weights_bin']
@@ -142,6 +231,12 @@ class O3aData(LVCData):
                 chieff = posterior_samples['chi_eff']
                 chiP = posterior_samples['chi_p']
                 spins = [chieff, chiP]
+            elif which_spins=='default':
+                s1 = posterior_samples['spin1']
+                s2 = posterior_samples['spin2']
+                cost1 = posterior_samples['costilt1']
+                cost2 = posterior_samples['costilt2']
+                spins = [s1, s2, cost1, cost2]
             else:
                 raise NotImplementedError()
         
@@ -154,7 +249,7 @@ class O3aData(LVCData):
         #w = all_ds[3]
         #spins = all_ds[4:]
         
-        return m1z, m2z, dL, ra, dec, spins, w
+        return m1z, m2z, dL, ra, dec, iota, spins, w
               
    
     

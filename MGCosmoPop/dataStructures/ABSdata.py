@@ -97,7 +97,7 @@ class Data(ABC):
         Nobs = samples.shape[1]
         
         print('Nobs in downsample: %s' %Nobs)
-        m1zD, m2zD, dLD, raD, decD, iotaD  =  np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples))
+        m1zD, m2zD, dLD, raD, decD, iotaD  =  np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples))
         #if not spins:
             # no spins
         s0D, s1D = np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples))
@@ -183,7 +183,7 @@ class Data(ABC):
     
 class LVCData(Data):
     
-    def __init__(self, fname, nObsUse=None, nSamplesUse=None, percSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='chiEff', SNR_th=8., FAR_th=1. ):
+    def __init__(self, fname, nObsUse=None, nSamplesUse=None, percSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='chiEff', SNR_th=8., FAR_th=1., BBH_only=True ):
         
         Data.__init__(self)
         
@@ -197,11 +197,14 @@ class LVCData(Data):
         print('FAR th in LVC data: %s' %self.FAR_th)
         self.events_use=events_use
         self.which_spins=which_spins
+        self.BBH_only=BBH_only
         
         nObsUse=None
         if events_use is not None:
-            if events_use['use'] is not None:
+            try:
                 nObsUse=len(events_use['use'])
+            except:
+                pass
         
         self.dist_unit = dist_unit
         self.events = self._get_events(fname, events_use)
@@ -267,13 +270,18 @@ class LVCData(Data):
         
         
         # Exclude events not identified as BBHs
-        list_BBH_or = [x for x in elist if x not in self._get_not_BBHs() ]
-        print('In the '+fname.split('/')[-1]+' data we have the following BBH events, total %s (excluding %s):' %(len(list_BBH_or) ,str(self._get_not_BBHs())) )
-        print(list_BBH_or)
-        
+        if self.BBH_only:
+            list_BBH_or = [x for x in elist if x not in self._get_not_BBHs() ]
+            print('In the '+fname.split('/')[-1]+' data we have the following BBH events, total %s (excluding %s):' %(len(list_BBH_or) ,str(self._get_not_BBHs())) )
+        else:
+            list_BBH_or = [x for x in elist]
+            print('In the '+fname.split('/')[-1]+' data we have the following BBH events, total %s (keeping all events independently):' %(len(list_BBH_or)) )
+            
+        print( np.sort(np.array(list_BBH_or)))
         # Impose cut on SNR
         print('Using only events with SNR>%s (round to 1 decimal digit)' %self.SNR_th)
         list_BBH_0 = [x for x in list_BBH_or if np.round(self.metadata[self.metadata.commonName==x].network_matched_filter_snr.values, 1)>=self.SNR_th  ]
+        print('Events:%s'%len(list_BBH_0))
         list_BBH_excluded_0 = [(x, np.round(self.metadata[self.metadata.commonName==x].network_matched_filter_snr.values), 1)[0] for x in list_BBH_or if np.round(self.metadata[self.metadata.commonName==x].network_matched_filter_snr.values, 1)<self.SNR_th  ]
         print('Excluded the following events with SNR<%s: ' %self.SNR_th)
         print(list_BBH_excluded_0)
@@ -281,6 +289,7 @@ class LVCData(Data):
 
         # Impose cut on FAR
         print('Using only events with FAR<%s' %self.FAR_th)
+        #print(self.metadata.far.values)
         list_BBH = [x for x in list_BBH_0 if self.metadata[self.metadata.commonName==x].far.values<=self.FAR_th  ]
         list_BBH_excluded = [(x, self.metadata[self.metadata.commonName==x].far.values) for x in list_BBH_0 if self.metadata[self.metadata.commonName==x].far.values>self.FAR_th  ]
         print('Excluded the following events with FAR>%s: ' %self.FAR_th)
@@ -339,7 +348,10 @@ class LVCData(Data):
                 assert len(m2z_)==len(dL_)
                 #assert len(weights_)==len(dL_)
                 if which_spins!="skip":
-                    assert len(spins_)==2
+                    if which_spins!='default':
+                        assert len(spins_)==2
+                    else:
+                        assert len(spins_)==4
                     assert len(spins_[0])==len(dL_)
                 else:  assert spins_==[]
                 
@@ -359,7 +371,10 @@ class LVCData(Data):
         dec_samples= np.full(fin_shape, np.NaN)
         iota_samples= np.full(fin_shape, np.NaN)
         if which_spins!="skip":
-            spins_samples= [np.full(fin_shape, np.NaN), np.full(fin_shape, np.NaN) ]
+            if which_spins=='default':
+                spins_samples= [np.full(fin_shape, np.NaN), np.full(fin_shape, np.NaN), np.full(fin_shape, np.NaN), np.full(fin_shape, np.NaN) ]
+            else:
+                spins_samples= [np.full(fin_shape, np.NaN), np.full(fin_shape, np.NaN) ]
         else: spins_samples=[]
         
         for i in range(nObsUse):
@@ -371,8 +386,8 @@ class LVCData(Data):
             dec_samples[i, :allNsamples[i]] = dec[i]
             iota_samples[i, :allNsamples[i]] = iota[i]
             if which_spins!="skip":
-                spins_samples[0][i, :allNsamples[i]] = spins[i][0]
-                spins_samples[1][i, :allNsamples[i]] = spins[i][1]
+                for k in range(len(spins_samples)):
+                    spins_samples[k][i, :allNsamples[i]] = spins[i][k]
         
         if self.dist_unit==u.Gpc:
             print('Using distances in Gpc')   

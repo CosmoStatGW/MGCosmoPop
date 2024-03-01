@@ -122,7 +122,7 @@ class AstroPhRateEvolution(RateEvolution):
             alphaRedshift , betaRedshift, zp = lambdaBBHrate
             pz =  alphaRedshift*np.log1p(z)-np.log(1+((1+z)/(1+zp))**(alphaRedshift+betaRedshift))#+np.log(self._C0(alphaRedshift , betaRedshift, zp))
             
-        return np.where( z<self.zmax, pz, 0 )
+        return np.where( z<self.zmax, pz, np.NINF )
 
     def _C0(self, alphaRedshift , betaRedshift, zp):
         

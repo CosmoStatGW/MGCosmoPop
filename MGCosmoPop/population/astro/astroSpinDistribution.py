@@ -7,8 +7,8 @@
 
 from ..ABSpopulation import BBHDistFunction
 import numpy as np
-#from numpy.linalg import inv, det
-from scipy.stats import truncnorm #, multivariate_normal
+from scipy.linalg import inv, det
+from scipy.stats import truncnorm, multivariate_normal
 from scipy.special import erfc
 from scipy.stats import beta
 ########################################################################
@@ -59,7 +59,7 @@ class GaussSpinDist(BBHDistFunction):
     
     def __init__(self, ):
         BBHDistFunction.__init__(self)
-        self.params = ['muEff', 'sigmaEff', 'muP', 'sigmaP', ] #'rho' ] # For the moment we ignore correlation
+        self.params = ['muEff', 'sigmaEff', 'muP', 'sigmaP', 'rho' ] # For the moment we ignore correlation
         
         self.baseValues = {
                            
@@ -92,7 +92,7 @@ class GaussSpinDist(BBHDistFunction):
     def logpdf(self, theta, lambdaBBHspin):
         
         chiEff, chiP = theta
-        muEff, sigmaEff, muP, sigmaP, = lambdaBBHspin
+        muEff, sigmaEff, muP, sigmaP, rho = lambdaBBHspin
         
         #mean = np.array([muEff, muP])
         #C = np.array( [[sigmaEff**2, rho*sigmaEff*sigmaP ], [rho*sigmaEff*sigmaP , sigmaP**2]]  )
@@ -100,24 +100,68 @@ class GaussSpinDist(BBHDistFunction):
         #logpdf = -np.log(2*np.pi)-0.5*np.log(det(C))-0.5*(theta-mean).dot(inv(C)).dot(theta-mean)
         #logpdf = multivariate_normal.logpdf(theta, mean=mean, cov=C )
         
-        
-        where_compute=~np.isnan(chiP)
-        if where_compute.sum==0:
-            pdf2=np.full(chiP.shape, 0.)
+        if rho==0:
+            where_compute=~np.isnan(chiP)
+            if where_compute.sum==0:
+                pdf2=np.full(chiP.shape, 0.)
+            else:
+            #pdftot=np.empty_like(chiEff)
+                pdf2=np.empty_like(chiP)
+                pdf2[~where_compute]=0.
+                chiP = chiP[where_compute]
+                # Put zero (i.e. ignore the effect) when chi_p is not available - this is used when computing selection effects, for which we don't have chi_p
+                pdf2[where_compute] =  trunc_gaussian_logpdf(chiP, lower=self.minChiP, upper=self.maxChiP, mu=muP, sigma=sigmaP )
+            
+            pdf1 = trunc_gaussian_logpdf(chiEff, lower=self.minChiEff, upper=self.maxChiEff, mu=muEff, sigma=sigmaEff ) #get_truncnorm(self.minChiEff, self.maxChiEff, muEff, sigmaEff ).logpdf(chiEff)
+            
+            
+            pdftot = pdf1+pdf2
+
         else:
-        #pdftot=np.empty_like(chiEff)
-            pdf2=np.empty_like(chiP)
-            pdf2[~where_compute]=0.
-            chiP = chiP[where_compute]
-            # Put zero (i.e. ignore the effect) when chi_p is not available - this is used when computing selection effects, for which we don't have chi_p
-            pdf2[where_compute] =  trunc_gaussian_logpdf(chiP, lower=self.minChiP, upper=self.maxChiP, mu=muP, sigma=sigmaP )
+ 
+            where_inf =  ( chiEff < -1 ) | ( chiEff > 1 ) | ( chiP <0 ) | ( chiP > 1 )
+            
+            sEsP = rho*sigmaEff*sigmaP
+            C = np.asarray( [ [sigmaEff**2, sEsP] , [ sEsP, sigmaP**2 ] ] )
+            mean = np.asarray( [muEff, muP] )
+            x = np.asarray( [chiEff, chiP] ).T
+            pdftot =  np.diag(-0.5*(x-mean)@(inv(C))@((x-mean).T)) - np.log(2*np.pi)-0.5*np.log(det(C))
         
-        pdf1 = trunc_gaussian_logpdf(chiEff, lower=self.minChiEff, upper=self.maxChiEff, mu=muEff, sigma=sigmaEff ) #get_truncnorm(self.minChiEff, self.maxChiEff, muEff, sigmaEff ).logpdf(chiEff)
-        
-        
-        pdftot = pdf1+pdf2
+            pdftot =  np.where( where_inf, np.NINF, pdftot)
         
         return pdftot
+
+    
+    def sample(self, nSamples, lambdaBBHspin, ):
+
+        muEff, sigmaEff, muP, sigmaP, rho = lambdaBBHspin
+
+        sEsP = rho*sigmaEff*sigmaP
+        C = np.asarray( [ [sigmaEff**2, sEsP] , [ sEsP, sigmaP**2 ] ] )
+
+        samples_ = multivariate_normal.rvs(mean=[muEff, muP], cov=C, size=nSamples)
+        chiesamples, chipsamples = samples_[:, 0], samples_[:, 1]
+        to_replace =  (chiesamples < -1)  |  (chiesamples > 1)  | (chipsamples <0)  | (chipsamples > 1) 
+        n_replace = to_replace.sum()
+        
+        while(n_replace>0):
+        
+            ss = multivariate_normal.rvs(mean=[muEff, muP], cov=C, size=n_replace)
+            try:
+                chiesamples_, chipsamples_ = ss[:, 0], ss[:, 1]
+            except IndexError:
+                chiesamples_, chipsamples_ = ss[0], ss[1]
+        
+            samples_[to_replace, 0] = chiesamples_
+            samples_[to_replace, 1] = chipsamples_
+        
+            chiesamples, chipsamples = samples_[:, 0], samples_[:, 1]
+                    
+            to_replace =  (chiesamples < -1)  |  (chiesamples > 1)  | (chipsamples < 0)  | (chipsamples > 1) 
+            
+            n_replace = to_replace.sum()
+
+        return samples_.T
     
   
     
@@ -228,8 +272,8 @@ class DefaultSpinModel(BBHDistFunction):
         
         logpdfampl =  beta.logpdf(chi1, alphaChi, betaChi)+beta.logpdf(chi2, alphaChi, betaChi)
         
-        logpdfcos1 = np.log( np.exp(trunc_gaussian_logpdf(cost1, mu = 1, sigma = sigmat, lower = -1, upper=1))*zeta+(1-zeta)/2 )
-        logpdfcos2 = np.log( np.exp(trunc_gaussian_logpdf(cost2, mu = 1, sigma = sigmat, lower = -1, upper=1))*zeta+(1-zeta)/2 ) 
+        logpdfcos1 = np.log( np.exp(trunc_gaussian_logpdf(cost1, mu = 1., sigma = sigmat, lower = -1, upper=1))*zeta+(1-zeta)/2 )
+        logpdfcos2 = np.log( np.exp(trunc_gaussian_logpdf(cost2, mu = 1., sigma = sigmat, lower = -1, upper=1))*zeta+(1-zeta)/2 ) 
         
         logpdf[where_compute] = logpdfampl+logpdfcos1+logpdfcos2
         

@@ -113,6 +113,12 @@ class O1O2Data(LVCData):
                 s1 = posterior_samples['spin1']*posterior_samples['costilt1']
                 s2 = posterior_samples['spin2']*posterior_samples['costilt2']
                 spins=[s1,s2]
+            elif which_spins=='default':
+                s1 = posterior_samples['spin1']
+                s2 = posterior_samples['spin2']
+                cost1 = posterior_samples['costilt1']
+                cost2 = posterior_samples['costilt2']
+                spins = [s1, s2, cost1, cost2]
                 
          
         
@@ -153,9 +159,11 @@ class O1O2InjectionsData(Data):
         print('Obs time: %s yrs' %self.Tobs )
         
         self.ifar_th=ifar_th
-        #gstlal_ifar, pycbc_ifar, pycbc_bbh_ifar = conditions_arr
-        self.condition = np.full(self.m1z.shape, True) #(gstlal_ifar > ifar_th) | (pycbc_ifar > ifar_th) | (pycbc_bbh_ifar > ifar_th)
         
+        #gstlal_ifar, pycbc_ifar, pycbc_bbh_ifar = conditions_arr
+        self.condition = np.full(self.m1z.shape, True)
+        #(gstlal_ifar > ifar_th) | (pycbc_ifar > ifar_th) | (pycbc_bbh_ifar > ifar_th)
+        # np.full(self.m1z.shape, True) #
         
     def get_theta(self):
         return np.array( [self.m1z, self.m2z, self.dL  ] )  
@@ -164,7 +172,9 @@ class O1O2InjectionsData(Data):
     def _load_data(self, fname, nInjUse, which_spins='skip'):
         
         with h5py.File(fname, 'r') as f:
-            print(f.attrs)
+            print(f.attrs.keys())
+            print(f.keys())
+            
             Tobs = 1.084931506849315 #f.attrs['analysis_time_s']/(365.25*24*3600) # years  (48.3+118)/365. #
             Ndraw = 7.1e07 #f.attrs['total_generated']
     
@@ -194,6 +204,7 @@ class O1O2InjectionsData(Data):
                 print('Removing factor of 1/2 for each spin dimension from p_draw...')
                 p_draw *= 4
             log_p_draw = np.log(p_draw)
+            
             #gstlal_ifar = np.array(f['injections/ifar_gstlal'])
             #pycbc_ifar = np.array(f['injections/ifar_pycbc_full'])
             #pycbc_bbh_ifar = np.array(f['injections/ifar_pycbc_bbh'])
@@ -218,6 +229,6 @@ class O1O2InjectionsData(Data):
             
             self.max_z = np.max(z)
             print('Max redshift of injections: %s' %self.max_z)
-            return m1z, m2z, dL , spins, log_p_draw , Ndraw, Tobs, #(gstlal_ifar, pycbc_ifar, pycbc_bbh_ifar)
+            return m1z, m2z, dL , spins, log_p_draw , Ndraw, Tobs#, (gstlal_ifar, pycbc_ifar, pycbc_bbh_ifar)
 
    

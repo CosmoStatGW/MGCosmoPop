@@ -310,7 +310,7 @@ def main():
                 params_MCMC_start= params_mock
             elif ('mock_BPL_5yr_GR'==config.dataset_names[0]) or ('mock_BPL_5yr_GR_1511'==config.dataset_names[0]):
                 params_MCMC_start= params_mock_BPL_5yr_GR
-            elif 'CHIMERA' in config.data[0]:
+            elif 'CHIMERA' in config.dataset_names[0]:
                 params_MCMC_start=params_mock_CHIMERA
 
         if config.normalized and 'R0' in params_MCMC_start.values():

@@ -81,13 +81,13 @@ class O3bData(LVCData):
 
         
         # By hand:
-        data_path = os.path.join(fname,  'IGWN-GWTC3p0-v1-'+event+'_PEDataRelease_mixed_'+self.suffix_name+self.post_file_extension)
+        data_path = os.path.join(fname,  'IGWN-GWTC3p0-v2-'+event+'_PEDataRelease_mixed_'+self.suffix_name+self.post_file_extension)
         with h5py.File(data_path, 'r') as f:
             dataset = f['C01:IMRPhenomXPHM']
             posterior_samples = dataset['posterior_samples']
             
-            _keys = ['mass_1', 'mass_2', 'luminosity_distance', ]
-            m1z, m2z, dL = [posterior_samples[k] for k in _keys]
+            _keys = ['mass_1', 'mass_2', 'luminosity_distance', 'iota']
+            m1z, m2z, dL, iota = [posterior_samples[k] for k in _keys]
             
             #m1z = posterior_samples['mass_1']
             #m2z = posterior_samples['mass_2']
@@ -103,6 +103,23 @@ class O3bData(LVCData):
                 chieff = posterior_samples['chi_eff']
                 chiP = posterior_samples['chi_p']
                 spins = [chieff, chiP]
+            elif which_spins=='default':
+                try:
+                    s1x = posterior_samples['spin_1x']
+                    s2x = posterior_samples['spin_2x']
+                    s1y = posterior_samples['spin_1y']
+                    s2y = posterior_samples['spin_2y']
+                    s1z = posterior_samples['spin_1z']
+                    s2z = posterior_samples['spin_2z']
+                    s1 = np.sqrt(s1x**2+s1y**2+s1z**2)
+                    s2 = np.sqrt(s2x**2+s2y**2+s2z**2)
+                    cost1 = posterior_samples['cos_tilt_1']
+                    cost2 = posterior_samples['cos_tilt_2']
+                    spins = [s1, s2, cost1, cost2]
+                except Exception as e:
+                    print(e)
+                    print(posterior_samples.dtype.fields.keys())
+                    raise ValueError()
             else:
                 raise NotImplementedError()
             try:
@@ -122,7 +139,7 @@ class O3bData(LVCData):
         #spins = all_ds[4:]
         #w = all_ds[3]
         
-        return np.squeeze(m1z), np.squeeze(m2z), np.squeeze(dL), np.squeeze(ra), np.squeeze(dec), [np.squeeze(s) for s in spins], w
+        return np.squeeze(m1z), np.squeeze(m2z), np.squeeze(dL), np.squeeze(ra), np.squeeze(dec), np.squeeze(iota), [np.squeeze(s) for s in spins], w
               
     
     
