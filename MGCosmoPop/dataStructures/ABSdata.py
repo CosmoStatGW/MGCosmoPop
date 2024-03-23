@@ -100,7 +100,7 @@ class Data(ABC):
         m1zD, m2zD, dLD, raD, decD, iotaD  =  np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples))
         #if not spins:
             # no spins
-        s0D, s1D = np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples))
+        s0D, s1D, s2D, s3D = np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples)), np.zeros((Nobs,nSamples))
         for o in range(Nobs):
             print('Samples shape is %s' %str(samples.shape))
             if Nobs>200:
@@ -110,11 +110,13 @@ class Data(ABC):
                 m1zD[o], m2zD[o], dLD[o], raD[o], decD[o], iotaD[o] = self._downsample(samples[:,o, :], nSamples, verbose=verbose)
 
             else:
-                m1zD[o], m2zD[o], dLD[o], raD[o], decD[o], iotaD[o], s0D[o], s1D[o] = self._downsample(samples[:,o, :], nSamples, verbose=verbose)
-            #elif Npar==3:
+                m1zD[o], m2zD[o], dLD[o], raD[o], decD[o], iotaD[o], s0D[o], s1D[o], s2D[o], s3D[o] = self._downsample(samples[:,o, :], nSamples, verbose=verbose)
+            
+        
+        #elif Npar==3:
             #    m1zD[o], m2zD[o], dLD[o] = self._downsample(samples[:,o, :], nSamples, verbose=verbose)
         #if Npar==5:
-        self.spins = [s0D, s1D]
+        self.spins = [s0D, s1D, s2D, s3D]
         self.m1z = m1zD
         self.m2z = m2zD
         self.dL = dLD

@@ -54,7 +54,7 @@ mass_functions = {  'smooth_pow_law': AstroSmoothPowerLawMass,
 
 spin_functions = {  'gauss': GaussSpinDist,
                       'skip': DummySpinDist,
-                      'flat':UniformSpinDistChiz
+                      'flat':UniformSpinDistChiz,
                   'default':DefaultSpinModel
      }
 
@@ -205,6 +205,8 @@ def load_data(dataset_name, injections_name=None, nObsUse=None, nSamplesUse=None
             dataset_key='mock'
         else:
             dataset_key=dataset_name
+            if 'dLprior' in data_args.keys():
+                _ = data_args.pop('dLprior')
         
         fname = os.path.join(Globals.dataPath, dataset_name, fnames_data[dataset_key])
 

@@ -155,7 +155,8 @@ params_mock_BPL_5yr_MG_1410 = {'H0':67.74, 'Om':0.3075, 'w0':-1, 'Xi0':1.8,
 
 
 which_spins={ 'gauss':'chiEff',
-             'skip':'skip'
+             'skip':'skip',
+             'default':'default'
     
     }
 
