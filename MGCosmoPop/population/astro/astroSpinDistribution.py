@@ -231,19 +231,19 @@ class DefaultSpinModel(BBHDistFunction):
     
     def __init__(self, ):
         BBHDistFunction.__init__(self)
-        self.params = ['alphaChi', 'betaChi','zeta','sigmat' ] #'rho' ] # For the moment we ignore correlation
+        self.params = ['muChi', 'varChi','zeta','sigmat' ] #'rho' ] # For the moment we ignore correlation
         
         self.baseValues = {
                            
-                           'alphaChi': 0.25,
-                           'betaChi':0.03, 
+                           'muChi': 0.3,
+                           'varChi':0.03, 
                            'zeta': 0.76, 
                            'sigmat':0.8
                            }
         
         self.names = {
-                           'alphaChi':r'$\alpha_{ \chi}$',
-                           'betaChi':r'$\beta_{ \chi}$', 
+                           'muChi':r'$\mu_{ \chi}$',
+                           'varChi':r'$\sigma_{ \chi}^2$', 
                            'zeta':r'$\zeta$', 
                            'sigmat':r'$\sigma_t$'
                            }
@@ -262,7 +262,15 @@ class DefaultSpinModel(BBHDistFunction):
     def logpdf(self, theta, lambdaBBHspin):
         
         chi1, chi2, cost1, cost2 = theta
-        alphaChi, betaChi, zeta, sigmat = lambdaBBHspin
+        muChi, varChi, zeta, sigmat = lambdaBBHspin
+
+        kappa_ = muChi*(1-muChi)/varChi-1
+        
+        alphaChi = muChi*kappa_ 
+        betaChi = (1-muChi)*kappa_ 
+
+        if (alphaChi<=1) | (betaChi<=1):
+            return -np.inf
         
         where_compute= (cost1>=-1) & (cost1<=1) & (cost2>=-1) & (cost2<=1)& (chi1>=0) & (chi1<=1) & (chi2>=0) & (chi2<=1)
     
