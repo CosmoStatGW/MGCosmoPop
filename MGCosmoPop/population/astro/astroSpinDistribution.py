@@ -272,15 +272,18 @@ class DefaultSpinModel(BBHDistFunction):
         
         logpdfampl =  beta.logpdf(chi1, alphaChi, betaChi)+beta.logpdf(chi2, alphaChi, betaChi)
         
-        logpdfcos1 = np.log( np.exp(trunc_gaussian_logpdf(cost1, mu = 1., sigma = sigmat, lower = -1, upper=1))*zeta+(1-zeta)/2 )
-        logpdfcos2 = np.log( np.exp(trunc_gaussian_logpdf(cost2, mu = 1., sigma = sigmat, lower = -1, upper=1))*zeta+(1-zeta)/2 ) 
+        pdfcos1 =  np.exp(trunc_gaussian_logpdf(cost1, mu = 1., sigma = sigmat, lower = -1, upper=1)) 
         
-        logpdf[where_compute] = logpdfampl+logpdfcos1+logpdfcos2
+        pdfcos2 =  np.exp(trunc_gaussian_logpdf(cost2, mu = 1., sigma = sigmat, lower = -1, upper=1)) 
+
+        logpdftilt = np.log( (1-zeta)/4 + zeta*pdfcos1*pdfcos2 )
+        
+        logpdf[where_compute] = logpdfampl+logpdftilt
         
         return logpdf
     
     
-    def sample(self, nSamples, lambdaBBHspin, return_chi1chi2=True):
+    def sample(self, nSamples, lambdaBBHspin):
         
         alphaChi, betaChi, zeta, sigmat = lambdaBBHspin
         

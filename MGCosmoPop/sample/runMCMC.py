@@ -91,6 +91,32 @@ params_mock_CHIMERA = {
                   
                  }
 
+
+
+params_ETBNSgauss = {
+
+    # Mass function
+ 'meanMass': 1.33,
+ 'sigmaMass': 0.09,
+ 
+                  
+    # Spin
+    'chiMin':-0.05,
+    'chiMax':0.05,
+    
+                  
+ # Redshift distribution
+  'alphaRedshift':1.42,    
+'betaRedshift':4.62, 
+    'zp':1.84,
+   'R0':105.5, 
+              
+    # Cosmo      
+    'H0': 67.7,
+     'Om': 0.31
+                  
+                 }
+
 params_mock_BPL_5yr_aLIGOdesignSensitivity = {'H0':67.74, 'Om':0.3075, 'w0':-1., 'Xi0':1., 'n':1.91, 'R0':25.0,
                   'lambdaRedshift':2., 'alpha1':1.6, 'alpha2':5.6, 'beta':1.4, 'deltam':5.0, 'ml':4., 'mh':90.0, 'b':0.4}
 
@@ -312,6 +338,10 @@ def main():
                 params_MCMC_start= params_mock_BPL_5yr_GR
             elif 'CHIMERA' in config.dataset_names[0]:
                 params_MCMC_start=params_mock_CHIMERA
+            elif 'CHIMERA' in config.dataset_names[0]:
+                params_MCMC_start=params_mock_CHIMERA
+            elif ('mock_ET_BNS'  in config.dataset_names[0]) and ('gauss' in config.dataset_names[0]):
+                params_MCMC_start = params_ETBNSgauss
 
         if config.normalized and 'R0' in params_MCMC_start.values():
             print('Removing R0 from parameters')
@@ -360,14 +390,19 @@ def main():
                 FAR_th = 1.
                 print('FAR_th not found in config. Using 1/yr ')
             
-            inj_args={'which_spins':which_spins[spindist], 'snr_th':SNR_th, }
+            inj_args={'which_spins':which_spins[spindist], 'snr_th':SNR_th, 'ifar_th':1./FAR_th }
+
+            
 
             if dataset_name in ('O3a', 'O1O2', 'O3b'):
                 O3_use=config.O3_use
-            if dataset_name in ('O3a', 'O3b'):
-                inj_args['which_injections'] = 'GWTC-3'
             elif 'mock' in dataset_name:
                 O3_use=None
+                
+            #if dataset_name in ('O3a', 'O3b'):
+            
+            inj_args['which_injections'] = config.which_injections #'GWTC-3'
+            
         
             print('\nLoading data from %s catalogue...' %dataset_name) 
             
@@ -378,7 +413,10 @@ def main():
         
 
             Data, injData = load_data(dataset_name, injections_name=iname,
-                                      nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, percSamplesUse=config.percSamplesUse, nInjUse=config.nInjUse, 
+                                      nObsUse=config.nObsUse, 
+                                      nSamplesUse=config.nSamplesUse, 
+                                      percSamplesUse=config.percSamplesUse, 
+                                      nInjUse=config.nInjUse, 
                                       dist_unit=units[config.dist_unit], 
                                       data_args={'events_use':O3_use, 'which_spins':which_spins[spindist], 'SNR_th':SNR_th, 'FAR_th': FAR_th, 'dLprior':config.dLpriordata }, 
                                       inj_args=inj_args,

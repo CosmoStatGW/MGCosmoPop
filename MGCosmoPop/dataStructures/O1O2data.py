@@ -25,10 +25,13 @@ import Globals
      
 class O1O2Data(LVCData):
     
-    def __init__(self, fname, which_metadata='GWOSC',  **kwargs):#nObsUse=None, nSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='skip' ):
+    def __init__(self, fname, which_metadata='GWOSC', force_BNS=False, **kwargs):#nObsUse=None, nSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='skip' ):
         
         self.post_file_extension='.hdf5'
+        self.force_BNS=force_BNS
+        
         import pandas as pd
+        
         if which_metadata=='GWOSC':
             print('Using SNRS and far from the public version of the GWTC-3 catalog from the GWOSC')
             self.metadata = pd.read_csv(os.path.join(fname, 'GWTC-1-confident.csv'))
@@ -57,9 +60,13 @@ class O1O2Data(LVCData):
         #self.Tobs= (48.3+118)/365.  # yrs
         self.Tobs= (129+267)/365.  # yrs
     
+
     
     def _get_not_BBHs(self):
-        return ['GW170817', ]
+        if not self.force_BNS:
+            return ['GW170817', ]
+        else:
+            return []
         
     
     def _name_conditions(self, f ):
@@ -75,8 +82,11 @@ class O1O2Data(LVCData):
         data_path = os.path.join(fname,  event+'_GWTC-1'+self.post_file_extension)
         
         with h5py.File(data_path, 'r') as f:
-
-            posterior_samples = f['Overall_posterior']
+            try:
+                posterior_samples = f['Overall_posterior']
+            except Exception as e:
+                print(e)
+                print(f.keys())
             _keys = ['m1_detector_frame_Msun', 'm2_detector_frame_Msun', 'luminosity_distance_Mpc', 
                      'right_ascension', 'declination', 'costheta_jn']
             m1z, m2z, dL, ra, dec, costh = [posterior_samples[k] for k in _keys]
@@ -143,7 +153,7 @@ class O1O2Data(LVCData):
  
 class O1O2InjectionsData(Data):
     
-    def __init__(self, fname, nInjUse=None,  dist_unit=u.Gpc, ifar_th=1 , which_spins='skip', SNR_th=None ):
+    def __init__(self, fname, nInjUse=None,  dist_unit=u.Gpc, ifar_th=1 , which_spins='skip', snr_th=None ):
         
         self.dist_unit=dist_unit
         self.m1z, self.m2z, self.dL, self.spins, self.log_weights_sel, self.N_gen, self.Tobs = self._load_data(fname, nInjUse, which_spins=which_spins )        

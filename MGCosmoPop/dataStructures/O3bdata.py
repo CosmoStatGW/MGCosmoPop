@@ -151,5 +151,3 @@ class O3bInjectionsData(O3InjectionsData, ):
         
         O3InjectionsData.__init__(self, fname, **kwargs)
 
-      
-  

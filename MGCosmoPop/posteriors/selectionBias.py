@@ -193,7 +193,10 @@ class SelectionBiasInjections(SelectionBias):
             #if allNobs is None:
             #    Nobs=None
             #else: Nobs=allNobs[i]
-            mu_, err_, Neff_ = self._Ndet(Lambda_test, injData_, verbose=verbose, )
+            if injData_ is not None:
+                mu_, err_, Neff_ = self._Ndet(Lambda_test, injData_, verbose=verbose, )
+            else:
+                mu_, err_, Neff_ = np.asarray(0.), np.asarray(0.), np.asarray(100000.) 
             mus.append(mu_)
             errs.append(err_)
             Neffs.append(Neff_)

@@ -231,12 +231,24 @@ class O3aData(LVCData):
                 chieff = posterior_samples['chi_eff']
                 chiP = posterior_samples['chi_p']
                 spins = [chieff, chiP]
+            
             elif which_spins=='default':
-                s1 = posterior_samples['spin1']
-                s2 = posterior_samples['spin2']
-                cost1 = posterior_samples['costilt1']
-                cost2 = posterior_samples['costilt2']
-                spins = [s1, s2, cost1, cost2]
+                try:
+                    s1x = posterior_samples['spin_1x']
+                    s2x = posterior_samples['spin_2x']
+                    s1y = posterior_samples['spin_1y']
+                    s2y = posterior_samples['spin_2y']
+                    s1z = posterior_samples['spin_1z']
+                    s2z = posterior_samples['spin_2z']
+                    s1 = np.sqrt(s1x**2+s1y**2+s1z**2)
+                    s2 = np.sqrt(s2x**2+s2y**2+s2z**2)
+                    cost1 = posterior_samples['cos_tilt_1']
+                    cost2 = posterior_samples['cos_tilt_2']
+                    spins = [s1, s2, cost1, cost2]
+                except Exception as e:
+                    print(e)
+                    print(posterior_samples.dtype.fields.keys())
+                    raise ValueError()
             else:
                 raise NotImplementedError()
         

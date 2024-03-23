@@ -528,3 +528,121 @@ class O3InjectionsData(Data):
             self.max_z = np.max(z)
             print('Max redshift of injections: %s' %self.max_z)
             return m1z, m2z, dL , spins, log_p_draw , Ndraw, Tobs, snrs, conditions_arr
+
+
+class GWTC3InjectionsData(Data):
+    
+    def __init__(self, fname, nInjUse=None, dist_unit=u.Gpc, ifar_th=1., snr_th=0.,  which_spins='skip' ):
+        
+        
+        self.which_injections = which_injections
+        self.which_spins=which_spins
+        self.dist_unit=dist_unit
+        self.m1z, self.m2z, self.dL, self.spins, self.log_weights_sel, self.N_gen, self.Tobs, self.snrs, self.ifar, self.runs = self._load_data(fname, nInjUse, which_spins=which_spins )        
+        self.logN_gen = np.log(self.N_gen)
+        #self.log_weights_sel = np.log(self.weights_sel)
+        assert (self.m1z > 0).all()
+        assert (self.m2z > 0).all()
+        assert (self.dL > 0).all()
+        assert(self.m2z<self.m1z).all()
+        
+        print('Loaded data shape: %s' %str(self.m1z.shape))
+        print('Loaded weights shape: %s' %str(self.log_weights_sel.shape))
+        
+        
+        
+        self.ifar_th = ifar_th
+        self.snr_th = snr_th
+        
+        
+        self.condition = np.where(self.runs == 'o3', self.ifar > 1/ifar_th, snr > self.snr_th)
+        
+
+          
+    def get_theta(self):
+        return np.array( [self.m1z, self.m2z, self.dL, self.spins  ] )  
+    
+    
+    def _load_data(self, fname, nInjUse, which_spins='skip'):
+        
+        #import astropy.units as u
+        from astropy.cosmology import Planck15
+        from cosmology.cosmo import Cosmo
+        import h5py
+        
+        print('Reading injections from %s...' %fname)
+        
+        with h5py.File(fname, 'r') as f:
+        
+            T_obs = f.attrs['analysis_time_s']/(365.25*24*3600) # years
+            N_draw = f.attrs['total_generated']
+
+            d = f['injections']
+    
+            ifars = [
+                        d[par][:] for par in d.keys()
+                        if ('ifar' in par) and ('cwb' not in par)
+                        ]
+            ifar = np.max(ifars, axis=0)
+            snr = d['optimal_snr_net'][:]
+            runs = d['name'][:].astype(str)
+        
+            all_injs = {k: np.array(f['injections'][k]) for k in f['injections'].keys()}
+
+            zs = all_injs['redshift']
+            m1s = all_injs['mass1_source']
+            m2s = all_injs['mass2_source']
+
+            log_jac_spin = np.zeros(zs.shape)
+            if which_spins=='skip':
+                spins=[]
+                
+            elif which_spins=='default':
+                s1x = all_injs['spin1x']
+                s1y = all_injs['spin1y']
+                s1z = all_injs['spin1z']
+                
+                s2x = all_injs['spin2x']
+                s2y = all_injs['spin2y']
+                s2z = all_injs['spin2z']
+    
+    
+                chi1sq = s1x**2+s1y**2+s1z**2
+                
+                chi2sq = s2x**2+s2y**2+s2z**2
+
+                
+                log_jac_spin = np.log(chi1sq) + np.log(chi2sq) + 2*np.log(2*np.pi)
+
+                chi1 = np.sqrt(chi1sq)
+                chi2 = np.sqrt(chi2sq)
+                cost1 = s1z/chi1
+                cost2 = s2z/chi2
+                spins=[chi1, chi2, cost1, cost2]
+
+            else:
+                raise NotImplementedError()
+                
+
+            print('Re-weighting p_draw to go to detector frame quantities...')
+            cosmo = Cosmo(dist_unit=self.dist_unit)
+
+            dLs =  cosmo.dLGW(zs, 67.9, 0.3065, -1,1,0)
+            log_p_draw_jac = 2*np.log1p(zs)+cosmo.log_ddL_dz( zs,  67.9, 0.3065, -1,1,0 )
+
+            m1d = m1s*(1+zs)
+            m2d = m2s*(1+zs)
+
+            log_p_draw = np.log(all_injs['sampling_pdf'])
+
+            log_p_draw_det = log_p_draw-log_p_draw_jac+log_jac_spin
+            
+      
+
+            print('Number of total injections: %s' %Ndraw)
+            print('Number of injections that pass first threshold: %s' %log_p_draw.shape[0])
+            
+            self.max_z = np.max(zs)
+            print('Max redshift of injections: %s' %self.max_z)
+            
+            return m1z, m2z, dL , spins, log_p_draw , Ndraw, Tobs, snr, ifar, runs
