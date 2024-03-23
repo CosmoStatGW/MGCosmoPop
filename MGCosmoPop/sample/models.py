@@ -217,7 +217,8 @@ def load_data(dataset_name, injections_name=None, nObsUse=None, nSamplesUse=None
             fnameInj = os.path.join(Globals.dataPath, dataset_name, fnames_inj_3[dataset_key] )
         elif inj_args['which_injections']=='GWTC-3-all':
             fnameInj = os.path.join(Globals.dataPath, dataset_name, fnames_inj_all[dataset_key] )
-            
+            _ = inj_args.pop('which_injections')
+       
         #fnameInj = os.path.join(Globals.dataPath, dataset_name, fnames_inj[dataset_key] )
         
         if dataset_key=='mock':
