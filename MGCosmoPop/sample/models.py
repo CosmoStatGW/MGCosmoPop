@@ -19,7 +19,7 @@ import Globals
 import astropy.units as u
 
 from population.astro.astroMassDistribution import AstroSmoothPowerLawMass, BrokenPowerLawMass, TruncPowerLawMass, PowerLawPlusPeakMass, MultiPeakMass, BNSGaussMass, BNSFlatMass, BrokenPowerLawMassBNS
-from population.astro.astroSpinDistribution import DummySpinDist, GaussSpinDist, UniformSpinDistChiz
+from population.astro.astroSpinDistribution import DummySpinDist, GaussSpinDist, UniformSpinDistChiz, DefaultSpinModel
 from population.astro.rateEvolution import PowerLawRateEvolution, AstroPhRateEvolution, RateEvolutionCOBA
 from population.astro.astroPopulation import AstroPopulation
 from cosmology.cosmo import Cosmo
@@ -29,7 +29,7 @@ from dataStructures.mockData import GWMockData, GWMockInjectionsData
 from dataStructures.O3adata import O3aData, O3aInjectionsData
 from dataStructures.O1O2data import O1O2Data, O1O2InjectionsData
 from dataStructures.O3bdata import O3bData, O3bInjectionsData
-from dataSstructures.ABSdata import GWTC3InjectionsData
+from dataStructures.ABSdata import GWTC3InjectionsData
 
 #import astropy.units as u
 
@@ -55,6 +55,7 @@ mass_functions = {  'smooth_pow_law': AstroSmoothPowerLawMass,
 spin_functions = {  'gauss': GaussSpinDist,
                       'skip': DummySpinDist,
                       'flat':UniformSpinDistChiz
+                  'default':DefaultSpinModel
      }
 
 
