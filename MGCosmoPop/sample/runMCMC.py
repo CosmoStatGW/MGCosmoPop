@@ -396,7 +396,10 @@ def main():
             
 
             if dataset_name in ('O3a', 'O1O2', 'O3b'):
-                O3_use=config.O3_use
+                if dataset_name=='O3a':
+                    O3_use=config.O3a_use
+                elif dataset_name=='O3b':
+                    O3_use=config.O3b_use
             elif 'mock' in dataset_name:
                 O3_use=None
                 
