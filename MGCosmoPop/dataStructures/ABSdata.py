@@ -537,7 +537,7 @@ class GWTC3InjectionsData(Data):
     def __init__(self, fname, nInjUse=None, dist_unit=u.Gpc, ifar_th=1., snr_th=0.,  which_spins='skip' ):
         
         
-        self.which_injections = which_injections
+        #self.which_injections = which_injections
         self.which_spins=which_spins
         self.dist_unit=dist_unit
         self.m1z, self.m2z, self.dL, self.spins, self.log_weights_sel, self.N_gen, self.Tobs, self.snrs, self.ifar, self.runs = self._load_data(fname, nInjUse, which_spins=which_spins )        
@@ -577,7 +577,7 @@ class GWTC3InjectionsData(Data):
         with h5py.File(fname, 'r') as f:
         
             T_obs = f.attrs['analysis_time_s']/(365.25*24*3600) # years
-            N_draw = f.attrs['total_generated']
+            Ndraw = f.attrs['total_generated']
 
             d = f['injections']
     

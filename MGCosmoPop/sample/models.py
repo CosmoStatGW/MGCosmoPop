@@ -91,9 +91,9 @@ fnames_inj_3  = { 'mock': 'selected.h5',
     }
 
 fnames_inj_all  = { #'mock': 'selected.h5',
-                #'O3a': 'endo3_bbhpop-LIGO-T2100113-v12-1238166018-15843600.hdf5',
+                'O3a':'o1+o2+o3_bbhpop_real+semianalytic-LIGO-T2100377-v2.hdf5',
                 'O1O2':'o1+o2+o3_bbhpop_real+semianalytic-LIGO-T2100377-v2.hdf5',
-                #'O3b':'endo3_bbhpop-LIGO-T2100113-v12-1256655642-12905976.hdf5'
+                'O3b':'o1+o2+o3_bbhpop_real+semianalytic-LIGO-T2100377-v2.hdf5',
     }
 
 
@@ -207,17 +207,21 @@ def load_data(dataset_name, injections_name=None, nObsUse=None, nSamplesUse=None
             dataset_key=dataset_name
             if 'dLprior' in data_args.keys():
                 _ = data_args.pop('dLprior')
+            try:
+                #injections_name=='GWTC-3-all'
+                if inj_args['which_injections']=='GWTC-2':
+                    fnameInj = os.path.join(Globals.dataPath, dataset_name, fnames_inj[dataset_key] )
+                elif inj_args['which_injections']=='GWTC-3':
+                    fnameInj = os.path.join(Globals.dataPath, dataset_name, fnames_inj_3[dataset_key] )
+                elif inj_args['which_injections']=='GWTC-3-all':
+                    fnameInj = os.path.join(Globals.dataPath, dataset_name, fnames_inj_all[dataset_key] )
+                    _ = inj_args.pop('which_injections')
+            except:
+                pass
         
         fname = os.path.join(Globals.dataPath, dataset_name, fnames_data[dataset_key])
 
-        #injections_name=='GWTC-3-all'
-        if inj_args['which_injections']=='GWTC-2':
-            fnameInj = os.path.join(Globals.dataPath, dataset_name, fnames_inj[dataset_key] )
-        elif inj_args['which_injections']=='GWTC-3':
-            fnameInj = os.path.join(Globals.dataPath, dataset_name, fnames_inj_3[dataset_key] )
-        elif inj_args['which_injections']=='GWTC-3-all':
-            fnameInj = os.path.join(Globals.dataPath, dataset_name, fnames_inj_all[dataset_key] )
-            _ = inj_args.pop('which_injections')
+        
        
         #fnameInj = os.path.join(Globals.dataPath, dataset_name, fnames_inj[dataset_key] )
         

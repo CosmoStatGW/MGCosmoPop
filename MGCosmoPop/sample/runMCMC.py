@@ -401,9 +401,10 @@ def main():
                 O3_use=None
                 
             #if dataset_name in ('O3a', 'O3b'):
-            
-            inj_args['which_injections'] = config.which_injections #'GWTC-3'
-            
+            try:
+                inj_args['which_injections'] = config.which_injections #'GWTC-3'
+            except:
+                pass
         
             print('\nLoading data from %s catalogue...' %dataset_name) 
             
