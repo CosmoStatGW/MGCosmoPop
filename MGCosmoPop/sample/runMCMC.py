@@ -412,7 +412,14 @@ def main():
                 iname=None
             else:
                 iname=config.injections_names[i]
-        
+
+            data_args={'events_use':O3_use, 'which_spins':which_spins[spindist], 'SNR_th':SNR_th, 'FAR_th': FAR_th, 'dLprior':config.dLpriordata }
+
+            if dataset_name=='O3a':
+                try:
+                    data_args['GWTC2_1'] = config.GWTC2_1
+                except:
+                    pass
 
             Data, injData = load_data(dataset_name, injections_name=iname,
                                       nObsUse=config.nObsUse, 
@@ -420,7 +427,7 @@ def main():
                                       percSamplesUse=config.percSamplesUse, 
                                       nInjUse=config.nInjUse, 
                                       dist_unit=units[config.dist_unit], 
-                                      data_args={'events_use':O3_use, 'which_spins':which_spins[spindist], 'SNR_th':SNR_th, 'FAR_th': FAR_th, 'dLprior':config.dLpriordata }, 
+                                      data_args=data_args, 
                                       inj_args=inj_args,
                                       Tobs=config.Tobs)
             allData.append(Data)
