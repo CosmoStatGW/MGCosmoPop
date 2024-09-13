@@ -117,6 +117,26 @@ params_ETBNSgauss = {
                   
                  }
 
+
+params_ETBBHmock = {'alpha': 3.33,
+ 'beta': 2.03,
+ 'mh': 76.39,
+ 'ml': 3.94,
+ 'lambdaPeak': 0.02,
+ 'muMass': 32.91,
+ 'sigmaMass': 3.56,
+ 'deltam': 7.94,
+ 'muChi': 0.3,
+ 'varChi': 0.04,
+ 'zeta': 0.75,
+ 'sigmat': 1.39,
+ 'alphaRedshift': 2.7,
+ 'betaRedshift': 5.0,
+ 'zp': 2.3,
+ 'R0': 16.53,
+ 'H0': 71.27,
+ 'Om': 0.29}
+
 params_mock_BPL_5yr_aLIGOdesignSensitivity = {'H0':67.74, 'Om':0.3075, 'w0':-1., 'Xi0':1., 'n':1.91, 'R0':25.0,
                   'lambdaRedshift':2., 'alpha1':1.6, 'alpha2':5.6, 'beta':1.4, 'deltam':5.0, 'ml':4., 'mh':90.0, 'b':0.4}
 
@@ -343,6 +363,8 @@ def main():
                 params_MCMC_start=params_mock_CHIMERA
             elif ('mock_ET_BNS'  in config.dataset_names[0]) and ('gauss' in config.dataset_names[0]):
                 params_MCMC_start = params_ETBNSgauss
+            elif ('mock_ET_BBH'  in config.dataset_names[0]):
+                params_MCMC_start = params_ETBBHmock
 
         if config.normalized and 'R0' in params_MCMC_start.values():
             print('Removing R0 from parameters')
@@ -635,7 +657,7 @@ def main():
     trueValues = allPops.get_base_values(config.params_inference)
     
     fig1 = corner.corner(
-    samples, labels=labels, truths=trueValues, quantiles=[0.16, 0.84],show_titles=True, title_kwargs={"fontsize": 12}
+    samples, labels=labels, truths=trueValues,  show_titles=True, title_kwargs={"fontsize": 12}, #quantiles=[0.16, 0.84],
     );
 
     fig1.savefig(os.path.join(out_path, 'corner.pdf'))
@@ -669,6 +691,10 @@ def main():
     if config.parallelization == 'mpi':
         pool.close()
         sys.exit(0)
+    else:
+        pool.close()
+        pool.join()
+        
     
     #if resume:
         # rm config_tmp 'config_tmp.py'
