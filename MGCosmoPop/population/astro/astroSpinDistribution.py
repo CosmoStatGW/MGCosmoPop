@@ -293,7 +293,12 @@ class DefaultSpinModel(BBHDistFunction):
     
     def sample(self, nSamples, lambdaBBHspin):
         
-        alphaChi, betaChi, zeta, sigmat = lambdaBBHspin
+        muChi, varChi, zeta, sigmat = lambdaBBHspin
+
+        kappa_ = muChi*(1-muChi)/varChi-1
+        
+        alphaChi = muChi*kappa_ 
+        betaChi = (1-muChi)*kappa_
         
         chi1sam = np.random.beta(alphaChi, betaChi, size=nSamples)
         chi2sam = np.random.beta(alphaChi, betaChi, size=nSamples)
