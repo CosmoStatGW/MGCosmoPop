@@ -209,7 +209,7 @@ def main():
                 useEarthMotion = FLAGS.rot,
                 fmin=FLAGS.fmin, fmax=FLAGS.fmax,
                 IntTablePath=None, 
-                DutyFactor=FLAGS.duty_factor, 
+                DutyFactor=FLAGS.duty_factor[d], 
                                ) 
         
     
