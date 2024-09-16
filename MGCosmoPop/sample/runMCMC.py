@@ -365,7 +365,9 @@ def main():
                 params_MCMC_start = params_ETBNSgauss
             elif ('mock_ET_BBH'  in config.dataset_names[0]):
                 params_MCMC_start = params_ETBBHmock
-
+            else:
+                params_MCMC_start = config.params_start
+        
         if config.normalized and 'R0' in params_MCMC_start.values():
             print('Removing R0 from parameters')
             _ = params_MCMC_start.pop('R0')
@@ -406,7 +408,7 @@ def main():
                 SNR_th = config.SNR_th
             except:
                 SNR_th = 8.
-
+                print('FAR_th not found in config. Using 8 ')
             try:
                 FAR_th = config.FAR_th
             except:
@@ -422,7 +424,9 @@ def main():
                     O3_use=config.O3a_use
                 elif dataset_name=='O3b':
                     O3_use=config.O3b_use
-            elif 'mock' in dataset_name:
+                elif dataset_name=='O1O2':
+                    O3_use={'not_use':[], 'use':None}
+            else:
                 O3_use=None
                 
             #if dataset_name in ('O3a', 'O3b'):
@@ -436,16 +440,28 @@ def main():
             if config.injections_names is None:
                 iname=None
             else:
-                iname=config.injections_names[i]
+                try:
+                    iname=config.injections_names[i]
+                except Exception as e:
+                    print(e)
+                    iname=config.injections_names[0]
+                
+            
+            data_args={'events_use':O3_use, 'which_spins':which_spins[spindist], 'SNR_th':SNR_th, 'FAR_th': FAR_th, 'dLprior':config.dLpriordata,  }
 
-            data_args={'events_use':O3_use, 'which_spins':which_spins[spindist], 'SNR_th':SNR_th, 'FAR_th': FAR_th, 'dLprior':config.dLpriordata }
+            #print('Data args is')
+            #print(data_args)
+
+            if dataset_name in ('O3a', 'O3b'):
+                data_args['suffix_name'] = config.suffix_name
 
             if dataset_name=='O3a':
                 try:
                     data_args['GWTC2_1'] = config.GWTC2_1
                 except:
                     pass
-
+            #print('Data args is')
+            #cprint(data_args)
             Data, injData = load_data(dataset_name, injections_name=iname,
                                       nObsUse=config.nObsUse, 
                                       nSamplesUse=config.nSamplesUse, 
@@ -454,9 +470,13 @@ def main():
                                       dist_unit=units[config.dist_unit], 
                                       data_args=data_args, 
                                       inj_args=inj_args,
-                                      Tobs=config.Tobs)
+                                      Tobs=config.Tobs,
+                                     inj_path=config.inj_path,
+                                      data_path=config.data_path,
+                                     )
             allData.append(Data)
-            allInjData.append(injData)
+            if injData is not None:
+                allInjData.append(injData)
         
         
         #Data, injData = load_data(config.dataset_name, nObsUse=config.nObsUse, nSamplesUse=config.nSamplesUse, nInjUse=config.nInjUse, dist_unit=units[config.dist_unit], events_use=O3_use, )

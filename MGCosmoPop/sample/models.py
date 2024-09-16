@@ -193,60 +193,47 @@ def build_model( populations, cosmo_args={}, mass_args={}, spin_args={}, rate_ar
 
 
 
-def load_data(dataset_name, injections_name=None, nObsUse=None, nSamplesUse=None, percSamplesUse=None, nInjUse=None, dist_unit=u.Gpc, data_args ={}, inj_args ={}, Tobs=None):
+def load_data(dataset_name, injections_name=None, nObsUse=None, nSamplesUse=None, percSamplesUse=None, nInjUse=None, dist_unit=u.Gpc, data_args ={}, inj_args ={}, Tobs=None, data_path=None, inj_path=None):
         
         # for O2/O3, injections_name can be None in which case the LVC injections are used (they should be in the same folder as the data)
         # or specify the name of a folder containing a file 'selected.h5'
         
         ############################################################
         # DATA
+
+        if data_path is None:
+            data_path = Globals.dataPath
+        if inj_path is None:
+            inj_path = Globals.dataPath
         
         if "mock" in dataset_name:
             dataset_key='mock'
         else:
             dataset_key=dataset_name
-            if 'dLprior' in data_args.keys():
-                _ = data_args.pop('dLprior')
+            #if 'dLprior' in data_args.keys():
+            #    _ = data_args.pop('dLprior')
+            
             try:
                 #injections_name=='GWTC-3-all'
                 if inj_args['which_injections']=='GWTC-2':
-                    fnameInj = os.path.join(Globals.dataPath, dataset_name, fnames_inj[dataset_key] )
+                    fnameInj = os.path.join(inj_path, dataset_name, fnames_inj[dataset_key] )
                 elif inj_args['which_injections']=='GWTC-3':
-                    fnameInj = os.path.join(Globals.dataPath, dataset_name, fnames_inj_3[dataset_key] )
+                    fnameInj = os.path.join(inj_path, dataset_name, fnames_inj_3[dataset_key] )
                 elif inj_args['which_injections']=='GWTC-3-all':
-                    fnameInj = os.path.join(Globals.dataPath, dataset_name, fnames_inj_all[dataset_key] )
+                    fnameInj = os.path.join(inj_path, dataset_name, fnames_inj_all[dataset_key] )
                     _ = inj_args.pop('which_injections')
             except:
                 pass
         
-        fname = os.path.join(Globals.dataPath, dataset_name, fnames_data[dataset_key])
+        if dataset_name not in ['O1O2', 'O3a', 'O3b']:
+            fname = os.path.join(data_path, dataset_name, 'observations.h5')
+        else:
+            fname = os.path.join(data_path, dataset_name, fnames_data[dataset_key])
 
-        
-       
-        #fnameInj = os.path.join(Globals.dataPath, dataset_name, fnames_inj[dataset_key] )
-        
-        if dataset_key=='mock':
-            
-            if 'dLprior' in data_args.keys():
-                dLp = data_args['dLprior']
-                print('dL prior is %s'%dLp)
-            else:
-                dLp=None
-                print('dL prior is None')
-            if dLp=='none':
-                dLp=None
-                print('dL prior is now None')
-                
-            
-            Data = GWMockData(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, percSamplesUse=percSamplesUse, dist_unit=dist_unit, Tobs=Tobs, dLprior=dLp)
-            if 'SNR_th' in inj_args.keys():
-                snr_th = inj_args['SNR_th']
-            else: snr_th=None
-            fnameInj = os.path.join(Globals.dataPath, injections_name, fnames_inj[dataset_key] )
-            injData = GWMockInjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit, Tobs=Tobs, snr_th=snr_th)
+
 
     
-        elif dataset_name=='O3a':
+        if dataset_name=='O3a':
             
             Data = O3aData(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, percSamplesUse=percSamplesUse, dist_unit=dist_unit, **data_args)
             
@@ -259,7 +246,11 @@ def load_data(dataset_name, injections_name=None, nObsUse=None, nSamplesUse=None
                 injData = None
             
             else:
-                fnameInj = os.path.join(Globals.dataPath, dataset_name, injections_name, 'selected.h5') #fnames_inj[dataset_key] )
+                # the name of some folder was passed to injections_name
+                
+                # the folder must be under inj_path/O3a/
+                
+                fnameInj = os.path.join(inj_path, dataset_name, injections_name, 'selected.h5') #fnames_inj[dataset_key] )
                 if 'SNR_th' in inj_args.keys():
                     snr_th = inj_args['SNR_th']
                 else: snr_th=None
@@ -277,7 +268,7 @@ def load_data(dataset_name, injections_name=None, nObsUse=None, nSamplesUse=None
                 injData = GWTC3InjectionsData(fnameInj, nInjUse=nInjUse, dist_unit=dist_unit, **inj_args )
             
             else:
-                fnameInj = os.path.join(Globals.dataPath, dataset_name, injections_name, 'selected.h5')
+                fnameInj = os.path.join(inj_path, dataset_name, injections_name, 'selected.h5')
                 if 'SNR_th' in inj_args.keys():
                     snr_th = inj_args['SNR_th']
                 else: snr_th=None
@@ -297,24 +288,52 @@ def load_data(dataset_name, injections_name=None, nObsUse=None, nSamplesUse=None
                 injData = None
                 
             else:
-                fnameInj = os.path.join(Globals.dataPath, dataset_name, injections_name, 'selected.h5')
+                fnameInj = os.path.join(inj_path, dataset_name, injections_name, 'selected.h5')
                 if 'SNR_th' in inj_args.keys():
                     snr_th = inj_args['SNR_th']
                 else: snr_th=None
                 injData = GWMockInjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit, Tobs=Data.Tobs, snr_th=snr_th )
         else:
-            raise ValueError('Dataset name not valid')
+            #raise ValueError('Dataset name not valid')
+            print("Using simulated data")
+            #if dataset_key=='mock':
+            print(data_args)
+            if 'dLprior' in data_args.keys():
+                dLp = data_args['dLprior']
+                print('dL prior is %s'%dLp)
+            else:
+                dLp=None
+                print('dL prior is None')
+            if dLp=='none':
+                dLp=None
+                print('dL prior is now None')
+                
+            
+            Data = GWMockData(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, percSamplesUse=percSamplesUse, dist_unit=dist_unit, Tobs=Tobs, dLprior=dLp)
+            if 'SNR_th' in inj_args.keys():
+                snr_th = inj_args['SNR_th']
+            else: snr_th=None
+
+            if dataset_key=='mock':
+                fnameInj = os.path.join(inj_path, injections_name, fnames_inj[dataset_key] )
+            else:
+                 fnameInj = os.path.join(inj_path, injections_name, 'selected.h5' )
+            
+            injData = GWMockInjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit, Tobs=Tobs, snr_th=snr_th)
         
         return Data, injData
     
     
     
     
-def load_injections(dataset_name, injections_name=None,  nInjUse=None, dist_unit=u.Gpc,  inj_args ={}, Tobs=None):
+def load_injections(dataset_name, injections_name=None,  nInjUse=None, dist_unit=u.Gpc,  inj_args ={}, Tobs=None, inj_path=None):
         
         # for O2/O3, injections_name can be None in which case the LVC injections are used (they should be in the same folder as the data)
         # or specify the name of a folder containing a file 'selected.h5'
-        
+
+        if inj_path is None:
+            inj_path = Globals.dataPath
+            
         ############################################################
         # DATA
         
@@ -324,9 +343,9 @@ def load_injections(dataset_name, injections_name=None,  nInjUse=None, dist_unit
             dataset_key=dataset_name
         
         if inj_args['which_injections']=='GWTC-2':
-            fnameInj = os.path.join(Globals.dataPath, dataset_name, fnames_inj[dataset_key] )
+            fnameInj = os.path.join(inj_path, dataset_name, fnames_inj[dataset_key] )
         elif inj_args['which_injections']=='GWTC-3':
-            fnameInj = os.path.join(Globals.dataPath, dataset_name, fnames_inj_3[dataset_key] )
+            fnameInj = os.path.join(inj_path, dataset_name, fnames_inj_3[dataset_key] )
         #else:
         #    raise ValueError('which_injections you entered %s' %which_injections)
         
@@ -336,14 +355,14 @@ def load_injections(dataset_name, injections_name=None,  nInjUse=None, dist_unit
             if 'SNR_th' in inj_args.keys():
                 snr_th = inj_args['SNR_th']
             else: snr_th=None
-            fnameInj = os.path.join(Globals.dataPath, injections_name, fnames_inj[dataset_key] )
+            fnameInj = os.path.join(inj_path, injections_name, fnames_inj[dataset_key] )
             injData = GWMockInjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit, Tobs=Tobs, snr_th=snr_th)
         elif dataset_name=='O3a':
             #Data = O3aData(fname,  nObsUse=nObsUse, nSamplesUse=nSamplesUse, percSamplesUse=percSamplesUse, dist_unit=dist_unit, **data_args)
             if injections_name is None:
                 injData = O3aInjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit, **inj_args)
             else:
-                fnameInj = os.path.join(Globals.dataPath, dataset_name, injections_name, 'selected.h5') #fnames_inj[dataset_key] )
+                fnameInj = os.path.join(inj_path, dataset_name, injections_name, 'selected.h5') #fnames_inj[dataset_key] )
                 if 'SNR_th' in inj_args.keys():
                     snr_th = inj_args['SNR_th']
                 else: snr_th=None
@@ -354,7 +373,7 @@ def load_injections(dataset_name, injections_name=None,  nInjUse=None, dist_unit
             if injections_name is None:
                 injData = O1O2InjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit, **inj_args)
             else:
-                fnameInj = os.path.join(Globals.dataPath, dataset_name, injections_name, 'selected.h5')
+                fnameInj = os.path.join(inj_path, dataset_name, injections_name, 'selected.h5')
                 if 'SNR_th' in inj_args.keys():
                     snr_th = inj_args['SNR_th']
                 else: snr_th=None
@@ -366,7 +385,7 @@ def load_injections(dataset_name, injections_name=None,  nInjUse=None, dist_unit
                 injData = O3bInjectionsData(fnameInj,  nInjUse=nInjUse, dist_unit=dist_unit, **inj_args)
                 #raise ValueError('LVC injections are not supported for O3b. Specify a name for the injections')
             else:
-                fnameInj = os.path.join(Globals.dataPath, dataset_name, injections_name, 'selected.h5')
+                fnameInj = os.path.join(inj_path, dataset_name, injections_name, 'selected.h5')
                 if 'SNR_th' in inj_args.keys():
                     snr_th = inj_args['SNR_th']
                 else: snr_th=None

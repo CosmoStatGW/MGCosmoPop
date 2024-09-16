@@ -185,7 +185,7 @@ class Data(ABC):
     
 class LVCData(Data):
     
-    def __init__(self, fname, nObsUse=None, nSamplesUse=None, percSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='chiEff', SNR_th=8., FAR_th=1., BBH_only=True ):
+    def __init__(self, fname, nObsUse=None, nSamplesUse=None, percSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='chiEff', SNR_th=8., FAR_th=1., BBH_only=True, dLprior='dLsq' ):
         
         Data.__init__(self)
         
@@ -193,7 +193,7 @@ class LVCData(Data):
         
         #self.metadata = pd.read_csv(os.path.join(Globals.dataPath, 'all_metadata_pipelines_best.csv'))
         
-        
+        self.dLprior=dLprior
         self.FAR_th = FAR_th
         self.SNR_th = SNR_th
         print('FAR th in LVC data: %s' %self.FAR_th)
@@ -402,10 +402,15 @@ class LVCData(Data):
         return np.zeros(self.m1z.shape)
 
     def logOrDistPrior(self):
-        # dl^2 prior on dL
-        return np.where( ~np.isnan(self.dL), 2*np.log(self.dL), 0)
+        
     
-  
+        if self.dLprior==None:
+                return np.zeros(self.dL.shape)
+        elif self.dLprior=='dLsq':
+                # dl^2 prior on dL
+                return np.where( ~np.isnan(self.dL), 2*np.log(self.dL), 0)
+        else:
+                raise ValueError()
   
 
 class O3InjectionsData(Data):
@@ -557,7 +562,7 @@ class GWTC3InjectionsData(Data):
         self.snr_th = snr_th
         
         
-        self.condition = np.where(self.runs == 'o3', self.ifar > 1/ifar_th, snr > self.snr_th)
+        self.condition = np.where(self.runs == 'o3', self.ifar > 1/ifar_th, self.snrs > self.snr_th)
         
 
           
@@ -647,4 +652,4 @@ class GWTC3InjectionsData(Data):
             self.max_z = np.max(zs)
             print('Max redshift of injections: %s' %self.max_z)
             
-            return m1z, m2z, dL , spins, log_p_draw , Ndraw, Tobs, snr, ifar, runs
+            return m1d, m2d, dLs , spins, log_p_draw , Ndraw, T_obs, snr, ifar, runs

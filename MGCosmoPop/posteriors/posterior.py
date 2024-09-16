@@ -34,6 +34,8 @@ class Posterior(object):
             print('This model will marginalize analytically over the overall normalization with a flat-in-log prior!')
         #self.params_inference = params_inference
         print('Bias sefety factor is %s'%self.bias_safety_factor)
+
+    
         
     def logPosterior(self, Lambda_test, return_all=False,):
         
@@ -47,14 +49,25 @@ class Posterior(object):
         
         # Compute likelihood
         lls = self.hyperLikelihood.logLik(Lambda_test)
+
+        llsum = np.asarray(lls).sum()
+        #print("lls : %s"%str(llsum))
+        if (not np.isfinite(llsum)) and (not return_all):
+            return -np.inf
         
-        #logll = np.log(ll)
         
         
         # Compute selection bias
         # Includes uncertainty on MC estimation of the selection effects if required. err is =zero if we required to ignore it.
         if self.selectionBias is not None:
             mus, errs, Neffs = self.selectionBias.Ndet(Lambda_test, )
+            #print("Len mus is %s"%str(len(mus)))
+            if len(mus)==1:
+                # Using one injection set
+                self.single_injection_set = True
+            else:
+                self.single_injection_set = False
+            #print("Single injection set is %s"%self.single_injection_set)
             
         else:
             # Test case: we see the full population.
@@ -66,36 +79,55 @@ class Posterior(object):
                 mus = np.ones(len(lls))
                 errs = np.zeros(len(lls))
         
-        #logNdet = logdiffexp(logMu, logErr )
+        # put all together and get posterior
         logPosts = np.zeros(len(lls))
         for i in range(len(lls)):
-            if Neffs[i] < self.bias_safety_factor * self.hyperLikelihood.data[i].Nobs:
+            #print("like for dataset %s"%i)
+            #print("Single injection set is %s"%self.single_injection_set)
+            if not self.single_injection_set:
+                #print("More than 1 inj set")
+                reject = Neffs[i] < self.bias_safety_factor * self.hyperLikelihood.data[i].Nobs
+            else:
+                if i==0:
+                    reject = Neffs[i] < self.bias_safety_factor * self.hyperLikelihood.data[i].Nobs
+                else:
+                    reject=False
+                    
+            if reject:
                 if self.verbose:
                     print('NEED MORE SAMPLES FOR SELECTION EFFECTS! Nobs = %s, Neff = %s, Values of Lambda: %s' %(self.hyperLikelihood.data[i].Nobs, Neffs[i], str(Lambda_test)))
-                print( "Safety factor is %s"%self.bias_safety_factor )
+                    print( "Safety factor is %s"%self.bias_safety_factor )
                 #print( "Nobs is %s"%self.hyperLikelihood.data[i].Nobs )
                 # reject the sample
                 logPosts[i] = -np.inf
             else:
-                
-                if not self.normalized:
-                    logPosts[i] = lls[i]-mus[i] #-np.exp(logNdet.astype('float128')) 
-                    # Add uncertainty on MC estimation of the selection effects. err is =zero if we required to ignore it.
-                    logPosts[i] += errs[i]
-                else:
-                    logPosts[i] = lls[i]-self.hyperLikelihood.data[i].Nobs*np.log(mus[i])
-                    if self.selectionBias.get_uncertainty:
-                        err = (3*self.hyperLikelihood.data[i].Nobs+(self.hyperLikelihood.data[i].Nobs)**2 )/(2*Neffs[i])
+                if ( not self.single_injection_set or i==0):
+                    if not self.normalized:
+                        logPosts[i] = lls[i]-mus[i] 
+                        # Add uncertainty on MC estimation of the selection effects. err is =zero if we required to ignore it.
+                        logPosts[i] += errs[i]
                     else:
-                        err = 0.
-                    logPosts[i] += err
+                        logPosts[i] = lls[i]-self.hyperLikelihood.data[i].Nobs*np.log(mus[i])
+                        if self.selectionBias.get_uncertainty:
+                            err = (3*self.hyperLikelihood.data[i].Nobs+(self.hyperLikelihood.data[i].Nobs)**2 )/(2*Neffs[i])
+                        else:
+                            err = 0.
+                        logPosts[i] += err
+                else:
+                    pass
+                    
         
         # sum log likelihood of different datasets
         logPost = logPosts.sum()
         
-        lls = np.asarray(lls).sum()
+        
+        #print("mus : %s"%str(mus))
         mus = np.asarray(mus).sum()
+        #print("mus sum : %s"%str(mus))
+        #if mus==0:
+        #    print(Lambda_test)
         errs= np.asarray(errs).sum()
+        #print("errs : %s"%str(errs))
         
         #if not self.normalized :
         #    Tobs = np.array([self.hyperLikelihood._getTobs(self.hyperLikelihood.data[i]) for i in range(len(lls)) ])#.sum()
@@ -112,7 +144,7 @@ class Posterior(object):
         if not return_all:
             return logPost
         else:
-            return logPost, lp, lls, mus, errs #np.exp( logMu.astype('float128')), np.exp(logErr.astype('float128'))
+            return logPost, lp, llsum, mus, errs #np.exp( logMu.astype('float128')), np.exp(logErr.astype('float128'))
         
         
         
