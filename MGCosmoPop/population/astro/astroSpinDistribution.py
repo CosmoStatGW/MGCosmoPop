@@ -229,7 +229,7 @@ class DefaultSpinModel(BBHDistFunction):
     default spin model, see 2010.14533 app D.1
     '''
     
-    def __init__(self, ):
+    def __init__(self, alpha_beta_prior=False):
         BBHDistFunction.__init__(self)
         self.params = ['muChi', 'varChi','zeta','sigmat' ] #'rho' ] # For the moment we ignore correlation
         
@@ -253,10 +253,11 @@ class DefaultSpinModel(BBHDistFunction):
         self.maxChi = 1
         self.minChi = -1
         self.nVars = 4
+        self.alpha_beta_prior=alpha_beta_prior
         
 
         
-        print('Default spin distribution in (chi1z, chi2z) base values: %s' %self.baseValues)
+        print('Default spin distribution in (chi1, chi2, cost1, cost2) base values: %s' %self.baseValues)
     
     
     def logpdf(self, theta, lambdaBBHspin):
@@ -269,8 +270,10 @@ class DefaultSpinModel(BBHDistFunction):
         alphaChi = muChi*kappa_ 
         betaChi = (1-muChi)*kappa_ 
 
-        if (alphaChi<=1) | (betaChi<=1):
-            return -np.inf
+        # This is not part of the distribution, only a restriction of the prior in the LVK analysis
+        if self.alpha_beta_prior:
+            if (alphaChi<=1) | (betaChi<=1):
+                return np.full(chi1.shape, -np.inf)
         
         where_compute= (cost1>=-1) & (cost1<=1) & (cost2>=-1) & (cost2<=1)& (chi1>=0) & (chi1<=1) & (chi2>=0) & (chi2<=1)
     

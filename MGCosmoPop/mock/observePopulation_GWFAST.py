@@ -110,6 +110,8 @@ class Observations(object):
             chi1, chi2, cost1, cost2 = np.squeeze(spinSamples)[:, 0], np.squeeze(spinSamples)[:, 1], np.squeeze(spinSamples)[:, 2], np.squeeze(spinSamples)[:, 3]
             spin1z = chi1*cost1
             spin2z = chi2*cost2
+        else:
+            raise ValueError()
         
         costheta = np.random.uniform(-1, 1, N)
         cosiota = np.random.uniform(-1, 1, N)
@@ -174,7 +176,7 @@ class Observations(object):
             events['cost2'] = cost2
         
         
-        return events #np.squeeze(m1s), np.squeeze(m2s), np.squeeze(zs), costhetas,  phis, cosiotas, ts_det
+        return events, spins #np.squeeze(m1s), np.squeeze(m2s), np.squeeze(zs), costhetas,  phis, cosiotas, ts_det
     
     
     
@@ -185,7 +187,7 @@ class Observations(object):
         
         #if verbose:
         #    print('Generating events in source frame and redshift...')
-        events_injected = self._generate_mergers(N, verbose=False)
+        events_injected, spins = self._generate_mergers(N, verbose=False)
         if verbose:
             print('Generated %s events .' %str(events_injected['dL'].shape))
       
