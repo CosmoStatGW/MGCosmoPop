@@ -74,6 +74,8 @@ class Observations(object):
         
         self.lambdaBase = self.allPops.get_base_values(self.allPops.params)
         self.LambdaCosmoBase, self.LambdaAllPopBase = self.allPops._split_params(self.lambdaBase)
+        self.lambdaBBHrate, self.lambdaBBHmass, self.lambdaBBHspin = self.allPops._pops[0]._split_lambdas(self.LambdaAllPopBase)
+        
         self.H0base, self.Om0Base, self.w0Base, self.Xi0Base, self.nBase = self.allPops.cosmo._get_values(self.LambdaCosmoBase, [ 'H0', 'Om', 'w0', 'Xi0', 'n'])
     
         self._find_Nperyear_expected()
@@ -98,9 +100,17 @@ class Observations(object):
         massSamples, zs, spinSamples = self.allPops.sample(N, self.zmax, self.lambdaBase)
         
         m1s, m2s = np.squeeze(massSamples)[:, 0], np.squeeze(massSamples)[:, 1]
+
+        if self.allPops._pops[0].spinDist.__class__.__name__ =='UniformSpinDistChiz':
         
-        spin1z, spin2z = np.squeeze(spinSamples)[:, 0], np.squeeze(spinSamples)[:, 1]
-    
+            spin1z, spin2z = np.squeeze(spinSamples)[:, 0], np.squeeze(spinSamples)[:, 1]
+            spins='flat'
+        elif self.allPops._pops[0].spinDist.__class__.__name__ =='DefaultSpinModel':
+            spins='default'
+            chi1, chi2, cost1, cost2 = np.squeeze(spinSamples)[:, 0], np.squeeze(spinSamples)[:, 1], np.squeeze(spinSamples)[:, 2], np.squeeze(spinSamples)[:, 3]
+            spin1z = chi1*cost1
+            spin2z = chi2*cost2
+        
         costheta = np.random.uniform(-1, 1, N)
         cosiota = np.random.uniform(-1, 1, N)
             
@@ -156,6 +166,12 @@ class Observations(object):
             'chi2z':spin2z,
           'tcoal':tcoal    
 }
+
+        if spins=='default':
+            events['chi1'] = chi1
+            events['chi2'] = chi2
+            events['cost1'] = cost1
+            events['cost2'] = cost2
         
         
         return events #np.squeeze(m1s), np.squeeze(m2s), np.squeeze(zs), costhetas,  phis, cosiotas, ts_det
@@ -236,14 +252,28 @@ class Observations(object):
         # otherwise, pass spins here and include them in the pop model.
         
         if ndet>0:
-            log_p_draw = self.allPops.log_dN_dm1zdm2zddL( events_detected['m1_source'], events_detected['m2_source'], events_detected['z'], 
+
+            
+            log_p_draw_nospin = self.allPops.log_dN_dm1zdm2zddL( events_detected['m1_source'], events_detected['m2_source'], events_detected['z'], 
                                                      #[events_detected['chi1z'], events_detected['chi2z']], 
                                                       [],
                                                      self.lambdaBase, 1., dL=events_detected['dL'])-np.log(self.Nperyear_expected)
+
+            if spins=='default':
+                log_p_draw_spin = self.allPops._pops[0].spinDist.logpdf([events_detected['chi1'], events_detected['chi2'], events_detected['cost1'], events_detected['cost2']], self.lambdaBBHspin)
+            elif spins=='flat':
+                log_p_draw_spin = self.allPops._pops[0].spinDist.logpdf([events_detected['chi1z'], events_detected['chi2z']], self.lambdaBBHspin)
+            else:
+                log_p_draw_spin =  np.ones(events_detected['m1_source'].shape)
+
+           log_p_draw =  log_p_draw_spin + log_p_draw_nospin
+    
+        
         else:
             log_p_draw=np.full( events_detected['m1_source'].shape, np.inf)
         
         events_detected['log_p_draw'] = log_p_draw
+        events_detected['log_p_draw_nospin'] = log_p_draw_nospin
         
         for k in allSNRs.keys():
             events_detected['snr_%s'%k] = allSNRs[k][keep]
@@ -261,6 +291,7 @@ class Observations(object):
         m2s_det = []
         dls_det = []
         logwts_det = []
+        logwts_nosp_det = []
         enough=False
         #first_it=True
         success=False
@@ -298,7 +329,7 @@ class Observations(object):
                     if k=='dL':
                         print('Events detected cat len: %s' %len(all_evs_det[k]))
             
-            m1d, m2d, dls, logwts = np.squeeze(events_chunk['m1_det']), np.squeeze(events_chunk['m2_det']), np.squeeze(events_chunk['dL']), np.squeeze(events_chunk['log_p_draw'])
+            m1d, m2d, dls, logwts, logwts_nosp = np.squeeze(events_chunk['m1_det']), np.squeeze(events_chunk['m2_det']), np.squeeze(events_chunk['dL']), np.squeeze(events_chunk['log_p_draw']), np.squeeze(events_chunk['log_p_draw_nospin'])
             
             
             try:
@@ -307,7 +338,7 @@ class Observations(object):
                 continue
             
             if np.ndim(m1d)==0 or np.isscalar(m1d):
-                m1d, m2d, dls, logwts = np.array([m1d]), np.array([m2d]), np.array([dls]), np.array([logwts])
+                m1d, m2d, dls, logwts, logwts_nosp = np.array([m1d]), np.array([m2d]), np.array([dls]), np.array([logwts]), np.array([logwts_nosp])
             
             N_gen += chunk_size
             
@@ -328,6 +359,7 @@ class Observations(object):
             dls_det.append(dls)
             #rhos_det.append(rho)
             logwts_det.append(logwts)
+            logwts_nosp_det.append(logwts_nosp)
 
             
             print('\nTotal kept: so far= %s\n\n' %Nsucc)
@@ -339,6 +371,7 @@ class Observations(object):
         m2s_det = np.concatenate(m2s_det)
         dls_det = np.concatenate(dls_det)
         logwts_det = np.concatenate(logwts_det)
+        logwts_nosp_det = np.concatenate(logwts_nosp_det)
         #rhos_det =  np.concatenate(rhos_det)
         for k in rhos_det_all.keys():
             rhos_det_all[k] = np.concatenate(rhos_det_all[k])
@@ -369,6 +402,7 @@ class Observations(object):
             f.create_dataset('m2det', data=m2s_det, compression='gzip', shuffle=True)
             f.create_dataset('dl', data=dls_det, compression='gzip', shuffle=True)
             f.create_dataset('logwt', data=logwts_det, compression='gzip', shuffle=True)
+            f.create_dataset('logwt_nosp', data=logwts_nosp_det, compression='gzip', shuffle=True)
             #f.create_dataset('snr', data=rhos_det, compression='gzip', shuffle=True)
             for k in rhos_det_all.keys():
                 print('Saving snr with key %s' %k)
