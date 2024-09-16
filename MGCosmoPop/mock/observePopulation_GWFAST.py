@@ -266,11 +266,12 @@ class Observations(object):
             else:
                 log_p_draw_spin =  np.ones(events_detected['m1_source'].shape)
 
-           log_p_draw =  log_p_draw_spin + log_p_draw_nospin
+            log_p_draw =  log_p_draw_spin + log_p_draw_nospin
     
         
         else:
             log_p_draw=np.full( events_detected['m1_source'].shape, np.inf)
+            log_p_draw_nospin=np.full( events_detected['m1_source'].shape, np.inf)
         
         events_detected['log_p_draw'] = log_p_draw
         events_detected['log_p_draw_nospin'] = log_p_draw_nospin
