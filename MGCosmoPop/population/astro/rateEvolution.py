@@ -12,7 +12,7 @@ import astropy.units as u
 
 class PowerLawRateEvolution(RateEvolution):
     
-    def __init__(self, unit=u.Gpc, normalized=False):
+    def __init__(self, unit=u.Gpc, normalized=False, zmax=20):
         RateEvolution.__init__(self)
         
         self.params = ['R0', 'lambdaRedshift']
@@ -24,6 +24,8 @@ class PowerLawRateEvolution(RateEvolution):
                            'lambdaRedshift':r'$\lambda$',}
         
         self.normalized=normalized
+        self.zmax = zmax
+        
         if normalized :
             print('The rate evolution returned will not include the overall number of events!')
             self._delete_R0()
