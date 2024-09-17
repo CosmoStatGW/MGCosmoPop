@@ -278,16 +278,18 @@ class LVCData(Data):
         else:
             list_BBH_or = [x for x in elist]
             print('In the '+fname.split('/')[-1]+' data we have the following BBH events, total %s (keeping all events independently):' %(len(list_BBH_or)) )
-            
+
+        list_BBH_or=list(np.unique(np.array(list_BBH_or)))
+        
         print( np.sort(np.array(list_BBH_or)))
         # Impose cut on SNR
         print('Using only events with SNR>%s (round to 1 decimal digit)' %self.SNR_th)
         list_BBH_0 = [x for x in list_BBH_or if np.round(self.metadata[self.metadata.commonName==x].network_matched_filter_snr.values, 1)>=self.SNR_th  ]
-        print('Events:%s'%len(list_BBH_0))
+        print('Events after SNR cut:%s'%len(list_BBH_0))
         list_BBH_excluded_0 = [(x, np.round(self.metadata[self.metadata.commonName==x].network_matched_filter_snr.values), 1)[0] for x in list_BBH_or if np.round(self.metadata[self.metadata.commonName==x].network_matched_filter_snr.values, 1)<self.SNR_th  ]
         print('Excluded the following events with SNR<%s: ' %self.SNR_th)
         print(list_BBH_excluded_0)
-        print('%s events remaining.' %len(list_BBH_0))
+        #print('%s events remaining.' %len(list_BBH_0))
 
         # Impose cut on FAR
         print('Using only events with FAR<%s' %self.FAR_th)
@@ -298,26 +300,26 @@ class LVCData(Data):
         print(str(list_BBH_excluded))
         print('%s events remaining.' %len(list_BBH))
         
-
         
         # Exclude other events if this is required in the config file
         if events_use is not None and events_use['use'] is not None and events_use['not_use'] is not None:
             raise ValueError('You passed options to both use and not_use. Please only provide the list of events that you want to use, or the list of events that you want to exclude. ')
         elif events_use is not None and events_use['use'] is not None:
             # Use only events given in use
-            print('Using only BBH events : ')
+            print('Using only BBH events passed in the config file: ')
             print(events_use['use'])
             list_BBH_final = [x for x in list_BBH if x in events_use['use']]
         elif events_use is not None and events_use['not_use'] is not None:
-            print('Excluding BBH events : ')
+            print('Also excluding BBH events passed in the config file: ')
             print(events_use['not_use'])
             list_BBH_final = [x for x in list_BBH if x not in events_use['not_use']]
         else:
             print('Using all BBH events')
             list_BBH_final=list_BBH
         
-        
-
+        print('\nFinal list of events used (total %s):'%len(list_BBH_final))
+        print(str(list_BBH_final))
+        print()
         return list_BBH_final
  
     
