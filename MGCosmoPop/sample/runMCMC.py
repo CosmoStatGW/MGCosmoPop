@@ -403,17 +403,24 @@ def main():
             # This is a hack because the code does not yes support the option of different populations with different spin models
             # To be fixed in case is needed
             spindist = config.populations[list(config.populations.keys())[0]]['spin_distribution']
-            
-            try:
-                SNR_th = config.SNR_th
-            except:
-                SNR_th = 8.
-                print('FAR_th not found in config. Using 8 ')
-            try:
-                FAR_th = config.FAR_th
-            except:
-                FAR_th = 1.
-                print('FAR_th not found in config. Using 1/yr ')
+
+            if dataset_name=='O1O2':
+                try:
+                    SNR_th = config.SNR_th
+                    FAR_th = 1.
+                except:
+                    SNR_th = 8.
+                    print('FAR_th not found in config. Using 8 ')
+                    FAR_th = 1.
+
+            elif dataset_name in ('O3a', 'O3b'):
+                try:
+                    FAR_th = config.FAR_th
+                    SNR_th=0.
+                except:
+                    FAR_th = 1.
+                    print('FAR_th not found in config. Using 1/yr ')
+                    SNR_th = 0
             
             inj_args={'which_spins':which_spins[spindist], 'snr_th':SNR_th, 'ifar_th':1./FAR_th }
 
@@ -448,6 +455,12 @@ def main():
                 
             
             data_args={'events_use':O3_use, 'which_spins':which_spins[spindist], 'SNR_th':SNR_th, 'FAR_th': FAR_th, 'dLprior':config.dLpriordata,  }
+
+            #try:
+            #    data_args['SNR_th_O1O2'] = config.SNR_th_O1O2
+            #    print('SNR th for O1-O2 is %s'%config.SNR_th_O1O2)
+            #except:
+            #    pass
 
             #print('Data args is')
             #print(data_args)
