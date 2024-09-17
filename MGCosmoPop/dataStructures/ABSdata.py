@@ -553,16 +553,19 @@ class GWTC3InjectionsData(Data):
         assert (self.dL > 0).all()
         assert(self.m2z<self.m1z).all()
         
-        print('Loaded data shape: %s' %str(self.m1z.shape))
-        print('Loaded weights shape: %s' %str(self.log_weights_sel.shape))
+        #print('Loaded data shape: %s' %str(self.m1z.shape))
+        #print('Loaded weights shape: %s' %str(self.log_weights_sel.shape))
         
         
         
         self.ifar_th = ifar_th
         self.snr_th = snr_th
+        print('Threshold on inverse false alarm rate (for O3a-O3b): %s'%str(ifar_th))
+        print('Threshold on SNR (for O1-O2): %s'%str(snr_th))
         
         
-        self.condition = np.where(self.runs == 'o3', self.ifar > 1/ifar_th, self.snrs > self.snr_th)
+        self.condition = np.where(self.runs == 'o3', self.ifar > ifar_th, self.snrs > self.snr_th)
+        print('Number of injections that pass far/snr threshold: %s' %self.condition.sum())
         
 
           
@@ -644,12 +647,13 @@ class GWTC3InjectionsData(Data):
 
             log_p_draw_det = log_p_draw-log_p_draw_jac+log_jac_spin
             
-      
+            
 
             print('Number of total injections: %s' %Ndraw)
-            print('Number of injections that pass first threshold: %s' %log_p_draw.shape[0])
+            print('Number of injections that pass first threshold: %s' %log_p_draw_det.shape[0])
+            
             
             self.max_z = np.max(zs)
             print('Max redshift of injections: %s' %self.max_z)
             
-            return m1d, m2d, dLs , spins, log_p_draw , Ndraw, T_obs, snr, ifar, runs
+            return m1d, m2d, dLs , spins, log_p_draw_det , Ndraw, T_obs, snr, ifar, runs
