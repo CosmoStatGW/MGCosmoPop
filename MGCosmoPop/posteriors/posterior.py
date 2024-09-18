@@ -101,7 +101,7 @@ class Posterior(object):
                 # reject the sample
                 logPosts[i] = -np.inf
             else:
-                if ( not self.single_injection_set or i==0):
+                if (not self.single_injection_set or i==0):
                     if not self.normalized:
                         logPosts[i] = lls[i]-mus[i] 
                         # Add uncertainty on MC estimation of the selection effects. err is =zero if we required to ignore it.
@@ -114,7 +114,7 @@ class Posterior(object):
                             #print("In sel effect, using N=%s"%N)
                         else:
                             N = self.hyperLikelihood.data[i].Nobs
-                        
+                        print("For dataset %s, mu is %s"%(i, mus[i]))
                         logPosts[i] = lls[i]-N*np.log(mus[i])
                         if self.selectionBias.get_uncertainty:
                             err = (3*N+(N)**2 )/(2*Neffs[i])
@@ -122,36 +122,26 @@ class Posterior(object):
                             err = 0.
                         logPosts[i] += err
                 else:
-                    pass
-                    
+                    # single inj set but multiple obs runs. 
+                    if self.normalized:
+                        logPosts[i] = lls[i]
+                        print("For dataset %s, no mus"%(i))
+                    else:
+                        raise NotImplementedError()
+
         
         # sum log likelihood of different datasets
-        logPost = logPosts.sum()
-        
-        
-        #print("mus : %s"%str(mus))
-        mus = np.asarray(mus).sum()
-        #print("mus sum : %s"%str(mus))
-        #if mus==0:
-        #    print(Lambda_test)
-        errs= np.asarray(errs).sum()
-        #print("errs : %s"%str(errs))
-        
-        #if not self.normalized :
-        #    Tobs = np.array([self.hyperLikelihood._getTobs(self.hyperLikelihood.data[i]) for i in range(len(lls)) ])#.sum()
-        #    Nobs = np.array([self.hyperLikelihood.data[i].Nobs for i in range(len(lls)) ])#.sum()
-            # Add observation time
-        #    logPost += (np.log(Tobs)*Nobs).sum()
-        
+        logPost = logPosts.sum()       
         
         # Add prior
         logPost += lp
         
         
-        
         if not return_all:
             return logPost
         else:
+            mus = np.asarray(mus).sum()
+            errs= np.asarray(errs).sum()
             return logPost, lp, llsum, mus, errs #np.exp( logMu.astype('float128')), np.exp(logErr.astype('float128'))
         
         
