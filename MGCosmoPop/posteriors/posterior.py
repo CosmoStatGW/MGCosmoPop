@@ -114,7 +114,7 @@ class Posterior(object):
                             #print("In sel effect, using N=%s"%N)
                         else:
                             N = self.hyperLikelihood.data[i].Nobs
-                        print("For dataset %s, mu is %s"%(i, mus[i]))
+                        #print("For dataset %s, mu is %s"%(i, mus[i]))
                         logPosts[i] = lls[i]-N*np.log(mus[i])
                         if self.selectionBias.get_uncertainty:
                             err = (3*N+(N)**2 )/(2*Neffs[i])
@@ -125,7 +125,7 @@ class Posterior(object):
                     # single inj set but multiple obs runs. 
                     if self.normalized:
                         logPosts[i] = lls[i]
-                        print("For dataset %s, no mus"%(i))
+                        #print("For dataset %s, no mus"%(i))
                     else:
                         raise NotImplementedError()
 
