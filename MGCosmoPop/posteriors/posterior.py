@@ -107,9 +107,17 @@ class Posterior(object):
                         # Add uncertainty on MC estimation of the selection effects. err is =zero if we required to ignore it.
                         logPosts[i] += errs[i]
                     else:
-                        logPosts[i] = lls[i]-self.hyperLikelihood.data[i].Nobs*np.log(mus[i])
+                        if self.single_injection_set:
+                            N = 0
+                            for j in range(len(lls)):
+                                N+=self.hyperLikelihood.data[j].Nobs
+                            #print("In sel effect, using N=%s"%N)
+                        else:
+                            N = self.hyperLikelihood.data[i].Nobs
+                        
+                        logPosts[i] = lls[i]-N*np.log(mus[i])
                         if self.selectionBias.get_uncertainty:
-                            err = (3*self.hyperLikelihood.data[i].Nobs+(self.hyperLikelihood.data[i].Nobs)**2 )/(2*Neffs[i])
+                            err = (3*N+(N)**2 )/(2*Neffs[i])
                         else:
                             err = 0.
                         logPosts[i] += err

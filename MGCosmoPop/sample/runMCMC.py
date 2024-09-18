@@ -421,6 +421,9 @@ def main():
                     FAR_th = 1.
                     print('FAR_th not found in config. Using 1/yr ')
                     SNR_th = 0
+            else:
+                FAR_th = config.FAR_th
+                SNR_th = config.SNR_th
             
             inj_args={'which_spins':which_spins[spindist], 'snr_th':SNR_th, 'ifar_th':1./FAR_th }
 
