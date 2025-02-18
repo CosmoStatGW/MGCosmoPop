@@ -55,7 +55,8 @@ mass_functions = {  'smooth_pow_law': AstroSmoothPowerLawMass,
 spin_functions = {  'gauss': GaussSpinDist,
                       'skip': DummySpinDist,
                       'flat':UniformSpinDistChiz,
-                  'default':DefaultSpinModel
+                  'default':DefaultSpinModel,
+                  'uniform_on_sphere':UniformOnSphereSpin
      }
 
 
