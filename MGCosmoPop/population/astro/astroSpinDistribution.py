@@ -322,3 +322,72 @@ class DefaultSpinModel(BBHDistFunction):
         
         
         return chi1sam, chi2sam, cost1sam, cost2sam
+
+
+
+class UniformOnSphereSpin(BBHDistFunction): 
+    
+    '''
+    Uniform distribution on the sphere
+    '''
+    
+    def __init__(self, ):
+        BBHDistFunction.__init__(self)
+        self.params = [ 'chiMax', ] 
+        
+        self.baseValues = {                            
+                           'chiMax':0.998, 
+                           }
+        
+        self.names = { 'chiMax':r'$\chi_{ z, Max}$', }
+         
+        self.n_params = len(self.params)
+    
+        self.maxChi = 1
+        self.minChi = -1
+        self.nVars = 1
+        
+        
+        print('Uniform spin distribution on the sphere. Base values: %s' %self.baseValues)
+    
+    
+    def logpdf(self, theta, lambdaBBHspin):
+        
+        s1x, s1y, s1z, s2x, s2y, s2z = theta
+        chiMax = lambdaBBHspin
+        
+        s12 = s1x**2 + s1y**2 + s1z**2 
+        s22 = s2x**2 + s2y**2 + s2z**2
+        
+        logpfds1 =  np.where(s12 < chiMax**2, - np.log(4 * np.pi) - np.log(chiMax) - np.log(s12), np.NINF)
+        logpfds2 =  np.where(s22 < chiMax**2, - np.log(4 * np.pi) - np.log(chiMax) - np.log(s22), np.NINF)
+
+        return logpfds1+logpfds2
+
+    
+    def sample(self, nSamples, lambdaBBHspin, ):
+        
+        chiMax = lambdaBBHspin
+        
+        costheta1 = np.random.uniform(-1, 1, nSamples)            
+        theta1 = np.arccos(costheta1)
+
+        costheta2 = np.random.uniform(-1, 1, nSamples)            
+        theta2 = np.arccos(costheta2)
+
+        phi1 = np.random.uniform(0, np.pi*2, nSamples)
+        phi2 = np.random.uniform(0, np.pi*2, nSamples)
+
+        s1 = np.random.uniform(0, chiMax, nSamples)
+        s2 = np.random.uniform(0, chiMax, nSamples)
+
+        s1x = s1*np.sin(theta1)*np.cos(phi1)
+        s1y = s1*np.sin(theta1)*np.sin(phi1)
+        s1z = s1*np.cos(theta1)
+
+        s2x = s2*np.sin(theta2)*np.cos(phi2)
+        s2y = s2*np.sin(theta2)*np.sin(phi2)
+        s2z = s2*np.cos(theta2)
+        
+        return s1x, s1y, s1z, s2x, s2y, s2z
+

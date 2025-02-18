@@ -110,6 +110,11 @@ class Observations(object):
             chi1, chi2, cost1, cost2 = np.squeeze(spinSamples)[:, 0], np.squeeze(spinSamples)[:, 1], np.squeeze(spinSamples)[:, 2], np.squeeze(spinSamples)[:, 3]
             spin1z = chi1*cost1
             spin2z = chi2*cost2
+        elif self.allPops._pops[0].spinDist.__class__.__name__ =='UniformOnSphereSpin':
+            spins='uniform_on_sphere'
+            s1x, s1y, s1z, s2x, s2y, s2z = np.squeeze(spinSamples)[:, 0], np.squeeze(spinSamples)[:, 1], np.squeeze(spinSamples)[:, 2], np.squeeze(spinSamples)[:, 3], np.squeeze(spinSamples)[:, 4], np.squeeze(spinSamples)[:, 5]
+            spin1z = s1z
+            spin2z = s2z
         else:
             raise ValueError()
         
@@ -174,7 +179,13 @@ class Observations(object):
             events['chi2'] = chi2
             events['cost1'] = cost1
             events['cost2'] = cost2
-        
+        elif spins=='uniform_on_sphere'
+            events['s1x'] = s1x
+            events['s2x'] = s2x
+            events['s1y'] = s1y
+            events['s2y'] = s2y
+            events['s1z'] = s1z
+            events['s2z'] = s2z
         
         return events, spins #np.squeeze(m1s), np.squeeze(m2s), np.squeeze(zs), costhetas,  phis, cosiotas, ts_det
     
@@ -265,6 +276,8 @@ class Observations(object):
                 log_p_draw_spin = self.allPops._pops[0].spinDist.logpdf([events_detected['chi1'], events_detected['chi2'], events_detected['cost1'], events_detected['cost2']], self.lambdaBBHspin)
             elif spins=='flat':
                 log_p_draw_spin = self.allPops._pops[0].spinDist.logpdf([events_detected['chi1z'], events_detected['chi2z']], self.lambdaBBHspin)
+            elif spins=='uniform_on_sphere':
+                log_p_draw_spin = self.allPops._pops[0].spinDist.logpdf([events_detected['s1x'], events_detected['s1y'], events_detected['s1z'], events_detected['s2x'], events_detected['s2y'], events_detected['s2z']], self.lambdaBBHspin)
             else:
                 log_p_draw_spin =  np.ones(events_detected['m1_source'].shape)
 
@@ -338,7 +351,7 @@ class Observations(object):
             try:
                 Nsucc += len(m1d)
             except:
-                continue
+                pass
             
             if np.ndim(m1d)==0 or np.isscalar(m1d):
                 m1d, m2d, dls, logwts, logwts_nosp = np.array([m1d]), np.array([m2d]), np.array([dls]), np.array([logwts]), np.array([logwts_nosp])
