@@ -345,7 +345,7 @@ class UniformOnSphereSpin(BBHDistFunction):
     
         self.maxChi = 1
         self.minChi = -1
-        self.nVars = 1
+        self.nVars = 6
         
         
         print('Uniform spin distribution on the sphere. Base values: %s' %self.baseValues)
