@@ -48,6 +48,8 @@ def norm_truncated_pl(alpha, ml, mh):
 
         elif (alpha > 1) :
             return -np.log(alpha-1)+utils.logdiffexp(  (1-alpha)*np.log(ml), (1-alpha)*np.log(mh) )
+        elif alpha==1:
+            return np.log(np.log(mh/ml))
         raise ValueError
         
 
@@ -240,6 +242,8 @@ class TruncPowerLawMass(BBHDistFunction):
             return np.log1p(beta)-utils.logdiffexp((1+beta)*np.log(m), (1+beta)*np.log(ml)) # -beta*np.log(m)
         elif beta<-1:
             return +np.log(-1-beta)-utils.logdiffexp( (1+beta)*np.log(ml), (1+beta)*np.log(m)) #-beta*np.log(m)
+        elif beta==1:
+            return np.log( 1/np.log( m/ml ) )
         raise ValueError # 1 / m / np.log(m / ml)
 
 

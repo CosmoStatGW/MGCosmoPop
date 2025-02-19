@@ -19,7 +19,7 @@ import Globals
 import astropy.units as u
 
 from population.astro.astroMassDistribution import AstroSmoothPowerLawMass, BrokenPowerLawMass, TruncPowerLawMass, PowerLawPlusPeakMass, MultiPeakMass, BNSGaussMass, BNSFlatMass, BrokenPowerLawMassBNS
-from population.astro.astroSpinDistribution import DummySpinDist, GaussSpinDist, UniformSpinDistChiz, DefaultSpinModel
+from population.astro.astroSpinDistribution import DummySpinDist, GaussSpinDist, UniformSpinDistChiz, DefaultSpinModel, UniformOnSphereSpin
 from population.astro.rateEvolution import PowerLawRateEvolution, AstroPhRateEvolution, RateEvolutionCOBA
 from population.astro.astroPopulation import AstroPopulation
 from cosmology.cosmo import Cosmo

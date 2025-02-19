@@ -354,7 +354,7 @@ class UniformOnSphereSpin(BBHDistFunction):
     def logpdf(self, theta, lambdaBBHspin):
         
         s1x, s1y, s1z, s2x, s2y, s2z = theta
-        chiMax = lambdaBBHspin
+        chiMax = lambdaBBHspin[0]
         
         s12 = s1x**2 + s1y**2 + s1z**2 
         s22 = s2x**2 + s2y**2 + s2z**2

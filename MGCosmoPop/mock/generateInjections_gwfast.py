@@ -230,7 +230,8 @@ def main():
                          zmax=FLAGS.zmax, out_dir=out_path,
                         #snr_th=FLAGS.snr_th, 
                         snr_th_dets = FLAGS.snr_th_dets, 
-                         add_noise =  FLAGS.add_noise
+                         add_noise =  FLAGS.add_noise,
+                         condition=FLAGS.condition
                         #seed=FLAGS.seed
      )   
     

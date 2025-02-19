@@ -53,11 +53,13 @@ class Observations(object):
                  zmax, out_dir,
                  snr_th_dets = [],
                  add_noise=False,
-                 seed=None
+                 seed=None,
+                 condition='and'
 #                 **kwargs):
     ):        
 
 
+        self.condition=condition
         self.add_noise = add_noise
         self.seed=seed
         
@@ -179,7 +181,7 @@ class Observations(object):
             events['chi2'] = chi2
             events['cost1'] = cost1
             events['cost2'] = cost2
-        elif spins=='uniform_on_sphere'
+        elif spins=='uniform_on_sphere':
             events['s1x'] = s1x
             events['s2x'] = s2x
             events['s1y'] = s1y
@@ -240,8 +242,16 @@ class Observations(object):
      
         
         # Select
-        keep = np.full(SNR.shape, True)
-       
+        if self.condition=='and':       
+            keep = np.full(SNR.shape, True)
+        elif self.condition=='or':
+            keep = np.full(SNR.shape, False)
+
+        m_ = allSNRs['net']>8
+        print('%s events with net snr larger than 8:'%m_.sum())
+        
+        print({k:allSNRs[k][m_] for k in allSNRs.keys()})
+        
         for d in allSNRs.keys():
             if verbose:
                 print('Searching %s in %s' %(d , str(list(self.snr_th_dets.keys()))))
@@ -252,10 +262,13 @@ class Observations(object):
                     if verbose:
                         print('th for %s: %s' %(d, th))
                     found=True
-                        
-            keep &= allSNRs[d]>th
-            if verbose:
-                print('Kept after %s snr cut: %s' %(d, keep.sum()))
+            if found:
+                if self.condition=='and':           
+                    keep &= allSNRs[d]>th
+                elif self.condition=='or':
+                    keep |= allSNRs[d]>th
+                if verbose:
+                    print('Kept after %s snr cut: %s' %(d, keep.sum()))
         ndet = keep.sum()
         
         events_detected =  {k: events_injected[k][keep] for k in events_injected.keys()}
@@ -350,7 +363,10 @@ class Observations(object):
             
             try:
                 Nsucc += len(m1d)
-            except:
+            except Exception as e:
+                #print(e)
+                if np.ndim(m1d)==0 or np.isscalar(m1d):
+                    Nsucc += 1
                 pass
             
             if np.ndim(m1d)==0 or np.isscalar(m1d):
