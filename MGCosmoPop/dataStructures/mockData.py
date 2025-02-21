@@ -15,19 +15,30 @@ from astropy.cosmology import Planck15, z_at_value
         
 class GWMockData(Data):
     
-    def __init__(self, fname, nObsUse=None, nSamplesUse=None, percSamplesUse=None, 
-                 dist_unit=u.Gpc, Tobs=2.5,  SNR_th=8., events_use_idxs = None, events_not_use_idxs=None, 
-                dLprior = None
+    def __init__(self, fname, 
+                 nObsUse=None, 
+                 nSamplesUse=None, 
+                 percSamplesUse=None, 
+                 dist_unit=u.Gpc, 
+                 Tobs=2.5,  
+                 SNR_th=8., 
+                 events_use_idxs = None, 
+                 events_not_use_idxs=None, 
+                dLprior = None, 
+                 inclination=False, 
+                 which_spins='none'
                 
                 ):
         
-        
+
+        self.which_spins=which_spins
+        self.inclination=inclination
         self.dLprior=dLprior
         print("dL prior is %s"%dLprior)
         
         self.SNR_th= SNR_th
         self.dist_unit = dist_unit
-        self.m1z, self.m2z, self.dL, self.ra, self.dec, self.snr, self.Nsamples, self.bin_weights = self._load_data(fname, nObsUse, events_use_idxs=events_use_idxs, events_not_use_idxs=events_not_use_idxs ) #nSamplesUse, )  
+        self.m1z, self.m2z, self.dL, self.ra, self.dec, self.inclination, self.spins, self.snr, self.Nsamples, self.bin_weights = self._load_data(fname, nObsUse, events_use_idxs=events_use_idxs, events_not_use_idxs=events_not_use_idxs ) #nSamplesUse, )  
         print('snr shape: %s' %str(self.snr.shape))
         
         self.logNsamples = np.log(self.Nsamples)
@@ -47,8 +58,10 @@ class GWMockData(Data):
         
         self.Tobs=Tobs
         #self.chiEff = np.zeros(self.m1z.shape)
-        self.spins = []
+        #self.spins = []
+        self.events = [str(i) for i in range(len(self.dL))] #np.arange(len(self.dL))
         print('Obs time: %s' %self.Tobs )
+        print('N. of events: %s' %len(self.events) )
         
     
     def set_snr_threshold(self, snr_th):
@@ -65,7 +78,7 @@ class GWMockData(Data):
             self.SNR_th=snr_th
             keep = self.snr >= snr_th
 
-            self.m1z, self.m2z, self.dL, self.ra, self.dec, self.snr, self.bin_weights = self.m1z[keep, :], self.m2z[keep, :], self.dL[ keep, :], self.ra[keep, :], self.dec[keep, :], self.snr[keep], self.bin_weights[keep]
+            self.m1z, self.m2z, self.dL, self.ra, self.dec, self.inclination, self.spins, self.snr, self.bin_weights = self.m1z[keep, :], self.m2z[keep, :], self.dL[ keep, :], self.ra[keep, :], self.dec[keep, :], self.inclination[keep, :], [self.spins[i][keep, :] for i in range(len(spins))], self.snr[keep], self.bin_weights[keep]
             self.logNsamples = self.logNsamples[keep]
             self.Nsamples = self.Nsamples[keep]
     
@@ -127,11 +140,29 @@ class GWMockData(Data):
                     try:
                         ra = np.array(phi['posteriors']['phi'])[:nObsUse, :]# m1
                         dec = np.pi/2-np.array(phi['posteriors']['theta'])[:nObsUse, :]
+                        print('Added ra, dec from theta, phi')
                     except:
                         print('No ra, dec')
                         ra=np.zeros(m1det_samples.shape)
                         dec=np.zeros(m1det_samples.shape)
-                    
+                if self.inclination:
+                    print('Also loading inclination')
+                    try:
+                        iota = np.array(phi['posteriors']['iota'])[:nObsUse, :]
+                    except:
+                        print('Inclination not found. Check input data!')
+                        iota=np.zeros(m1det_samples.shape)
+                else:
+                    iota=np.zeros(m1det_samples.shape)
+
+                if self.which_spins=='none':
+                    spins=[ np.zeros(m1det_samples.shape) ]
+                elif self.which_spins=='aligned':
+                    chi1z = np.array(phi['posteriors']['chi1z'])[:nObsUse, :]
+                    chi2z = np.array(phi['posteriors']['chi2z'])[:nObsUse, :]
+                    spins=[ chi1z, chi2z ]
+                else:
+                    raise NotImplementedError()
         
         if self.dist_unit==u.Mpc:
             print('Using distances in Mpc')
@@ -158,7 +189,7 @@ class GWMockData(Data):
         
         print('Excluding events %s' %str(events_not_use_idxs))
         print('We finally use %s events '%len(events_use_idxs))
-        return m1det_samples[events_use_idxs, :], m2det_samples[events_use_idxs, :], dl_samples[events_use_idxs, :], ra[events_use_idxs, :], dec[events_use_idxs, :], snrs[events_use_idxs], np.count_nonzero(m1det_samples[events_use_idxs, :], axis=-1), bin_weights[events_use_idxs] 
+        return m1det_samples[events_use_idxs, :], m2det_samples[events_use_idxs, :], dl_samples[events_use_idxs, :], ra[events_use_idxs, :], dec[events_use_idxs, :], iota[events_use_idxs, :], [spins[i][events_use_idxs, :] for i in range(len(spins))], snrs[events_use_idxs], np.count_nonzero(m1det_samples[events_use_idxs, :], axis=-1), bin_weights[events_use_idxs] 
     
     def logOrMassPrior(self):
         return np.zeros(self.m1z.shape)
