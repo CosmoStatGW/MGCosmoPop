@@ -7,7 +7,10 @@
 from ..ABSpopulation import BBHDistFunction
 import numpy as np
 import scipy.stats as ss
-from scipy.integrate import cumtrapz
+try:
+    from scipy.integrate import cumtrapz
+except:
+    from scipy.integrate import cumulative_trapezoid as cumtrapz
 
 import sys
 import os
