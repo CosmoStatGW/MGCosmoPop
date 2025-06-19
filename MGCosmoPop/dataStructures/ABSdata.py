@@ -7,7 +7,10 @@
 from abc import ABC, abstractmethod
 from scipy.stats import ks_2samp
 import numpy as np
-from scipy.integrate import cumtrapz
+try:
+    from scipy.integrate import cumtrapz
+except:
+    from scipy.integrate import cumulative_trapezoid as cumtrapz
 from scipy.interpolate import interp1d
 import astropy.units as u
 import os
