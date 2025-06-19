@@ -18,8 +18,13 @@ PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
+
 from scipy.interpolate import interp1d
-from scipy.integrate import cumtrapz
+
+try:
+    from scipy.integrate import cumtrapz as mycumtrapz
+except:
+    from scipy.integrate import cumulative_trapezoid as mycumtrapz
 
 import scipy.stats as ss
 
@@ -979,7 +984,7 @@ class Observations(object):
         ets = np.linspace(0, 0.25, 1000)
         pe = ss.norm(ets, sigma_eta)
         pets = pe.pdf(eta_obs) / (pe.cdf(0.25) - pe.cdf(0.0))
-        cets = cumtrapz(pets, ets, initial=0)
+        cets = mycumtrapz(pets, ets, initial=0)
         cets /= cets[-1]
         icdf = interp1d(cets, ets)
         return icdf(np.random.rand(size))
@@ -988,7 +993,7 @@ class Observations(object):
         ths = np.linspace(0, 1, 1000)
         pt = ss.norm(ths, sigma_theta)
         pths = pt.pdf(theta_obs) / (pt.cdf(1) - pt.cdf(0))
-        cths = cumtrapz(pths, ths, initial=0)
+        cths = mycumtrapz(pths, ths, initial=0)
         cths /= cths[-1]
         icdf = interp1d(cths, ths)
     
