@@ -113,18 +113,21 @@ def main():
         _ = plt.hist(zs, bins=20, density=True, label='Observed', alpha=0.5)
         _ = plt.hist(allzGen, bins=20, density=True, label='True', alpha=0.5)
         plt.xlabel('z')
+        plt.yscale('log')
         plt.savefig(os.path.join(out_path, 'zs_dist.pdf') )
         plt.close()
     
         _ = plt.hist(m1s, bins=20, density=True, label='Observed', alpha=0.5)
         _ = plt.hist(allm1Gen, bins=20, density=True, label='True', alpha=0.5)
         plt.xlabel('m1')
+        plt.yscale('log')
         plt.savefig(os.path.join(out_path, 'm1s_dist.pdf') )
         plt.close()
     
         _ = plt.hist(m2s, bins=20, density=True, label='Observed', alpha=0.5)
         _ = plt.hist(allm2Gen, bins=20, density=True, label='Observed', alpha=0.5)
         plt.xlabel('m2')
+        plt.yscale('log')
         plt.savefig(os.path.join(out_path, 'm2s_dist.pdf') )
         plt.close()
     

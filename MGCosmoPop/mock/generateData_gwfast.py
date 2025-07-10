@@ -258,6 +258,7 @@ def main():
         #########################################################################
         ## Generate injections 
         myObs.generate_injections(FLAGS.N_desired, chunk_size=int(FLAGS.chunk_size))
+    
     elif FLAGS_IN.type=='data':
         #########################################################################
         ## Generate data
@@ -276,6 +277,7 @@ def main():
         _ = plt.hist(allzGen, bins=zbins, density=True, label='True', alpha=0.5)
         plt.xlabel('z')
         plt.legend()
+        plt.yscale('log')
         plt.savefig(os.path.join(out_path, 'zs_dist.pdf') )
         plt.close()
 
@@ -284,6 +286,7 @@ def main():
         _ = plt.hist(allm1Gen, bins=mbins, density=True, label='True', alpha=0.5)
         plt.xlabel('m1')
         plt.legend()
+        plt.yscale('log')
         plt.savefig(os.path.join(out_path, 'm1s_dist.pdf') )
         plt.close()
     
@@ -291,6 +294,7 @@ def main():
         _ = plt.hist(allm2Gen, bins=mbins, density=True, label='True', alpha=0.5)
         plt.xlabel('m2')
         plt.legend()
+        plt.yscale('log')
         plt.savefig(os.path.join(out_path, 'm2s_dist.pdf') )
         plt.close()
     

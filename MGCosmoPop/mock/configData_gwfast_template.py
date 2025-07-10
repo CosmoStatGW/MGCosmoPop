@@ -112,10 +112,10 @@ add_noise = True # leave it true
 # For datasets
 ###############################################################################
 
-tot_time_yrs = 5
-time_steps = [1,2,3,4,5]
-Nsamples = 5000
-samples_step = 500
+tot_time_yrs = 0.2
+time_steps = None
+Nsamples = 100
+samples_step = 100
 
 eta_scatter=5e-03 
 mc_scatter = 3e-02

@@ -347,7 +347,7 @@ class Observations(object):
             elif spins=='uniform_on_sphere':
                 log_p_draw_spin = self.allPops._pops[0].spinDist.logpdf([events_detected['s1x'], events_detected['s1y'], events_detected['s1z'], events_detected['s2x'], events_detected['s2y'], events_detected['s2z']], self.lambdaBBHspin)
             else:
-                log_p_draw_spin =  np.ones(events_detected['m1_source'].shape)
+                log_p_draw_spin =  np.zeros(events_detected['m1_source'].shape)
 
             log_p_draw =  log_p_draw_spin + log_p_draw_nospin
     
@@ -496,14 +496,14 @@ class Observations(object):
                 f.create_dataset(k, data=rhos_det_all[k], compression='gzip', shuffle=True)
         print('Done.')
         print('Saving in pymcpop format...')
-        np.save( os.path.join(self.out_dir+'_dL.npy'), dls_det )
-        np.save( os.path.join(self.out_dir+'_m1d.npy'), m1s_det )
-        np.save( os.path.join(self.out_dir+'_m2d.npy'), m2s_det )
+        np.save( os.path.join(self.out_dir, 'injections_dL.npy'), dls_det )
+        np.save( os.path.join(self.out_dir, 'injectins_m1d.npy'), m1s_det )
+        np.save( os.path.join(self.out_dir, 'injections_m2d.npy'), m2s_det )
         
-        np.save( os.path.join(self.out_dir+'_log_p_draw.npy'), logwts_nosp_det )
-        np.save( os.path.join(self.out_dir+'_Ngen.npy'), N_gen )
-        np.savetxt( os.path.join(self.out_dir+'_Tobs.txt'), np.array([1.])) 
-        np.save( os.path.join(self.out_dir+'_log_p_draw_spin.npy'), logwts_det )
+        np.save( os.path.join(self.out_dir, 'injections_log_p_draw.npy'), logwts_nosp_det )
+        np.save( os.path.join(self.out_dir, 'injections__Ngen.npy'), N_gen )
+        np.savetxt( os.path.join(self.out_dir, 'injections_Tobs.txt'), np.array([1.])) 
+        np.save( os.path.join(self.out_dir, 'injections_log_p_draw_spin.npy'), logwts_det )
         print('Done.')
 
 
