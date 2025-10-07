@@ -161,8 +161,32 @@ class GWMockData(Data):
                     chi1z = np.array(phi['posteriors']['chi1z'])[:nObsUse, :]
                     chi2z = np.array(phi['posteriors']['chi2z'])[:nObsUse, :]
                     spins=[ chi1z, chi2z ]
-                else:
-                    raise NotImplementedError()
+                elif which_spins=='default':
+                    try:
+                        s1x = posterior_samples['spin_1x']
+                        s2x = posterior_samples['spin_2x']
+                        s1y = posterior_samples['spin_1y']
+                        s2y = posterior_samples['spin_2y']
+                        s1z = posterior_samples['spin_1z']
+                        s2z = posterior_samples['spin_2z']
+                        s1 = np.sqrt(s1x**2+s1y**2+s1z**2)
+                        s2 = np.sqrt(s2x**2+s2y**2+s2z**2)
+                        cost1 = posterior_samples['cos_tilt_1']
+                        cost2 = posterior_samples['cos_tilt_2']
+                        spins = [s1, s2, cost1, cost2]
+                    except Exception as e:
+                        print(e)
+                        print(posterior_samples.dtype.fields.keys())
+                        try:
+                            s1 = posterior_samples['a_1']
+                            s2 = posterior_samples['a_2']
+                            cost1 = np.cos(posterior_samples['tilt_1'])
+                            cost2 = np.cos(posterior_samples['tilt_2'])
+                            spins = [s1, s2, cost1, cost2]
+
+                        except Exception as e:
+                            print(e)
+                            raise ValueError()
         
         if self.dist_unit==u.Mpc:
             print('Using distances in Mpc')
