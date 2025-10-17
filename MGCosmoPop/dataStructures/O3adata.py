@@ -26,7 +26,7 @@ import Globals
 
 class O3aData(LVCData):
     
-    def __init__(self, fname,  which_metadata='GWOSC', 
+    def __init__(self, fname,  which_metadata='GWOSC', metadata = None,
                  GWTC2_1 = ['GW190403_051519', 'GW190426_190642', 'GW190725_174728','GW190805_211137', 'GW190916_200658', 'GW190917_114630','GW190925_232845', 'GW190926_050336'], 
                  suffix_name = 'nocosmo',
                  **kwargs): #nObsUse=None, nSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='skip' ):

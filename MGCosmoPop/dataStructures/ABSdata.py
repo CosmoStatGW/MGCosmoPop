@@ -271,8 +271,12 @@ class LVCData(Data):
         
         allFiles = [f for f in os.listdir(fname) if f.endswith(self.post_file_extension)] #glob.glob(os.path.join(fname, '*.h5' ))
         #print(allFiles)
+        print("List dir %s"%fname)
+        print(allFiles)
         elist = [self._get_name_from_fname(f) for f in allFiles if self._name_conditions(f) ]
         
+
+        print(self.metadata.columns)
         
         # Exclude events not identified as BBHs
         if self.BBH_only:
@@ -287,9 +291,9 @@ class LVCData(Data):
         print( np.sort(np.array(list_BBH_or)))
         # Impose cut on SNR
         print('Using only events with SNR>%s (round to 1 decimal digit)' %self.SNR_th)
-        list_BBH_0 = [x for x in list_BBH_or if np.round(self.metadata[self.metadata.commonName==x].network_matched_filter_snr.values, 1)>=self.SNR_th  ]
+        list_BBH_0 = [x for x in list_BBH_or if np.round(self.metadata[self.metadata.name==x].network_matched_filter_snr.values, 1)>=self.SNR_th  ]
         print('Events after SNR cut:%s'%len(list_BBH_0))
-        list_BBH_excluded_0 = [(x, np.round(self.metadata[self.metadata.commonName==x].network_matched_filter_snr.values), 1)[0] for x in list_BBH_or if np.round(self.metadata[self.metadata.commonName==x].network_matched_filter_snr.values, 1)<self.SNR_th  ]
+        list_BBH_excluded_0 = [(x, np.round(self.metadata[self.metadata.name==x].network_matched_filter_snr.values), 1)[0] for x in list_BBH_or if np.round(self.metadata[self.metadata.name==x].network_matched_filter_snr.values, 1)<self.SNR_th  ]
         print('Excluded the following events with SNR<%s: ' %self.SNR_th)
         print(list_BBH_excluded_0)
         #print('%s events remaining.' %len(list_BBH_0))
@@ -297,8 +301,8 @@ class LVCData(Data):
         # Impose cut on FAR
         print('Using only events with FAR<%s' %self.FAR_th)
         #print(self.metadata.far.values)
-        list_BBH = [x for x in list_BBH_0 if self.metadata[self.metadata.commonName==x].far.values<=self.FAR_th  ]
-        list_BBH_excluded = [(x, self.metadata[self.metadata.commonName==x].far.values) for x in list_BBH_0 if self.metadata[self.metadata.commonName==x].far.values>self.FAR_th  ]
+        list_BBH = [x for x in list_BBH_0 if self.metadata[self.metadata.name==x].far.values<=self.FAR_th  ]
+        list_BBH_excluded = [(x, self.metadata[self.metadata.name==x].far.values) for x in list_BBH_0 if self.metadata[self.metadata.name==x].far.values>self.FAR_th  ]
         print('Excluded the following events with FAR>%s: ' %self.FAR_th)
         print(str(list_BBH_excluded))
         print('%s events remaining.' %len(list_BBH))

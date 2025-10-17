@@ -26,37 +26,40 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 import Globals
      
 
-class O3bData(LVCData):
+class O4aData(LVCData):
     
-    def __init__(self, fname, suffix_name = 'nocosmo', which_metadata = 'GWOSC',  metadata = None, **kwargs):#nObsUse=None, nSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='skip' ):
+    def __init__(self, fname, metadata = 'GWTC-4.0.csv', **kwargs):#nObsUse=None, nSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='skip' ):
         
-        self.suffix_name = suffix_name
+        self.suffix_name = ''
         import pandas as pd
-        self.post_file_extension='.h5'
-        if which_metadata=='GWOSC':
-            print('Using SNRS and far from the public version of the GWTC-3 catalog from the GWOSC')
-            self.metadata = pd.read_csv(os.path.join(fname, 'GWTC-3-confident.csv'))
+        self.post_file_extension='.hdf5'
+        if metadata is not None:
+            self.metadata = pd.read_csv(metadata)
         else:
-            print('Using best SNRS and far from all pipelines as reported in the GWTC-3 catalog paper')
-            self.metadata = pd.read_csv(os.path.join(Globals.dataPath, 'all_metadata_pipelines_best.csv'))
+            try:
+                self.metadata = pd.read_csv(os.path.join(fname, 'GWTC-4.0.csv'))
+            except:
+                raise ValueError('Metadata for GWTC4 not found')
+        # if which_metadata=='GWOSC':
+        #     print('Using SNRS and far from the public version of the GWTC-3 catalog from the GWOSC')
+        #     self.metadata = pd.read_csv(os.path.join(fname, 'GWTC-4.0.csv'))
+        # else:
+        #     print('Using best SNRS and far from all pipelines as reported in the GWTC-3 catalog paper')
+        #     self.metadata = pd.read_csv(os.path.join(Globals.dataPath, 'all_metadata_pipelines_best.csv'))
         LVCData.__init__(self, fname, **kwargs)
         
         
     
     def _set_Tobs(self):
-        self.Tobs= 147.083/365. # difference between the two GPS times below, in sec
-        # O3b dates: 1st November 2019 15:00 UTC (GPS 1256655618) to 27th March 2020 17:00 UTC (GPS 1269363618)
-        # 147.083
-        # 148 days in total
-        # 142.0 days with at least one detector for O3b
-        
-        # second half of the third observing run (O3b) between 1 November 2019, 15:00 UTC and 27 March 2020, 17:00 UTC
-        # for 96.6% of the time (142.0 days) at least one interferometer was observing,
-        # while for 85.3% (125.5 days) at least two interferometers were observing
+        self.Tobs= (1389456018  - 1368975618)/60/60/24/365 # difference between the two GPS times below, in sec
+        #O4 began on 2023 May 24 at 15:00:00 UTC.  GPS = 1368975618
+        # This run is
+        # again divided into parts: the first part of the fourth observing run (O4a) ended on 2024 January 16 at 16:00:00 UTC
+        # GPS =1389456018
     
     
     def _get_not_BBHs(self):
-        return ['GW200115_042309','GW200105_162426', 'GW191219_163120', 'GW200210_092254', 'GW200210_092255', 'GW190917_114630' ]
+        return ['GW230518_125908','GW230529_181500', ]
         # events in this line have secondary mass compatible with NS
 
         #+['GW190413_05954', 'GW190426_152155', 'GW190719_215514', 'GW190725_174728', 'GW190731_140936', 'GW190805_211137', 'GW190917_114630', 'GW191103_012549', 'GW200216_220804' ] 
@@ -68,7 +71,8 @@ class O3bData(LVCData):
     
     
     def _get_name_from_fname(self, fname):
-        return ('_').join(fname.split('-')[-1].split('_')[:2] )
+        # IGWN-GWTC4p0-0f954158d_720-GW230627_015337-combined_PEDataRelease.hdf5
+        return ('_').join(fname.split('-')[-2].split('_')[:2] )
     
     
     def _load_data_event(self, fname, event, nSamplesUse, which_spins='skip'):
@@ -81,9 +85,10 @@ class O3bData(LVCData):
 
         
         # By hand:
-        data_path = os.path.join(fname,  'IGWN-GWTC3p0-v2-'+event+'_PEDataRelease_mixed_'+self.suffix_name+self.post_file_extension)
+        data_path = os.path.join(fname,  'IGWN-GWTC4p0-0f954158d_720-'+event+'-combined_PEDataRelease'+self.post_file_extension)
         with h5py.File(data_path, 'r') as f:
-            dataset = f['C01:IMRPhenomXPHM']
+            print('opening %s'%data_path)
+            dataset = f['C00:IMRPhenomXPHM-SpinTaylor']
             posterior_samples = dataset['posterior_samples']
             
             _keys = ['mass_1', 'mass_2', 'luminosity_distance', 'iota']
@@ -143,10 +148,10 @@ class O3bData(LVCData):
               
     
     
-class O3bInjectionsData(O3InjectionsData, ):
+class O4aInjectionsData(O3InjectionsData, ):
     
     def __init__(self, fname, **kwargs):
-        self.Tobs=147.083/365.
+        self.Tobs=(1389456018  - 1368975618)/60/60/24/365
         print('Obs time: %s yrs' %self.Tobs )
         
         O3InjectionsData.__init__(self, fname, **kwargs)

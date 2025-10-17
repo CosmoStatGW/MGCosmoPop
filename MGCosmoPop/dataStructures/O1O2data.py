@@ -16,16 +16,16 @@ import sys
 PACKAGE_PARENT = '..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
-
+sys.path.append(os.path.join(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)), 'cosmology') )
 from astropy.cosmology import Planck15
-from cosmology.cosmo import Cosmo
+from cosmo import Cosmo
 
 import Globals
 
      
 class O1O2Data(LVCData):
     
-    def __init__(self, fname, which_metadata='GWOSC', force_BNS=False, **kwargs):#nObsUse=None, nSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='skip' ):
+    def __init__(self, fname, which_metadata='GWOSC', force_BNS=False, metadata = None, **kwargs):#nObsUse=None, nSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='skip' ):
         
         self.post_file_extension='.hdf5'
         self.force_BNS=force_BNS
