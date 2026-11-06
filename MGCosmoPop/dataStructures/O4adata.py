@@ -72,6 +72,7 @@ class O4aData(LVCData):
     
     def _get_name_from_fname(self, fname):
         # IGWN-GWTC4p0-0f954158d_720-GW230627_015337-combined_PEDataRelease.hdf5
+        # IGWN-GWTC4p0-1a206db3d_721-GW231221_135041-combined_PEDataRelease.hdf5
         return ('_').join(fname.split('-')[-2].split('_')[:2] )
     
     

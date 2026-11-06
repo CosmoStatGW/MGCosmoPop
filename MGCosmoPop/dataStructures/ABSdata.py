@@ -188,7 +188,7 @@ class Data(ABC):
     
 class LVCData(Data):
     
-    def __init__(self, fname, nObsUse=None, nSamplesUse=None, percSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='chiEff', SNR_th=8., FAR_th=1., BBH_only=True, dLprior='dLsq' ):
+    def __init__(self, fname, nObsUse=None, nSamplesUse=None, percSamplesUse=None, dist_unit=u.Gpc, events_use=None, which_spins='chiEff', SNR_th=8., FAR_th=1., BBH_only=True, dLprior='dLsq', load_prior=False ):
         
         Data.__init__(self)
         
@@ -203,6 +203,7 @@ class LVCData(Data):
         self.events_use=events_use
         self.which_spins=which_spins
         self.BBH_only=BBH_only
+        self.entry_name=entry_name
         
         nObsUse=None
         if events_use is not None:
@@ -214,8 +215,15 @@ class LVCData(Data):
         self.dist_unit = dist_unit
         self.events = self._get_events(fname, events_use)
         
-        self.m1z, self.m2z, self.dL, self.ra, self.dec, self.iota, self.spins, self.Nsamples, self.bin_weights = self._load_data(fname, nObsUse, which_spins=which_spins)  
+        self.m1z, self.m2z, self.dL, self.ra, self.dec, self.iota, self.spins, self.Nsamples, self.bin_weights = self._load_data(fname, nObsUse, which_spins=which_spins, entry_name='posterior_samples', )  
         self.Nobs=self.m1z.shape[0]
+        
+        
+        if load_prior:
+            print('\nAlso loading prior samples...')
+
+            self.m1z_prior, self.m2z_prior, self.dL_prior, self.ra_prior, self.dec_prior, self.iota_prior_prior, self.spins_prior, self.Nsamples_prior, self.bin_weights_prior = self._load_data(fname, nObsUse, which_spins=which_spins, entry_name='prior_samples' ) 
+        
         # assert len(self.bin_weights)==self.Nobs
         #print(self.bin_weights)
         #print('We have %s observations' %self.Nobs)
@@ -291,9 +299,15 @@ class LVCData(Data):
         print( np.sort(np.array(list_BBH_or)))
         # Impose cut on SNR
         print('Using only events with SNR>%s (round to 1 decimal digit)' %self.SNR_th)
-        list_BBH_0 = [x for x in list_BBH_or if np.round(self.metadata[self.metadata.name==x].network_matched_filter_snr.values, 1)>=self.SNR_th  ]
+        try:
+            list_BBH_0 = [x for x in list_BBH_or if np.round(self.metadata[self.metadata.name==x].network_matched_filter_snr.values, 1)>=self.SNR_th  ]
+        except:
+            list_BBH_0 = [x for x in list_BBH_or if np.round(self.metadata[self.metadata.commonName==x].network_matched_filter_snr.values, 1)>=self.SNR_th  ]
         print('Events after SNR cut:%s'%len(list_BBH_0))
-        list_BBH_excluded_0 = [(x, np.round(self.metadata[self.metadata.name==x].network_matched_filter_snr.values), 1)[0] for x in list_BBH_or if np.round(self.metadata[self.metadata.name==x].network_matched_filter_snr.values, 1)<self.SNR_th  ]
+        try:
+            list_BBH_excluded_0 = [(x, np.round(self.metadata[self.metadata.name==x].network_matched_filter_snr.values), 1)[0] for x in list_BBH_or if np.round(self.metadata[self.metadata.name==x].network_matched_filter_snr.values, 1)<self.SNR_th  ]
+        except:
+            list_BBH_excluded_0 = [(x, np.round(self.metadata[self.metadata.commonName==x].network_matched_filter_snr.values), 1)[0] for x in list_BBH_or if np.round(self.metadata[self.metadata.commonName==x].network_matched_filter_snr.values, 1)<self.SNR_th  ]
         print('Excluded the following events with SNR<%s: ' %self.SNR_th)
         print(list_BBH_excluded_0)
         #print('%s events remaining.' %len(list_BBH_0))
@@ -301,8 +315,12 @@ class LVCData(Data):
         # Impose cut on FAR
         print('Using only events with FAR<%s' %self.FAR_th)
         #print(self.metadata.far.values)
-        list_BBH = [x for x in list_BBH_0 if self.metadata[self.metadata.name==x].far.values<=self.FAR_th  ]
-        list_BBH_excluded = [(x, self.metadata[self.metadata.name==x].far.values) for x in list_BBH_0 if self.metadata[self.metadata.name==x].far.values>self.FAR_th  ]
+        try:
+            list_BBH = [x for x in list_BBH_0 if self.metadata[self.metadata.name==x].far.values<=self.FAR_th  ]
+            list_BBH_excluded = [(x, self.metadata[self.metadata.name==x].far.values) for x in list_BBH_0 if self.metadata[self.metadata.name==x].far.values>self.FAR_th  ]
+        except:
+            list_BBH = [x for x in list_BBH_0 if self.metadata[self.metadata.commonName==x].far.values<=self.FAR_th  ]
+            list_BBH_excluded = [(x, self.metadata[self.metadata.commonName==x].far.values) for x in list_BBH_0 if self.metadata[self.metadata.commonName==x].far.values>self.FAR_th  ]
         print('Excluded the following events with FAR>%s: ' %self.FAR_th)
         print(str(list_BBH_excluded))
         print('%s events remaining.' %len(list_BBH))
@@ -330,7 +348,7 @@ class LVCData(Data):
         return list_BBH_final
  
     
-    def _load_data(self, fname, nObsUse, which_spins='chiEff'):
+    def _load_data(self, fname, nObsUse, which_spins='chiEff', **kwargs):
         print('Loading data...')
     
         
@@ -345,7 +363,7 @@ class LVCData(Data):
         for event in self.events[:nObsUse]:
                 print('Reading data from %s' %event)
             #with h5py.File(fname, 'r') as phi:
-                m1z_, m2z_, dL_, ra_, dec_, iota_, spins_, weights_  = self._load_data_event(fname, event, nSamplesUse=None, which_spins=which_spins)
+                m1z_, m2z_, dL_, ra_, dec_, iota_, spins_, weights_  = self._load_data_event(fname, event, nSamplesUse=None, which_spins=which_spins, **kwargs)
                 print('Number of samples in LVC data: %s' %m1z_.shape[0]) #%(~np.isnan(m1z_)).sum()) #%m1z_.shape[0])
                 m1s.append(m1z_)
                 m2s.append(m2z_)
@@ -366,7 +384,27 @@ class LVCData(Data):
                     assert len(spins_[0])==len(dL_)
                 else:  assert spins_==[]
                 
-                nSamples = len(m1z_)
+                finite_mask = (
+                    np.isfinite(m1z_)
+                    & np.isfinite(m2z_)
+                    & np.isfinite(dL_)
+                )
+                
+                if which_spins != "skip":
+                    for s in spins_:
+                        finite_mask &= np.isfinite(s)
+                
+                nSamples = int(np.sum(finite_mask))
+                
+                m1z_ = m1z_[finite_mask]
+                m2z_ = m2z_[finite_mask]
+                dL_ = dL_[finite_mask]
+                ra_ = ra_[finite_mask]
+                dec_ = dec_[finite_mask]
+                iota_ = iota_[finite_mask]
+                
+                if which_spins != "skip":
+                    spins_ = [s[finite_mask] for s in spins_]
                 
                 allNsamples.append(nSamples)
             #print('ciao')

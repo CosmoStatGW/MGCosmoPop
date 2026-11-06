@@ -71,7 +71,7 @@ class O3bData(LVCData):
         return ('_').join(fname.split('-')[-1].split('_')[:2] )
     
     
-    def _load_data_event(self, fname, event, nSamplesUse, which_spins='skip'):
+    def _load_data_event(self, fname, event, nSamplesUse, which_spins='skip', dataset_name='C01:IMRPhenomXPHM', entry_name='posterior_samples'):
         
         ### Using pesummary read function
         #data = read(os.path.join(fname,  event+self.post_file_extension))
@@ -83,8 +83,8 @@ class O3bData(LVCData):
         # By hand:
         data_path = os.path.join(fname,  'IGWN-GWTC3p0-v2-'+event+'_PEDataRelease_mixed_'+self.suffix_name+self.post_file_extension)
         with h5py.File(data_path, 'r') as f:
-            dataset = f['C01:IMRPhenomXPHM']
-            posterior_samples = dataset['posterior_samples']
+            dataset = f[dataset_name]
+            posterior_samples = dataset[entry_name]
             
             _keys = ['mass_1', 'mass_2', 'luminosity_distance', 'iota']
             m1z, m2z, dL, iota = [posterior_samples[k] for k in _keys]

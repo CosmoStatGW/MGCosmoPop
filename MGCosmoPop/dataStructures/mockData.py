@@ -26,7 +26,8 @@ class GWMockData(Data):
                  events_not_use_idxs=None, 
                 dLprior = None, 
                  inclination=False, 
-                 which_spins='none'
+                 which_spins='none',
+                 reweight=False
                 
                 ):
         
@@ -35,10 +36,12 @@ class GWMockData(Data):
         self.inclination=inclination
         self.dLprior=dLprior
         print("dL prior is %s"%dLprior)
+
+        self.reweight=reweight
         
         self.SNR_th= SNR_th
         self.dist_unit = dist_unit
-        self.m1z, self.m2z, self.dL, self.ra, self.dec, self.inclination, self.spins, self.snr, self.Nsamples, self.bin_weights = self._load_data(fname, nObsUse, events_use_idxs=events_use_idxs, events_not_use_idxs=events_not_use_idxs ) #nSamplesUse, )  
+        self.m1z, self.m2z, self.dL, self.ra, self.dec, self.inclination, self.spins, self.snr, self.Nsamples, self.bin_weights, enames = self._load_data(fname, nObsUse, events_use_idxs=events_use_idxs, events_not_use_idxs=events_not_use_idxs ) #nSamplesUse, )  
         print('snr shape: %s' %str(self.snr.shape))
         
         self.logNsamples = np.log(self.Nsamples)
@@ -51,17 +54,27 @@ class GWMockData(Data):
         self.set_snr_threshold(SNR_th)
         
 
-        assert (self.m1z > 0).all()
-        assert (self.m2z > 0).all()
-        assert (self.dL > 0).all()
-        assert(self.m2z<=self.m1z).all()
+        valid = np.isfinite(self.m1z) & np.isfinite(self.m2z) & np.isfinite(self.dL)
+        
+        assert (self.m1z[valid] > 0).all()
+        assert (self.m2z[valid] > 0).all()
+        assert (self.dL[valid] > 0).all()
+        assert (self.m2z[valid] <= self.m1z[valid]).all()
         
         self.Tobs=Tobs
         #self.chiEff = np.zeros(self.m1z.shape)
         #self.spins = []
-        self.events = [str(i) for i in range(len(self.dL))] #np.arange(len(self.dL))
+
+        if enames is None:
+            self.events = [str(i) for i in range(len(self.dL))] #np.arange(len(self.dL))
+        else:
+            self.events = enames
+        
+        
         print('Obs time: %s' %self.Tobs )
         print('N. of events: %s' %len(self.events) )
+        print("Names: ")
+        print(self.events)
         
     
     def set_snr_threshold(self, snr_th):
@@ -78,7 +91,7 @@ class GWMockData(Data):
             self.SNR_th=snr_th
             keep = self.snr >= snr_th
 
-            self.m1z, self.m2z, self.dL, self.ra, self.dec, self.inclination, self.spins, self.snr, self.bin_weights = self.m1z[keep, :], self.m2z[keep, :], self.dL[ keep, :], self.ra[keep, :], self.dec[keep, :], self.inclination[keep, :], [self.spins[i][keep, :] for i in range(len(spins))], self.snr[keep], self.bin_weights[keep]
+            self.m1z, self.m2z, self.dL, self.ra, self.dec, self.inclination, self.spins, self.snr, self.bin_weights = self.m1z[keep, :], self.m2z[keep, :], self.dL[ keep, :], self.ra[keep, :], self.dec[keep, :], self.inclination[keep, :], [self.spins[i][keep, :] for i in range(len(self.spins))], self.snr[keep], self.bin_weights[keep]
             self.logNsamples = self.logNsamples[keep]
             self.Nsamples = self.Nsamples[keep]
     
@@ -101,25 +114,43 @@ class GWMockData(Data):
         #if nObsUse is None:
         #    nObsUse=None
         with h5py.File(fname, 'r') as phi: #observations.h5 has to be in the same folder as this code
+
+                try:
+                    props = phi["properties"]              # group
+                    print(props)
+                    gwnames = props["gwnames"][:]        # may be bytes -> decode if needed
+                    gwnames = [x.decode() if isinstance(x, bytes) else x for x in gwnames][:nObsUse]
+                    print("gwnames found. len=%s"%len(gwnames))
+                except Exception as e:
+                    print(e)
+                    print("names not found")
+                    gwnames = None
                 
+                if self.reweight:
+                    print("Use re-weighted posteriors")
+
+                    pe = phi['posteriors_reweight']
+                else:
+                    pe = phi['posteriors']
+            
                 print('List of available entries:')
-                for pn in phi['posteriors'].keys():
+                for pn in pe.keys():
                     print(pn)
             
-                m1det_samples = np.array(phi['posteriors']['m1det'])[:nObsUse, :]# m1
-                m2det_samples = np.array(phi['posteriors']['m2det'])[:nObsUse, :] # m2
+                m1det_samples = np.array(pe['m1det'])[:nObsUse, :]# m1
+                m2det_samples = np.array(pe['m2det'])[:nObsUse, :] # m2
                 
                 try:
-                    dl_samples = np.array(phi['posteriors']['dl'])[:nObsUse, :]
+                    dl_samples = np.array(pe['dl'])[:nObsUse, :]
                 except:
                     try:
-                        dl_samples = np.array(phi['posteriors']['dL'])[:nObsUse, :]
+                        dl_samples = np.array(pe['dL'])[:nObsUse, :]
                     except:
                         raise ValueError('Neither dL nor dl present as key in this dataset')
                 
                 print('dl samples loaded shape: %s' %str(dl_samples.shape))
                 try:
-                    snrs = np.array(phi['posteriors']['rho'])[:nObsUse]
+                    snrs = np.array(pe['rho'])[:nObsUse]
                 #print(dl_samples.shape)
                 except Exception as e:
                     print(e)
@@ -127,19 +158,19 @@ class GWMockData(Data):
                     snrs = np.zeros(dl_samples.shape[0])
                 print('snrs loaded shape: %s' %str(snrs.shape))
                 try:
-                    bin_weights = np.array(phi['posteriors']['bin_weights'])[:nObsUse]
+                    bin_weights = np.array(pe['bin_weights'])[:nObsUse]
                 except Exception as e:
                     print(e)
                     print('No bin weights.')
                     bin_weights = np.ones(dl_samples.shape[0])
                     
                 try:
-                    ra = np.array(phi['posteriors']['ra'])[:nObsUse, :]# m1
-                    dec = np.array(phi['posteriors']['dec'])[:nObsUse, :] 
+                    ra = np.array(pe['ra'])[:nObsUse, :]# m1
+                    dec = np.array(pe['dec'])[:nObsUse, :] 
                 except:
                     try:
-                        ra = np.array(phi['posteriors']['phi'])[:nObsUse, :]# m1
-                        dec = np.pi/2-np.array(phi['posteriors']['theta'])[:nObsUse, :]
+                        ra = np.array(pe['phi'])[:nObsUse, :]# m1
+                        dec = np.pi/2-np.array(pe['theta'])[:nObsUse, :]
                         print('Added ra, dec from theta, phi')
                     except:
                         print('No ra, dec')
@@ -148,7 +179,7 @@ class GWMockData(Data):
                 if self.inclination:
                     print('Also loading inclination')
                     try:
-                        iota = np.array(phi['posteriors']['iota'])[:nObsUse, :]
+                        iota = np.array(pe['iota'])[:nObsUse, :]
                     except:
                         print('Inclination not found. Check input data!')
                         iota=np.zeros(m1det_samples.shape)
@@ -158,30 +189,51 @@ class GWMockData(Data):
                 if self.which_spins=='none':
                     spins=[ np.zeros(m1det_samples.shape) ]
                 elif self.which_spins=='aligned':
-                    chi1z = np.array(phi['posteriors']['chi1z'])[:nObsUse, :]
-                    chi2z = np.array(phi['posteriors']['chi2z'])[:nObsUse, :]
+                    chi1z = np.array(pe['chi1z'])[:nObsUse, :]
+                    chi2z = np.array(pe['chi2z'])[:nObsUse, :]
                     spins=[ chi1z, chi2z ]
                 elif self.which_spins=='default':
                     try:
-                        s1x = np.array(phi['posteriors']['spin_1x'])[:nObsUse, :]
-                        s2x = np.array(phi['posteriors']['spin_2x'])[:nObsUse, :]
-                        s1y = np.array(phi['posteriors']['spin_1y'])[:nObsUse, :]
-                        s2y = np.array(phi['posteriors']['spin_2y'])[:nObsUse, :]
-                        s1z = np.array(phi['posteriors']['spin_1z'])[:nObsUse, :]
-                        s2z = np.array(phi['posteriors']['spin_2z'])[:nObsUse, :]
+                        s1x = np.array(pe['spin_1x'])[:nObsUse, :]
+                        s2x = np.array(pe['spin_2x'])[:nObsUse, :]
+                        s1y = np.array(pe['spin_1y'])[:nObsUse, :]
+                        s2y = np.array(pe['spin_2y'])[:nObsUse, :]
+                        s1z = np.array(pe['spin_1z'])[:nObsUse, :]
+                        s2z = np.array(pe['spin_2z'])[:nObsUse, :]
                         s1 = np.sqrt(s1x**2+s1y**2+s1z**2)
                         s2 = np.sqrt(s2x**2+s2y**2+s2z**2)
-                        cost1 = np.array(phi['posteriors']['cos_tilt_1'])[:nObsUse, :]
-                        cost2 = np.array(phi['posteriors']['cos_tilt_2'])[:nObsUse, :]
+                        cost1 = np.array(pe['cos_tilt_1'])[:nObsUse, :]
+                        cost2 = np.array(pe['cos_tilt_2'])[:nObsUse, :]
                         spins = [s1, s2, cost1, cost2]
                     except Exception as e:
                         print(e)
-                        print(posterior_samples.dtype.fields.keys())
+
                         try:
-                            s1 = np.array(phi['posteriors']['a_1'])[:nObsUse, :]
-                            s2 = np.array(phi['posteriors']['a_2'])[:nObsUse, :]
-                            cost1 = np.cos(np.array(phi['posteriors']['tilt_1']))[:nObsUse, :]
-                            cost2 = np.cos(np.array(phi['posteriors']['tilt_2']))[:nObsUse, :]
+                            try:
+                                s1 = np.array(pe['a_1'])[:nObsUse, :]
+                                s2 = np.array(pe['a_2'])[:nObsUse, :]
+                                print("spin magnitudes names a_1, a_2")
+                            except Exception as e:
+                                print(e)
+                                try:
+                                    s1 = np.array(pe['chi_1'])[:nObsUse, :]
+                                    s2 = np.array(pe['chi_2'])[:nObsUse, :]
+                                    print("spin magnitudes names chi_1, chi_2")
+                                except Exception as e:
+                                    raise ValueError()
+                                    
+                            try:
+                                cost1 = np.cos(np.array(pe['tilt_1']))[:nObsUse, :]
+                                cost2 = np.cos(np.array(pe['tilt_2']))[:nObsUse, :]
+                                print("spin tilt names tilt_1, tilt_2")
+                            except Exception as e:
+                                print(e)
+                                try:
+                                    cost1 = np.array(pe['cos_t_1'])[:nObsUse, :]
+                                    cost2 = np.array(pe['cos_t_2'])[:nObsUse, :]
+                                    print("spin cos tilt names cos_t_1, cos_t_2")
+                                except:
+                                    raise ValueError()
                             spins = [s1, s2, cost1, cost2]
 
                         except Exception as e:
@@ -213,7 +265,61 @@ class GWMockData(Data):
         
         print('Excluding events %s' %str(events_not_use_idxs))
         print('We finally use %s events '%len(events_use_idxs))
-        return m1det_samples[events_use_idxs, :], m2det_samples[events_use_idxs, :], dl_samples[events_use_idxs, :], ra[events_use_idxs, :], dec[events_use_idxs, :], iota[events_use_idxs, :], [spins[i][events_use_idxs, :] for i in range(len(spins))], snrs[events_use_idxs], np.count_nonzero(m1det_samples[events_use_idxs, :], axis=-1), bin_weights[events_use_idxs] 
+
+        m1det_samples = m1det_samples[events_use_idxs, :]
+        m2det_samples = m2det_samples[events_use_idxs, :]
+        dl_samples = dl_samples[events_use_idxs, :]
+        ra = ra[events_use_idxs, :]
+        dec = dec[events_use_idxs, :]
+        iota = iota[events_use_idxs, :]
+        spins = [spins[i][events_use_idxs, :] for i in range(len(spins))]
+        snrs = snrs[events_use_idxs]
+        bin_weights = bin_weights[events_use_idxs]
+        
+        valid = (
+            np.isfinite(m1det_samples)
+            & np.isfinite(m2det_samples)
+            & np.isfinite(dl_samples)
+        )
+        
+        for s in spins:
+            valid &= np.isfinite(s)
+        
+        Nsamples = valid.sum(axis=-1).astype(int)
+        
+        for i in range(m1det_samples.shape[0]):
+            keep = np.where(valid[i])[0]
+            n = len(keep)
+        
+            m1det_i = m1det_samples[i, keep]
+            m2det_i = m2det_samples[i, keep]
+            dl_i = dl_samples[i, keep]
+            ra_i = ra[i, keep]
+            dec_i = dec[i, keep]
+            iota_i = iota[i, keep]
+            spins_i = [s[i, keep] for s in spins]
+        
+            m1det_samples[i, :] = np.nan
+            m2det_samples[i, :] = np.nan
+            dl_samples[i, :] = np.nan
+            ra[i, :] = np.nan
+            dec[i, :] = np.nan
+            iota[i, :] = np.nan
+        
+            m1det_samples[i, :n] = m1det_i
+            m2det_samples[i, :n] = m2det_i
+            dl_samples[i, :n] = dl_i
+            ra[i, :n] = ra_i
+            dec[i, :n] = dec_i
+            iota[i, :n] = iota_i
+        
+            for k in range(len(spins)):
+                spins[k][i, :] = np.nan
+                spins[k][i, :n] = spins_i[k]
+        
+        return m1det_samples, m2det_samples, dl_samples, ra, dec, iota, spins, snrs, Nsamples, bin_weights, gwnames
+
+        
     
     def logOrMassPrior(self):
         return np.zeros(self.m1z.shape)
